@@ -1,0 +1,15 @@
+2022-04-22T13:54:20.619685809 0.012323s notice: Recursively removing directory /home/dna-dev/Documents/EmailAPI/email-api/rethinkdb_data/tmp
+2022-04-22T13:54:20.622443057 0.015098s notice: Initializing directory /home/dna-dev/Documents/EmailAPI/email-api/rethinkdb_data
+2022-04-22T13:54:20.622540082 0.015177s info: Creating a default database for your convenience. (This is because you ran 'rethinkdb' without 'create', 'serve', or '--join', and the directory '/home/dna-dev/Documents/EmailAPI/email-api/rethinkdb_data' did not already exist or is empty.)
+2022-04-22T13:54:20.622579548 0.015216s notice: Running rethinkdb 2.4.1~0focal (CLANG 10.0.0 )...
+2022-04-22T13:54:20.623523002 0.016160s notice: Running on Linux 5.16.11-76051611-generic x86_64
+2022-04-22T13:54:20.623556961 0.016194s notice: Loading data from directory /home/dna-dev/Documents/EmailAPI/email-api/rethinkdb_data
+2022-04-22T13:54:20.636524283 0.029161s info: Automatically using cache size of 6960 MB
+2022-04-22T13:54:20.637308492 0.029945s notice: Listening for intracluster connections on port 29015
+2022-04-22T13:54:20.639019725 0.031656s notice: Listening for client driver connections on port 28015
+2022-04-22T13:54:20.639067174 0.031704s notice: Listening for administrative HTTP connections on port 8080
+2022-04-22T13:54:20.639068866 0.031706s notice: Listening on cluster addresses: 127.0.0.1, ::1
+2022-04-22T13:54:20.639070108 0.031707s notice: Listening on driver addresses: 127.0.0.1, ::1
+2022-04-22T13:54:20.639073945 0.031711s notice: Listening on http addresses: 127.0.0.1, ::1
+2022-04-22T13:54:20.639077281 0.031714s notice: To fully expose RethinkDB on the network, bind to all addresses by running rethinkdb with the `--bind all` command line option.
+2022-04-22T13:54:20.639080519 0.031717s notice: Server ready, "mcaballero_ag0" ad8a6913-1d0d-4fbd-b82a-0725b1e839c0
