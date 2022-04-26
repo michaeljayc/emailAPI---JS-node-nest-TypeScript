@@ -13,3 +13,25 @@
 2022-04-22T13:54:20.639073945 0.031711s notice: Listening on http addresses: 127.0.0.1, ::1
 2022-04-22T13:54:20.639077281 0.031714s notice: To fully expose RethinkDB on the network, bind to all addresses by running rethinkdb with the `--bind all` command line option.
 2022-04-22T13:54:20.639080519 0.031717s notice: Server ready, "mcaballero_ag0" ad8a6913-1d0d-4fbd-b82a-0725b1e839c0
+2022-04-22T15:22:42.779704861 0.016158s notice: Running rethinkdb 2.4.1~0focal (CLANG 10.0.0 )...
+2022-04-22T15:22:42.781521055 0.017972s notice: Running on Linux 5.16.11-76051611-generic x86_64
+2022-04-22T15:22:42.781587588 0.018038s notice: Loading data from directory /home/dna-dev/Documents/Git Repos/emailAPI/rethinkdb_data
+2022-04-22T15:22:42.788698080 0.025148s info: Automatically using cache size of 6493 MB
+2022-04-22T15:22:42.790446343 0.026896s error: TCP socket creation failed for port 29015: Address already in use.
+2022-04-22T15:22:59.307637937 0.023119s notice: Running rethinkdb 2.4.1~0focal (CLANG 10.0.0 )...
+2022-04-22T15:22:59.309055726 0.024536s notice: Running on Linux 5.16.11-76051611-generic x86_64
+2022-04-22T15:22:59.309129166 0.024608s notice: Loading data from directory /home/dna-dev/Documents/Git Repos/emailAPI/rethinkdb_data
+2022-04-22T15:22:59.317738210 0.033217s info: Automatically using cache size of 6559 MB
+2022-04-22T15:22:59.318159403 0.033639s notice: Listening for intracluster connections on port 29015
+2022-04-22T15:22:59.318872975 0.034352s notice: Listening for client driver connections on port 28015
+2022-04-22T15:22:59.318914419 0.034394s notice: Listening for administrative HTTP connections on port 8080
+2022-04-22T15:22:59.318916089 0.034395s notice: Listening on cluster addresses: 127.0.0.1, ::1
+2022-04-22T15:22:59.318917327 0.034396s notice: Listening on driver addresses: 127.0.0.1, ::1
+2022-04-22T15:22:59.318920941 0.034400s notice: Listening on http addresses: 127.0.0.1, ::1
+2022-04-22T15:22:59.318924037 0.034403s notice: To fully expose RethinkDB on the network, bind to all addresses by running rethinkdb with the `--bind all` command line option.
+2022-04-22T15:22:59.318927244 0.034406s notice: Server ready, "mcaballero_ag0" ad8a6913-1d0d-4fbd-b82a-0725b1e839c0
+2022-04-22T15:23:08.984049671 9.699530s notice: Server got SIGINT from pid 0, uid 0; shutting down...
+2022-04-22T15:23:08.984541428 9.700021s notice: Shutting down client connections...
+2022-04-22T15:23:08.984664501 9.700144s notice: All client connections closed.
+2022-04-22T15:23:08.984670583 9.700150s notice: Shutting down storage engine... (This may take a while if you had a lot of unflushed data in the writeback cache.)
+2022-04-22T15:23:08.985651909 9.701132s notice: Storage engine shut down.
