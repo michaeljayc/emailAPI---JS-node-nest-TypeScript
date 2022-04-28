@@ -11,13 +11,19 @@ const common_1 = require("@nestjs/common");
 const rethink_module_1 = require("../rethinkdb/rethink.module");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
-const user_module_1 = require("./Modules/user.module");
-const user_role_module_1 = require("./Modules/user_role.module");
+const user_module_1 = require("./users/user.module");
+const user_role_module_1 = require("./user_roles/user_role.module");
+const config_1 = require("@nestjs/config");
 let AppModule = class AppModule {
 };
 AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [rethink_module_1.RethinkModule, user_role_module_1.UserRoleModule, user_module_1.UserModule],
+        imports: [
+            config_1.ConfigModule.forRoot({ isGlobal: true }),
+            rethink_module_1.RethinkModule,
+            user_role_module_1.UserRoleModule,
+            user_module_1.UserModule
+        ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
     })

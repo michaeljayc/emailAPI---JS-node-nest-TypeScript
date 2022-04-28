@@ -5,7 +5,7 @@ export declare class UserService {
     private connection;
     constructor(connection: any);
     getAllUsers(): Promise<User>;
-    getUserByEmail(credentials: common.LoginCredentials): Promise<any>;
+    getUserByEmail(credentials: common.loginCredentials): Promise<any>;
     registerUser(user: User): Promise<rethink.WriteResult>;
     loginUser(id: string): Promise<User>;
 }

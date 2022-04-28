@@ -1,14 +1,14 @@
-import User from "src/Entities/user.entity";
+import User from "src/users/user.entity";
 
-const d = new Date();
+const DATE = new Date;
 
-export type LoginCredentials = {
+export type loginCredentials = {
     email: string;
     password: string;
 }
 
 export const setDateTime = () => {
-    return d.toLocaleDateString()+' - '+d.toLocaleTimeString();
+    return DATE.toLocaleDateString()+' - '+DATE.toLocaleTimeString();
 }
 
 export class ResponseFormat {
@@ -16,17 +16,37 @@ export class ResponseFormat {
     success: boolean;
     message: string;
     count: number;
-    data: {};
+    data: User;
 
     constructor(){}
 }
 
-export const formatResponse = (user: User): ResponseFormat => {
+export const formatResponse = (data?: User): ResponseFormat => {
     const response = new ResponseFormat();
-    response.count = Object.keys(user).length;
+    response.count = Object.keys(data).length;
     response.success = true;
     response.message = "Success"
-    response.data = user;
+    response.data = data;
 
     return response;
+}
+
+export type Logs = {
+    timestamp: string;
+    request: {
+        function_name: string,
+        params: {}
+    };
+    response: ResponseFormat;
+}
+
+export const formatLogs = (func_name: string, data: object,response: ResponseFormat): Logs => {
+    return  {
+        timestamp: DATE.toLocaleDateString()+' '+DATE.toLocaleTimeString(),
+        request: {
+            function_name: func_name,
+            params: data
+        },
+        response: response 
+    }
 }

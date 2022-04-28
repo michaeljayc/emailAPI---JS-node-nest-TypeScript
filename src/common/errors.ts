@@ -1,5 +1,6 @@
 import { ResponseFormat } from "./common";
-const error = new Error();
+import { User } from "src/users/user.entity";
+import { BadRequestException } from "@nestjs/common";
 
 export const userEmailDoesNotExist = (email: string) => {
     let message = `${email} does not exist.`;
@@ -7,7 +8,7 @@ export const userEmailDoesNotExist = (email: string) => {
     response.success = false;
     response.count = 0;
     response.message = message;
-    response.data = {}
+    response.data = null;
     return response;
 }
 
@@ -17,6 +18,6 @@ export const incorrectUserPassword = () => {
     response.success = false;
     response.count = 0;
     response.message = message;
-    response.data = {}
+    response.data = null;
     return response;
 }

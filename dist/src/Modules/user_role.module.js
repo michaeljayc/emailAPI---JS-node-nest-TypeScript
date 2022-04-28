@@ -10,14 +10,14 @@ exports.UserRoleModule = void 0;
 const common_1 = require("@nestjs/common");
 const database_provider_1 = require("../../rethinkdb/database.provider");
 const rethink_module_1 = require("../../rethinkdb/rethink.module");
-const user_role_resolver_1 = require("../Resolvers/user_role.resolver");
+const user_role_controller_1 = require("src/Controllers/user_role.controller");
 const user_role_service_1 = require("../Services/user_role.service");
 let UserRoleModule = class UserRoleModule {
 };
 UserRoleModule = __decorate([
     (0, common_1.Module)({
         imports: [rethink_module_1.RethinkModule],
-        controllers: [user_role_resolver_1.UserRoleResolver],
+        controllers: [user_role_controller_1.UserRoleController],
         providers: [user_role_service_1.UserRoleService, database_provider_1.RethinkProvider]
     })
 ], UserRoleModule);

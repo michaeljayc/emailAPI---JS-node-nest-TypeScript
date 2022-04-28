@@ -1,5 +1,5 @@
-import User from "src/Entities/user.entity";
-export declare type LoginCredentials = {
+import User from "src/users/user.entity";
+export declare type loginCredentials = {
     email: string;
     password: string;
 };
@@ -8,7 +8,16 @@ export declare class ResponseFormat {
     success: boolean;
     message: string;
     count: number;
-    data: {};
+    data: User;
     constructor();
 }
-export declare const formatResponse: (user: User) => ResponseFormat;
+export declare const formatResponse: (data?: User) => ResponseFormat;
+export declare type Logs = {
+    timestamp: string;
+    request: {
+        function_name: string;
+        params: {};
+    };
+    response: ResponseFormat;
+};
+export declare const formatLogs: (func_name: string, data: object, response: ResponseFormat) => Logs;

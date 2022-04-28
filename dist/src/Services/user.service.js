@@ -25,18 +25,17 @@ let UserService = class UserService {
         return await rethink
             .db(DB)
             .table(TABLE)
-            .orderBy('join_date')
+            .orderBy('updated_date')
             .run(this.connection);
     }
     async getUserByEmail(credentials) {
-        let data = await rethink
+        return await rethink
             .db(DB)
             .table(TABLE)
             .filter({
             'email': credentials.email
         })
             .run(this.connection);
-        return data;
     }
     async registerUser(user) {
         return await rethink
