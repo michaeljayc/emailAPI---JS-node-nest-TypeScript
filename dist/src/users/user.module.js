@@ -15,6 +15,10 @@ const database_provider_1 = require("../../rethinkdb/database.provider");
 const user_role_module_1 = require("../user_roles/user_role.module");
 const logger_service_1 = require("../Services/logger.service");
 const jwt_1 = require("@nestjs/jwt");
+const auth_module_1 = require("../auth/auth.module");
+const auth_service_1 = require("../auth/auth.service");
+const core_1 = require("@nestjs/core");
+const roles_guard_1 = require("../auth/roles.guard");
 let UserModule = class UserModule {
 };
 UserModule = __decorate([
@@ -24,9 +28,17 @@ UserModule = __decorate([
             jwt_1.JwtModule.register({
                 secret: "secret",
                 signOptions: { expiresIn: '1d' }
-            })],
+            }),
+            auth_module_1.AuthModule],
         controllers: [user_controller_1.UserController],
-        providers: [database_provider_1.default, user_service_1.UserService, logger_service_1.default],
+        providers: [database_provider_1.default,
+            user_service_1.UserService,
+            logger_service_1.default,
+            auth_service_1.AuthService,
+            {
+                provide: core_1.APP_GUARD,
+                useClass: roles_guard_1.RolesGuard
+            },],
         exports: [user_service_1.UserService]
     })
 ], UserModule);

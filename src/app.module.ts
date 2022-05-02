@@ -5,13 +5,15 @@ import { AppService } from './app.service';
 import { UserModule } from './users/user.module';
 import { UserRoleModule } from './user_roles/user_role.module';
 import { ConfigModule } from "@nestjs/config"
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({isGlobal: true}),
     RethinkModule, 
     UserRoleModule, 
-    UserModule
+    UserModule,
+    AuthModule
   ],
   controllers: [AppController],
   providers: [AppService],

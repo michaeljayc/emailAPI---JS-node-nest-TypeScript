@@ -5,6 +5,7 @@ export class User {
     last_name: string;
     birthdate: string;
     gender: string;
+    username: string;
     email: string;
     password?: string;
     created_date: string;
@@ -17,6 +18,7 @@ export class User {
         last_name: string,
         birthdate: string,
         gender: string,
+        username: string,
         email: string,
         password: string,
         created_date: string,

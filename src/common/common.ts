@@ -1,3 +1,4 @@
+import { userInfo } from "os";
 import User from "src/users/user.entity";
 
 const DATE = new Date;
@@ -16,17 +17,25 @@ export class ResponseFormat {
     success: boolean;
     message: string;
     count: number;
-    data: User;
+    data?: User[];
 
     constructor(){}
 }
 
-export const formatResponse = (data?: User): ResponseFormat => {
+export const formatResponse = (data?: User[], success?: boolean, message?: string): ResponseFormat => {
+    const truncated_data = data ? data : null;
+
+    if (truncated_data !== null) {
+        truncated_data.forEach( value => {
+            delete value.password;
+        })        
+    }
+
     const response = new ResponseFormat();
     response.count = Object.keys(data).length;
-    response.success = true;
-    response.message = "Success"
-    response.data = data;
+    response.success = success ? success : false;
+    response.message = message ? message : "Failed";
+    response.data = truncated_data;
 
     return response;
 }
@@ -49,4 +58,9 @@ export const formatLogs = (func_name: string, data: object,response: ResponseFor
         },
         response: response 
     }
+}
+
+export const truncatePassword = (user:User): User => {
+    console.log(user);
+    return user;
 }

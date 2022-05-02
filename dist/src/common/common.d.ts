@@ -8,10 +8,10 @@ export declare class ResponseFormat {
     success: boolean;
     message: string;
     count: number;
-    data: User;
+    data?: User[];
     constructor();
 }
-export declare const formatResponse: (data?: User) => ResponseFormat;
+export declare const formatResponse: (data?: User[], success?: boolean, message?: string) => ResponseFormat;
 export declare type Logs = {
     timestamp: string;
     request: {
@@ -21,3 +21,4 @@ export declare type Logs = {
     response: ResponseFormat;
 };
 export declare const formatLogs: (func_name: string, data: object, response: ResponseFormat) => Logs;
+export declare const truncatePassword: (user: User) => User;

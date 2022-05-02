@@ -14,6 +14,7 @@ const app_service_1 = require("./app.service");
 const user_module_1 = require("./users/user.module");
 const user_role_module_1 = require("./user_roles/user_role.module");
 const config_1 = require("@nestjs/config");
+const auth_module_1 = require("./auth/auth.module");
 let AppModule = class AppModule {
 };
 AppModule = __decorate([
@@ -22,7 +23,8 @@ AppModule = __decorate([
             config_1.ConfigModule.forRoot({ isGlobal: true }),
             rethink_module_1.RethinkModule,
             user_role_module_1.UserRoleModule,
-            user_module_1.UserModule
+            user_module_1.UserModule,
+            auth_module_1.AuthModule
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
