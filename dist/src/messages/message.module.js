@@ -8,17 +8,27 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageModule = void 0;
 const common_1 = require("@nestjs/common");
+const jwt_1 = require("@nestjs/jwt");
 const database_provider_1 = require("../../rethinkdb/database.provider");
 const rethink_module_1 = require("../../rethinkdb/rethink.module");
+const logger_service_1 = require("../Services/logger.service");
+const user_service_1 = require("../users/user.service");
 const message_controller_1 = require("./message.controller");
 const message_service_1 = require("./message.service");
 let MessageModule = class MessageModule {
 };
 MessageModule = __decorate([
     (0, common_1.Module)({
-        imports: [rethink_module_1.RethinkModule],
+        imports: [rethink_module_1.RethinkModule,
+            jwt_1.JwtModule.register({
+                secret: "secret",
+                signOptions: { expiresIn: '1d' }
+            })],
         controllers: [message_controller_1.default],
-        providers: [message_service_1.default, database_provider_1.default],
+        providers: [message_service_1.default,
+            database_provider_1.default,
+            logger_service_1.default,
+            user_service_1.UserService],
     })
 ], MessageModule);
 exports.MessageModule = MessageModule;

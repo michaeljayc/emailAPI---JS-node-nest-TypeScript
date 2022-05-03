@@ -61,7 +61,7 @@ let UserController = UserController_1 = class UserController {
     }
     async loginUser(credentials, response) {
         let user_data;
-        let response_data = await this.userService.getUserByEmail(credentials);
+        let response_data = await this.userService.getUserByEmail(credentials.email);
         if (Object.keys(response_data._responses).length === 0) {
             return response_data = error.userEmailDoesNotExist(credentials.email);
         }
@@ -69,7 +69,11 @@ let UserController = UserController_1 = class UserController {
         if (!await this.authService.comparePassword(credentials.password, user_data.password)) {
             return response_data = error.incorrectUserPassword();
         }
-        const jwt = await this.jwtService.signAsync({ id: user_data.id, username: user_data.username });
+        const jwt = await this.jwtService.signAsync({
+            id: user_data.id,
+            username: user_data.username,
+            email: user_data.email
+        });
         response_data = common.formatResponse([user_data], true, "Login Successful.");
         this.loggerService.insertLogs(common.formatLogs("loginUser", credentials, response_data));
         response.cookie("jwt", jwt, { httpOnly: true });

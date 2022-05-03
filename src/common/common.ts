@@ -22,7 +22,7 @@ export class ResponseFormat {
     constructor(){}
 }
 
-export const formatResponse = (data?: User[], success?: boolean, message?: string): ResponseFormat => {
+export const formatResponse = (data?: any, success?: boolean, message?: string): ResponseFormat => {
     const truncated_data = data ? data : null;
 
     if (truncated_data !== null) {

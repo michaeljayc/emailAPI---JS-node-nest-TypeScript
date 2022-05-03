@@ -11,7 +11,7 @@ export declare class ResponseFormat {
     data?: User[];
     constructor();
 }
-export declare const formatResponse: (data?: User[], success?: boolean, message?: string) => ResponseFormat;
+export declare const formatResponse: (data?: any, success?: boolean, message?: string) => ResponseFormat;
 export declare type Logs = {
     timestamp: string;
     request: {

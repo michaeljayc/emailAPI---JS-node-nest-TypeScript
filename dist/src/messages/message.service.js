@@ -14,9 +14,37 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageService = void 0;
 const common_1 = require("@nestjs/common");
+const rethink = require("rethinkdb");
+const DB = "emailAPI";
+const TABLE = "messages";
 let MessageService = class MessageService {
     constructor(connection) {
         this.connection = connection;
+    }
+    async getMessages(id, menu) {
+        return await rethink
+            .db(DB)
+            .table(TABLE)
+            .filter({
+            "user_id": id,
+            "menu_state": menu
+        })
+            .orderBy('updated_date')
+            .run(this.connection);
+    }
+    async getMessageDetails(message_id) {
+        return await rethink
+            .db(DB)
+            .table(TABLE)
+            .get(message_id)
+            .run(this.connection);
+    }
+    async createMessage(message) {
+        return await rethink
+            .db(DB)
+            .table(TABLE)
+            .insert(message)
+            .run(this.connection);
     }
 };
 MessageService = __decorate([
