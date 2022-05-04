@@ -1,17 +1,17 @@
 export declare class Message {
     id: string;
-    user_id: string;
     sender: string;
+    sender_id: string;
     recipient: string;
+    recipient_id: string;
     subject: string;
     message: string;
     menu_state: number;
-    isDraft: boolean;
     isDeleted: boolean;
     read: false;
     unread: true;
     created_date: string;
     updated_date: string;
-    constructor(id: string, user_id: any, string: any, sender: string, recipient: string, subject: string, message: string, menu_state: number, isDraft: boolean, isDeleted: boolean, read: false, unread: true, created_date: Date, updated_date: Date);
+    constructor(id: string, sender: string, sender_id: string, recipient: string, recipient_id: string, subject: string, message: string, menu_state: number, isDeleted: boolean, read: false, unread: true, created_date: string, updated_date: string);
 }
 export default Message;

@@ -21,29 +21,68 @@ let MessageService = class MessageService {
     constructor(connection) {
         this.connection = connection;
     }
-    async getMessages(id, menu) {
+    async getReceivedMessages(id) {
         return await rethink
             .db(DB)
-            .table(TABLE)
+            .table("inbox")
             .filter({
-            "user_id": id,
-            "menu_state": menu
+            "recipient_id": id
         })
             .orderBy('updated_date')
             .run(this.connection);
     }
-    async getMessageDetails(message_id) {
+    async getComposedMessages(id, table) {
+        let table_to_query = table === "sent" ? "sent" : "drafts";
         return await rethink
             .db(DB)
-            .table(TABLE)
+            .table(table_to_query)
+            .filter({
+            "sender_id": id
+        })
+            .orderBy('updated_date')
+            .run(this.connection);
+    }
+    async getMessageDetails(table, message_id) {
+        return await rethink
+            .db(DB)
+            .table(table)
             .get(message_id)
             .run(this.connection);
     }
-    async createMessage(message) {
+    async sendMessage(table, message) {
         return await rethink
             .db(DB)
-            .table(TABLE)
+            .table(table)
             .insert(message)
+            .run(this.connection);
+    }
+    async updateReadUnread(message) {
+        let res = await rethink
+            .db(DB)
+            .table("inbox")
+            .get(message.id)
+            .update({
+            "read": true,
+            "unread": false,
+            "updated_date": String(Date.now())
+        })
+            .run(this.connection);
+        return await this.getMessageDetails("inbox", message.id);
+    }
+    async updateMessage(id, message) {
+        return await rethink
+            .db(DB)
+            .table("drafts")
+            .get(id)
+            .update(message)
+            .run(this.connection);
+    }
+    async deleteMessage(table, message_id) {
+        return await rethink
+            .db(DB)
+            .table(table)
+            .get(message_id)
+            .delete()
             .run(this.connection);
     }
 };

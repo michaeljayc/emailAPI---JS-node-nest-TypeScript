@@ -28,60 +28,179 @@ let MessageController = class MessageController {
         this.userService = userService;
     }
     async getMessages(request, query) {
-        let menu = query.menu ? Number(query.menu) : 1;
-        let formatted_response;
-        const cookie = request.cookies["jwt"];
-        if (!cookie)
-            throw new common_1.ForbiddenException;
-        const user_data = await this.jwtService.verifyAsync(cookie);
-        let response = await this.messageService.getMessages(user_data.id, menu)
-            .then(result => {
-            formatted_response = common.formatResponse(result, true, "Success");
-        });
-        this.loggerService.insertLogs(common.formatLogs("getMessages", query, formatted_response));
-        return formatted_response;
-    }
-    async createMessage(request, message) {
+        let table = query.menu ? query.menu : "inbox";
         let response;
         let formatted_response;
         const cookie = request.cookies["jwt"];
         if (!cookie)
             throw new common_1.ForbiddenException;
-        let recipient_data = await this.userService.getUserByEmail(message.recipient);
-        if (Object.keys(recipient_data._responses).length > 0)
-            recipient_data = recipient_data.next()._settledValue;
-        message.created_date = String(Date.now());
-        message.updated_date = String(Date.now());
-        if (message.isDraft)
-            formatted_response = common.formatResponse([message], true, "Saved as draft.");
-        if (message.menu_state === 4) {
-            response = await this.messageService.createMessage(message);
-            if (response.inserted === 1) {
-                formatted_response = common.formatResponse([response], true, "Message sent.");
-            }
+        const user_data = await this.jwtService.verifyAsync(cookie);
+        if (table === "inbox") {
+            response = await this
+                .messageService
+                .getReceivedMessages(user_data.id)
+                .then(result => {
+                formatted_response = common
+                    .formatResponse([result], true, "Success");
+            })
+                .catch(error => {
+                formatted_response = common
+                    .formatResponse([error], false, "Failed");
+            });
         }
-        this.loggerService.insertLogs(common.formatLogs("createMessage", message, formatted_response));
+        else {
+            response = await this
+                .messageService
+                .getComposedMessages(user_data.id, table)
+                .then(result => {
+                formatted_response = common
+                    .formatResponse([result], true, "Success");
+            })
+                .catch(error => {
+                formatted_response = common
+                    .formatResponse([error], false, "Failed");
+            });
+        }
+        this.loggerService.insertLogs(common.formatLogs("getMessages", query, formatted_response));
         return formatted_response;
-        return;
     }
-    async getMessageDetails(request, param) {
-        const message_id = param.message_id;
+    async sendMessage(request, message) {
+        let formatted_response;
         const cookie = request.cookies["jwt"];
         if (!cookie)
             throw new common_1.ForbiddenException;
-        let response = await this.messageService.getMessageDetails(message_id)
+        let recipient_data = await this.userService.getUserByEmail(message.recipient);
+        if (Object.keys(recipient_data._responses).length > 0) {
+            recipient_data = recipient_data.next()._settledValue;
+            message.recipient_id = recipient_data.id;
+            message.created_date = String(Date.now());
+            message.updated_date = String(Date.now());
+            formatted_response = await this
+                .messageService
+                .sendMessage("sent", message)
+                .then(result => {
+                return true;
+            })
+                .catch(error => {
+                return common
+                    .formatResponse([error], false, "Failed");
+            });
+        }
+        else {
+            formatted_response = common.formatResponse([message], false, "Receipient does not exist.");
+        }
+        if (formatted_response) {
+            let response = await this
+                .messageService
+                .sendMessage("inbox", message)
+                .then(result => {
+                formatted_response = common
+                    .formatResponse([result], true, "Message Sent");
+            });
+        }
+        this.loggerService.insertLogs(common.formatLogs("sendMessage", message, formatted_response));
+        return;
+    }
+    async saveAsDraft(request, message) {
+        const cookie = request.cookies["jwt"];
+        if (!cookie)
+            throw new common_1.ForbiddenException;
+        message.created_date = String(Date.now());
+        message.updated_date = String(Date.now());
+        let response = await this
+            .messageService
+            .sendMessage("drafts", message)
             .then(result => {
-            return common.formatResponse([result], true, "Success");
+            return common.formatResponse([message], true, "Saved as draft");
         })
             .catch(error => {
-            return common.formatResponse([error], false);
+            return common.formatResponse([message], false, "Failed");
         });
-        this.loggerService.insertLogs(common.formatLogs("getMessageDetails", param, response));
+        this.loggerService.insertLogs(common.formatLogs("saveAsDraft", message, response));
         return response;
+    }
+    async getMessageDetails(request, param) {
+        const cookie = request.cookies["jwt"];
+        if (!cookie)
+            throw new common_1.ForbiddenException;
+        let response = await this
+            .messageService
+            .getMessageDetails(param.menu, param.message_id);
+        if (!response)
+            response = common
+                .formatResponse([], false, "Message does not exist.");
+        else {
+            if (param.menu === "inbox") {
+                response = await this.updateReadUnread(response)
+                    .then(result => {
+                    return common
+                        .formatResponse([result], true, "Success");
+                })
+                    .catch(error => {
+                    return common
+                        .formatResponse([], false, "Failed");
+                });
+            }
+        }
+        this.loggerService
+            .insertLogs(common
+            .formatLogs("getMessageDetails", param, response));
+        return response;
+    }
+    async updateMessage(request, message, query) {
+        const message_id = query.id;
+        let formatted_response;
+        const cookie = request.cookies["jwt"];
+        if (!cookie)
+            throw new common_1.ForbiddenException;
+        let response = await this
+            .messageService
+            .updateMessage(message_id, message);
+        if (response.replaced === 1)
+            formatted_response = common
+                .formatResponse([response], true, "Message updated.");
+        else
+            formatted_response = common
+                .formatResponse([response], false, "Failed to update message.");
+        this.loggerService
+            .insertLogs(common
+            .formatLogs("updateMessage", response, formatted_response));
+        return formatted_response;
+    }
+    async deleteMessage(request, param, query) {
+        const table = param.menu;
+        const message_id = query.id;
+        const cookie = request.cookies["jwt"];
+        if (!cookie)
+            throw new common_1.ForbiddenException;
+        let response = await this
+            .messageService
+            .deleteMessage(table, message_id)
+            .then(result => {
+            if (result.deleted === 1) {
+                return common
+                    .formatResponse([result], true, "Message deleted.");
+            }
+            else {
+                return common
+                    .formatResponse([result], false, "Message does not exist.");
+            }
+        })
+            .catch(error => {
+            return common
+                .formatResponse([error], true, "Failed.");
+        });
+        this.loggerService
+            .insertLogs(common
+            .formatLogs("deleteMessage", { param, query }, response));
+        return response;
+    }
+    async updateReadUnread(message) {
+        return await this.messageService.updateReadUnread(message);
     }
 };
 __decorate([
-    (0, common_1.Get)(),
+    (0, common_1.Get)(""),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
@@ -89,21 +208,47 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "getMessages", null);
 __decorate([
-    (0, common_1.Post)("new"),
+    (0, common_1.Post)("send"),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, message_entity_1.default]),
     __metadata("design:returntype", Promise)
-], MessageController.prototype, "createMessage", null);
+], MessageController.prototype, "sendMessage", null);
 __decorate([
-    (0, common_1.Get)(":message_id"),
+    (0, common_1.Post)("save-as-draft"),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, message_entity_1.default]),
+    __metadata("design:returntype", Promise)
+], MessageController.prototype, "saveAsDraft", null);
+__decorate([
+    (0, common_1.Get)(":menu/:message_id"),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "getMessageDetails", null);
+__decorate([
+    (0, common_1.Put)("drafts/update"),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, message_entity_1.default, Object]),
+    __metadata("design:returntype", Promise)
+], MessageController.prototype, "updateMessage", null);
+__decorate([
+    (0, common_1.Delete)(":menu/delete"),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)()),
+    __param(2, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object, Object]),
+    __metadata("design:returntype", Promise)
+], MessageController.prototype, "deleteMessage", null);
 MessageController = __decorate([
     (0, common_1.Controller)("messages"),
     __metadata("design:paramtypes", [message_service_1.default,

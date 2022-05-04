@@ -12,7 +12,11 @@ export declare class MessageController {
     private readonly userService;
     constructor(messageService: MessageService, jwtService: JwtService, loggerService: LoggerService, userService: UserService);
     getMessages(request: Request, query: any): Promise<ResponseFormat>;
-    createMessage(request: Request, message: Message): Promise<ResponseFormat>;
+    sendMessage(request: Request, message: Message): Promise<ResponseFormat>;
+    saveAsDraft(request: Request, message: Message): Promise<ResponseFormat>;
     getMessageDetails(request: Request, param: any): Promise<ResponseFormat>;
+    updateMessage(request: Request, message: Message, query: any): Promise<ResponseFormat>;
+    deleteMessage(request: Request, param: any, query: any): Promise<ResponseFormat>;
+    updateReadUnread(message: Message): Promise<Message>;
 }
 export default MessageController;
