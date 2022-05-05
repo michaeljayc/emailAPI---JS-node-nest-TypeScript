@@ -49,14 +49,19 @@ export type Logs = {
     response: ResponseFormat;
 }
 
-export const formatLogs = (func_name: string, data: object,response: ResponseFormat): Logs => {
+export const formatLogs = (
+        func_name: string, 
+        data: object,
+        response: ResponseFormat
+    ): Logs => {
+
     return  {
         timestamp: DATE.toLocaleDateString()+' '+DATE.toLocaleTimeString(),
         request: {
             function_name: func_name,
             params: data
         },
-        response: response 
+        response: response
     }
 }
 
