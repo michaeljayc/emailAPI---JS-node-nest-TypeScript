@@ -21,24 +21,11 @@ let MessageService = class MessageService {
     constructor(connection) {
         this.connection = connection;
     }
-    async getReceivedMessages(id) {
+    async getMessages(data) {
         return await rethink
             .db(DB)
-            .table("inbox")
-            .filter({
-            "recipient_id": id
-        })
-            .orderBy('updated_date')
-            .run(this.connection);
-    }
-    async getComposedMessages(id, table) {
-        let table_to_query = table === "sent" ? "sent" : "drafts";
-        return await rethink
-            .db(DB)
-            .table(table_to_query)
-            .filter({
-            "sender_id": id
-        })
+            .table(data.table)
+            .filter(data.need)
             .orderBy('updated_date')
             .run(this.connection);
     }
@@ -69,10 +56,10 @@ let MessageService = class MessageService {
             .run(this.connection);
         return await this.getMessageDetails("inbox", message.id);
     }
-    async updateMessage(id, message) {
+    async updateMessage(table, id, message) {
         return await rethink
             .db(DB)
-            .table("drafts")
+            .table(table)
             .get(id)
             .update(message)
             .run(this.connection);

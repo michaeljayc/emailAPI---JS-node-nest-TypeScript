@@ -12,18 +12,16 @@ export const setDateTime = () => {
     return DATE.toLocaleDateString()+' - '+DATE.toLocaleTimeString();
 }
 
-export class ResponseFormat {
+export interface ResponseFormat {
 
     success: boolean;
     message: string;
     count: number;
-    data?: User[];
-
-    constructor(){}
+    datas?: any;
 }
 
-export const formatResponse = (data?: any, success?: boolean, message?: string): ResponseFormat => {
-    const truncated_data = data ? data : null;
+export const formatResponse = (data?: any, isSuccessful?: boolean, status?: string): ResponseFormat => {
+    let truncated_data = data ? data : null;
 
     if (truncated_data !== null) {
         truncated_data.forEach( value => {
@@ -31,11 +29,12 @@ export const formatResponse = (data?: any, success?: boolean, message?: string):
         })        
     }
 
-    const response = new ResponseFormat();
-    response.count = Object.keys(data).length;
-    response.success = success ? success : false;
-    response.message = message ? message : "Failed";
-    response.data = truncated_data;
+    const response = {
+        count: Object.keys(data).length,
+        success: (isSuccessful) ? isSuccessful : false,
+        message: (status) ? status : "Failed",
+        datas: truncated_data
+    }
 
     return response;
 }
@@ -69,3 +68,23 @@ export const truncatePassword = (user:User): User => {
     console.log(user);
     return user;
 }
+
+export const Menu =  {
+    "inbox": 1,
+    "sent": 2,
+    "drafts": 3,
+    "starred": 4,
+    "important": 5
+}
+
+export const menu_tables = ["inbox","sent","drafts"];
+
+export const is_valid_menu_tables = (menu: string): boolean => {  
+    return menu_tables.includes(menu);
+}   
+
+export const is_valid_menu = (menu: string) => {
+    const menu_keys = Object.keys(Menu);
+    return menu_keys.includes(menu);
+}
+

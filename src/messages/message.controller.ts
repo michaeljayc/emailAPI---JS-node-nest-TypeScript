@@ -4,6 +4,7 @@ import {
     Delete, 
     ForbiddenException, 
     Get, 
+    NotAcceptableException, 
     Param, 
     Post, 
     Put, 
@@ -13,12 +14,15 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import { ResponseFormat } from "src/common/common";
 import Message from "./message.entity";
-import { Request } from "express";
+import { Request, response } from "express";
 import MessageService from "./message.service";
 import * as common from "src/common/common";
 import LoggerService from "src/Services/logger.service";
 import { UserService } from "src/users/user.service";
-import { RethinkModule } from "rethinkdb/rethink.module";
+import { is_valid_menu, 
+    Menu,
+    is_valid_menu_tables
+} from "src/common/common";
 
 @Controller("messages")
 export class MessageController {
@@ -28,11 +32,11 @@ export class MessageController {
         private readonly loggerService: LoggerService,
         private readonly userService: UserService){}
 
-    @Get(":menu")
+    @Get("")
     async getMessages(@Req() request: Request,
-        @Param() param): Promise<ResponseFormat> {
+        @Query() query): Promise<ResponseFormat | any> {
 
-            let table = param.menu ? param.menu : "inbox";
+            let table = query.menu ? query.menu : "inbox";
             let response: any;
             let formatted_response: ResponseFormat;
             const cookie = request.cookies["jwt"];
@@ -40,13 +44,38 @@ export class MessageController {
             // If not logged-in, forbid access
             if (!cookie)
                 throw new ForbiddenException;
-            
-            const user_data = await this.jwtService.verifyAsync(cookie);
-            
-            if (table === "inbox") {
+
+            if (is_valid_menu(query.menu)) {
+
+                // Get cookie data
+                const user_data = await this.jwtService.verifyAsync(cookie);
+                let need: {};
+
+                if (is_valid_menu_tables(query.menu)) {
+                    
+                    // Get the id to filter
+                    if (table === "inbox") {
+                        need = {"recipient_id": user_data.id}
+                    } else {
+                        need = {"sender_id": user_data.id}
+                    }
+
+                } else {
+                    need = {"menu_state": query.menu === "starred" ?
+                        Menu.starred : Menu.important}
+                    table = query.menu;
+                }
+
+                // compose data to send as arguement
+                const to_query = {
+                    need: need,
+                    table: query.menu,
+                    id: user_data.id
+                }
+                
                 response = await this
                     .messageService
-                    .getReceivedMessages(user_data.id)
+                    .getMessages(to_query)
                         .then( result => {
                             formatted_response = common
                                 .formatResponse([result], true, "Success");
@@ -56,30 +85,23 @@ export class MessageController {
                                 .formatResponse([error], false, "Failed");
                         })
             } else {
-                response = await this
-                    .messageService
-                    .getComposedMessages(user_data.id, table)
-                        .then( result => {
-                            formatted_response = common
-                                .formatResponse([result], true, "Success");
-                        })
-                        .catch( error => {
-                            formatted_response = common
-                                .formatResponse([error], false, "Failed");
-                        })
+                return { 
+                    statusCode: "404",
+                    message: `Invalid menu - (${query.menu})`
+                }
             }
 
             this
             .loggerService
             .insertLogs(common
                 .formatLogs(
-                    "getMessages", param, formatted_response)
+                    "getMessages", query, formatted_response)
                 )
             
             return formatted_response;
     }
 
-    @Get(":menu/:message_id")
+    @Get(":menu/details/:message_id")
     async getMessageDetails(@Req() request: Request,
         @Param() param): Promise<ResponseFormat> {
 
@@ -264,7 +286,7 @@ export class MessageController {
             
             let response = await this
                 .messageService
-                .updateMessage(message_id,message);
+                .updateMessage("drafts",message_id,message);
 
             if (response.replaced === 1)
                 formatted_response = common
@@ -339,10 +361,11 @@ export class MessageController {
             const reply_recipient_id = message.sender_id;
 
             // Set message details
-            message.message_origin_id = message.message_origin_id ?
-                message.message_origin_id :
-                param.message_id;
-            message.subject = `RE: ${message.subject}`;
+            if (!message.message_origin_id) {
+                message.message_origin_id = param.message_id;
+                message.subject = `RE: ${message.subject}`;
+            }
+
             message.sender = message.recipient;
             message.sender_id = message.recipient_id;
             message.recipient = reply_recipient;
@@ -376,13 +399,67 @@ export class MessageController {
             return response;
     }
 
-    // Assuming it is in INBOX messages
-    // @Post(":message_id")
-    // async setMenuState(@Req() request: Request,
-    //     @Param() param): Promise<ResponseFormat> {
-    //         console.log(param)
-    //         return;
-    // }
+    @Put(":menu/:message_id/:state")
+    async setMenuState(@Req() request: Request,
+        @Param() param): Promise<ResponseFormat | any> {
+            
+            let formatted_response: ResponseFormat = null;
+            const cookie = request.cookies["jwt"];
+            if (!cookie)
+                throw new ForbiddenException;
+            
+            if (is_valid_menu_tables(param.menu)) {
+
+                let message = await 
+                    this
+                    .messageService
+                    .getMessageDetails(param.menu, param.message_id)
+                
+                if (message) {
+                    // check if message is already starred or important
+                    if (message.menu_state === Menu.starred || 
+                        message.menu_state === Menu.important ) {
+                        
+                            message.menu_state = 0;
+
+                    }  else {
+                        message.menu_state = param.state === "starred" ?
+                        Menu.starred :
+                        Menu.important;
+                    }
+
+                    let response = await
+                        this
+                        .messageService
+                        .updateMessage(param.menu, param.message_id, message)
+                            .then( result => {
+                                return common.formatResponse(
+                                    [message], true, `Message menu_state updated`
+                                )
+                            })
+                            .catch( error => {
+                                return common.formatResponse(
+                                    [error], false, `Failed`
+                                )
+                            })
+
+                    formatted_response = response;
+                } else {
+                    formatted_response = common
+                        .formatResponse([param],
+                        false,
+                        "Message not found."
+                    )
+                }
+            } else {
+                return { 
+                    statusCode: "404",
+                    message: `'${param.menu}' not found.`
+                }
+            }
+
+        return formatted_response
+    }
 
     async updateReadUnread(message: Message): Promise<Message> {
         return await this.messageService.updateReadUnread(message)

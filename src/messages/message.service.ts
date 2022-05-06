@@ -14,33 +14,20 @@ export class MessageService {
         this.connection = connection;
     }
 
-    async getReceivedMessages(id: string)
+    async getMessages(data: any)
         : Promise<rethink.WriteResult> {
+            
             return await rethink
                 .db(DB)
-                .table("inbox")
-                .filter({
-                    "recipient_id": id
-                })
-                .orderBy('updated_date')
-                .run(this.connection)
-    }
-
-    async getComposedMessages(id: string,table:string)
-        : Promise<rethink.WriteResult> {
-            let table_to_query = table === "sent" ? "sent" : "drafts"; 
-            return await rethink
-                .db(DB)
-                .table(table_to_query)
-                .filter({
-                    "sender_id": id
-                })
+                .table(data.table)
+                .filter(data.need)
                 .orderBy('updated_date')
                 .run(this.connection)
     }
 
     async getMessageDetails(table: string, message_id: string)
         : Promise<any> {
+
             return await rethink
                 .db(DB)
                 .table(table)
@@ -51,6 +38,7 @@ export class MessageService {
     async sendMessage(table: string, message: Message)
         : Promise<rethink.WriteResult> {
             return await rethink
+
                 .db(DB)
                 .table(table)
                 .insert(message)
@@ -59,6 +47,7 @@ export class MessageService {
 
     async updateReadUnread(message: Message)
         : Promise<any> {
+
             let res = await rethink
                 .db(DB)
                 .table("inbox")
@@ -77,11 +66,14 @@ export class MessageService {
     }
 
 
-    async updateMessage(id:string, message: Message)
+    async updateMessage(table: string, 
+        id:string,
+         message: Message)
         : Promise<rethink.WriteResult> {
+
             return await rethink
                 .db(DB)
-                .table("drafts")
+                .table(table)
                 .get(id)
                 .update(message)
                 .run(this.connection)

@@ -20,6 +20,7 @@ const message_service_1 = require("./message.service");
 const common = require("../common/common");
 const logger_service_1 = require("../Services/logger.service");
 const user_service_1 = require("../users/user.service");
+const common_2 = require("../common/common");
 let MessageController = class MessageController {
     constructor(messageService, jwtService, loggerService, userService) {
         this.messageService = messageService;
@@ -27,18 +28,37 @@ let MessageController = class MessageController {
         this.loggerService = loggerService;
         this.userService = userService;
     }
-    async getMessages(request, param) {
-        let table = param.menu ? param.menu : "inbox";
+    async getMessages(request, query) {
+        let table = query.menu ? query.menu : "inbox";
         let response;
         let formatted_response;
         const cookie = request.cookies["jwt"];
         if (!cookie)
             throw new common_1.ForbiddenException;
-        const user_data = await this.jwtService.verifyAsync(cookie);
-        if (table === "inbox") {
+        if ((0, common_2.is_valid_menu)(query.menu)) {
+            const user_data = await this.jwtService.verifyAsync(cookie);
+            let need;
+            if ((0, common_2.is_valid_menu_tables)(query.menu)) {
+                if (table === "inbox") {
+                    need = { "recipient_id": user_data.id };
+                }
+                else {
+                    need = { "sender_id": user_data.id };
+                }
+            }
+            else {
+                need = { "menu_state": query.menu === "starred" ?
+                        common_2.Menu.starred : common_2.Menu.important };
+                table = query.menu;
+            }
+            const to_query = {
+                need: need,
+                table: query.menu,
+                id: user_data.id
+            };
             response = await this
                 .messageService
-                .getReceivedMessages(user_data.id)
+                .getMessages(to_query)
                 .then(result => {
                 formatted_response = common
                     .formatResponse([result], true, "Success");
@@ -49,22 +69,15 @@ let MessageController = class MessageController {
             });
         }
         else {
-            response = await this
-                .messageService
-                .getComposedMessages(user_data.id, table)
-                .then(result => {
-                formatted_response = common
-                    .formatResponse([result], true, "Success");
-            })
-                .catch(error => {
-                formatted_response = common
-                    .formatResponse([error], false, "Failed");
-            });
+            return {
+                statusCode: "404",
+                message: `Invalid menu - (${query.menu})`
+            };
         }
         this
             .loggerService
             .insertLogs(common
-            .formatLogs("getMessages", param, formatted_response));
+            .formatLogs("getMessages", query, formatted_response));
         return formatted_response;
     }
     async getMessageDetails(request, param) {
@@ -186,7 +199,7 @@ let MessageController = class MessageController {
         message.updated_date = String(Date.now());
         let response = await this
             .messageService
-            .updateMessage(message_id, message);
+            .updateMessage("drafts", message_id, message);
         if (response.replaced === 1)
             formatted_response = common
                 .formatResponse([response], true, "Message updated.");
@@ -232,10 +245,10 @@ let MessageController = class MessageController {
             throw new common_1.ForbiddenException;
         const reply_recipient = message.sender;
         const reply_recipient_id = message.sender_id;
-        message.message_origin_id = message.message_origin_id ?
-            message.message_origin_id :
-            param.message_id;
-        message.subject = `RE: ${message.subject}`;
+        if (!message.message_origin_id) {
+            message.message_origin_id = param.message_id;
+            message.subject = `RE: ${message.subject}`;
+        }
         message.sender = message.recipient;
         message.sender_id = message.recipient_id;
         message.recipient = reply_recipient;
@@ -259,23 +272,62 @@ let MessageController = class MessageController {
         return response;
     }
     async setMenuState(request, param) {
-        console.log(param);
-        return;
+        let formatted_response = null;
+        const cookie = request.cookies["jwt"];
+        if (!cookie)
+            throw new common_1.ForbiddenException;
+        if ((0, common_2.is_valid_menu_tables)(param.menu)) {
+            let message = await this
+                .messageService
+                .getMessageDetails(param.menu, param.message_id);
+            if (message) {
+                if (message.menu_state === common_2.Menu.starred ||
+                    message.menu_state === common_2.Menu.important) {
+                    message.menu_state = 0;
+                }
+                else {
+                    message.menu_state = param.state === "starred" ?
+                        common_2.Menu.starred :
+                        common_2.Menu.important;
+                }
+                let response = await this
+                    .messageService
+                    .updateMessage(param.menu, param.message_id, message)
+                    .then(result => {
+                    return common.formatResponse([message], true, `Message menu_state updated`);
+                })
+                    .catch(error => {
+                    return common.formatResponse([error], false, `Failed`);
+                });
+                formatted_response = response;
+            }
+            else {
+                formatted_response = common
+                    .formatResponse([param], false, "Message not found.");
+            }
+        }
+        else {
+            return {
+                statusCode: "404",
+                message: `'${param.menu}' not found.`
+            };
+        }
+        return formatted_response;
     }
     async updateReadUnread(message) {
         return await this.messageService.updateReadUnread(message);
     }
 };
 __decorate([
-    (0, common_1.Get)(":menu"),
+    (0, common_1.Get)(""),
     __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Param)()),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "getMessages", null);
 __decorate([
-    (0, common_1.Get)(":menu/:message_id"),
+    (0, common_1.Get)(":menu/details/:message_id"),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)()),
     __metadata("design:type", Function),
@@ -326,7 +378,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "replyToMessage", null);
 __decorate([
-    (0, common_1.Post)(":message_id"),
+    (0, common_1.Put)(":menu/:message_id/:state"),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)()),
     __metadata("design:type", Function),

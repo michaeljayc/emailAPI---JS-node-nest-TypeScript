@@ -11,14 +11,14 @@ export declare class MessageController {
     private readonly loggerService;
     private readonly userService;
     constructor(messageService: MessageService, jwtService: JwtService, loggerService: LoggerService, userService: UserService);
-    getMessages(request: Request, param: any): Promise<ResponseFormat>;
+    getMessages(request: Request, query: any): Promise<ResponseFormat | any>;
     getMessageDetails(request: Request, param: any): Promise<ResponseFormat>;
     sendMessage(request: Request, message: Message): Promise<ResponseFormat>;
     saveAsDraft(request: Request, message: Message): Promise<ResponseFormat>;
     updateDraftedMessage(request: Request, message: Message, query: any): Promise<ResponseFormat>;
     deleteMessage(request: Request, param: any, query: any): Promise<ResponseFormat>;
     replyToMessage(request: Request, param: any, message: Message): Promise<ResponseFormat>;
-    setMenuState(request: Request, param: any): Promise<ResponseFormat>;
+    setMenuState(request: Request, param: any): Promise<ResponseFormat | any>;
     updateReadUnread(message: Message): Promise<Message>;
 }
 export default MessageController;
