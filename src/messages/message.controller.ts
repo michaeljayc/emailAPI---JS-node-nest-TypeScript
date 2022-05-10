@@ -105,7 +105,7 @@ export class MessageController {
             return formatted_response;
     }
 
-    @Get(":menu/details/:message_id")
+    @Get(":menu/:action/:message_id")
     async getMessageDetails(@Req() request: Request,
         @Param() param): Promise<ResponseFormat> {
 
