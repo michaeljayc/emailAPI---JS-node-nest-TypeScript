@@ -1,3 +1,12 @@
-import { ResponseFormat } from "./common";
-export declare const userEmailDoesNotExist: (email: string) => ResponseFormat;
-export declare const incorrectUserPassword: () => ResponseFormat;
+export declare const userEmailDoesNotExist: (email: string) => {
+    success: boolean;
+    count: number;
+    message: string;
+    data: any;
+};
+export declare const incorrectUserPassword: () => {
+    success: boolean;
+    count: number;
+    message: string;
+    data: any;
+};

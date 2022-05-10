@@ -56,12 +56,12 @@ export class UserService {
             .run(this.connection)
     }
 
-    async getUserByEmail(credentials: common.loginCredentials): Promise<any> {
+    async getUserByEmail(email:string): Promise<any> {
         return await rethink
             .db(DB)
             .table(TABLE)
             .filter({
-                'email': credentials.email
+                'email': email
             })
             .run(this.connection)
     }

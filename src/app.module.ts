@@ -6,6 +6,7 @@ import { UserModule } from './users/user.module';
 import { UserRoleModule } from './user_roles/user_role.module';
 import { ConfigModule } from "@nestjs/config"
 import { AuthModule } from './auth/auth.module';
+import { MessageModule } from './messages/message.module';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { AuthModule } from './auth/auth.module';
     RethinkModule, 
     UserRoleModule, 
     UserModule,
-    AuthModule
+    AuthModule,
+    MessageModule,
   ],
   controllers: [AppController],
   providers: [AppService],

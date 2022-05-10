@@ -1,18 +1,14 @@
-import { Body, Controller, Delete, ForbiddenException, forwardRef, Get, Inject, Logger, Param, Post, Put, Req, Res, UnauthorizedException, ValidationPipe } from "@nestjs/common";
+import { Body, Controller, Delete, ForbiddenException, Get, Logger, Param, Post, Put, Req, Res } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { LoggerService } from "src/Services/logger.service";
 import { AuthService } from "src/auth/auth.service";
 import { User } from "./user.entity";
 import * as common from "src/common/common";
-import * as bcrypt from "bcrypt";
 import * as error from "src/common/errors";
 import { JwtService } from "@nestjs/jwt";
 import { Response, Request } from "express";
 import { Role } from "src/user_roles/role.enum";
 import { Roles } from "src/user_roles/role.decorator";
-import { RolesGuard } from "src/auth/roles.guard";
-import { PassThrough } from "stream";
-import { format } from "path";
 
 const DATE = new Date;
 
@@ -27,7 +23,7 @@ export class UserController {
 
     @Post("register")
     async registerUser(@Body() user:User): Promise<common.ResponseFormat> {
-        // Set ccreate  and update datetime
+        // Set create  and update datetime
         user.created_date = common.setDateTime();
         user.updated_date = common.setDateTime();
         
@@ -54,7 +50,7 @@ export class UserController {
         @Res({passthrough: true}) response: Response): Promise<common.ResponseFormat> {
 
         let user_data: any;
-        let response_data: any = await this.userService.getUserByEmail(credentials);
+        let response_data: any = await this.userService.getUserByEmail(credentials.email);
         if (Object.keys(response_data._responses).length === 0) {
             return response_data = error.userEmailDoesNotExist(credentials.email);
         }
@@ -64,7 +60,15 @@ export class UserController {
             return response_data = error.incorrectUserPassword();
         }
 
-        const jwt = await this.jwtService.signAsync( {id: user_data.id, username: user_data.username} )
+        // Data store in the cookie
+        const jwt = await this.jwtService.signAsync(
+            {
+                id: user_data.id, 
+                username: user_data.username,
+                email: user_data.email
+            }
+        )
+
         response_data = common.formatResponse([user_data], true, "Login Successful.");
         this.loggerService.insertLogs(common.formatLogs("loginUser", credentials, response_data));
         response.cookie("jwt", jwt, {httpOnly: true});
@@ -75,8 +79,11 @@ export class UserController {
     async getUser(@Req() request: Request) {
         let {password, ...param} = request.body;
         let formatted_response: common.ResponseFormat;
-
         const cookie = request.cookies['jwt'];
+        
+        if (!cookie) 
+            throw new ForbiddenException;
+
         const data = await this.jwtService.verifyAsync(cookie);
         const user_data = await this.userService.getUserById(data.id);
         formatted_response = common.formatResponse([user_data],true, "Success");

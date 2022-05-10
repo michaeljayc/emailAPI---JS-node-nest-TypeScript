@@ -56,12 +56,12 @@ let UserService = class UserService {
             .filter({ "username": username })
             .run(this.connection);
     }
-    async getUserByEmail(credentials) {
+    async getUserByEmail(email) {
         return await rethink
             .db(DB)
             .table(TABLE)
             .filter({
-            'email': credentials.email
+            'email': email
         })
             .run(this.connection);
     }

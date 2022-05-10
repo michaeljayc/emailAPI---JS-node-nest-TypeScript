@@ -14,9 +14,62 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageService = void 0;
 const common_1 = require("@nestjs/common");
+const rethink = require("rethinkdb");
+const DB = "emailAPI";
+const TABLE = "messages";
 let MessageService = class MessageService {
     constructor(connection) {
         this.connection = connection;
+    }
+    async getMessages(data) {
+        return await rethink
+            .db(DB)
+            .table(data.table)
+            .filter(data.filtered)
+            .orderBy('updated_date')
+            .run(this.connection);
+    }
+    async getMessageDetails(table, message_id) {
+        return await rethink
+            .db(DB)
+            .table(table)
+            .get(message_id)
+            .run(this.connection);
+    }
+    async sendMessage(table, message) {
+        return await rethink
+            .db(DB)
+            .table(table)
+            .insert(message)
+            .run(this.connection);
+    }
+    async updateReadUnread(message_id) {
+        let res = await rethink
+            .db(DB)
+            .table("inbox")
+            .get(message_id)
+            .update({
+            "read": true,
+            "updated_date": String(Date.now())
+        })
+            .run(this.connection);
+        return await this.getMessageDetails("inbox", message_id);
+    }
+    async updateMessage(table, id, message) {
+        return await rethink
+            .db(DB)
+            .table(table)
+            .get(id)
+            .update(message)
+            .run(this.connection);
+    }
+    async deleteMessage(table, message_id) {
+        return await rethink
+            .db(DB)
+            .table(table)
+            .get(message_id)
+            .delete()
+            .run(this.connection);
     }
 };
 MessageService = __decorate([
