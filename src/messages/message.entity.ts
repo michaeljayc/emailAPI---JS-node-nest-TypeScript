@@ -10,7 +10,6 @@ export class Message {
     message: string;
     menu_state: number;
     read: false;
-    unread: true;
     created_date: string;
     updated_date: string;
 
@@ -24,7 +23,6 @@ export class Message {
         message: string,
         menu_state: number,
         read: false,
-        unread: true,
         created_date: string,
         updated_date: string){}
 }

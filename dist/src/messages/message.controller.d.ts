@@ -19,6 +19,6 @@ export declare class MessageController {
     deleteMessage(request: Request, param: any, query: any): Promise<ResponseFormat>;
     replyToMessage(request: Request, param: any, message: Message): Promise<ResponseFormat>;
     setMenuState(request: Request, param: any): Promise<ResponseFormat | any>;
-    updateReadUnread(message: Message): Promise<Message>;
+    updateReadUnread(message_id: string): Promise<Message>;
 }
 export default MessageController;

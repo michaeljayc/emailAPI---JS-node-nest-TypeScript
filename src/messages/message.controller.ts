@@ -9,17 +9,18 @@ import {
     Post, 
     Put, 
     Query, 
-    Req }
-    from "@nestjs/common";
+    Req 
+} from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ResponseFormat } from "src/common/common";
 import Message from "./message.entity";
-import { Request, response } from "express";
+import { Request } from "express";
 import MessageService from "./message.service";
 import * as common from "src/common/common";
 import LoggerService from "src/Services/logger.service";
 import { UserService } from "src/users/user.service";
-import { is_valid_menu, 
+import { 
+    is_valid_menu, 
     Menu,
     is_valid_menu_tables
 } from "src/common/common";
@@ -45,34 +46,37 @@ export class MessageController {
             if (!cookie)
                 throw new ForbiddenException;
 
-            if (is_valid_menu(query.menu)) {
+            if (is_valid_menu(table)) {
 
                 // Get cookie data
                 const user_data = await this.jwtService.verifyAsync(cookie);
-                let need: {};
+                let filtered: {};
 
-                if (is_valid_menu_tables(query.menu)) {
+                if (is_valid_menu_tables(table)) {
                     
                     // Get the id to filter
                     if (table === "inbox") {
-                        need = {"recipient_id": user_data.id}
+                        filtered = {"recipient_id": user_data.id}
+                        filtered["recipient_id"]
                     } else {
-                        need = {"sender_id": user_data.id}
+                        filtered = {"sender_id": user_data.id}
                     }
 
                 } else {
-                    need = {"menu_state": query.menu === "starred" ?
-                        Menu.starred : Menu.important}
-                    table = query.menu;
+                    filtered = {"menu_state": query.menu === "starred" ?
+                        Menu.starred : Menu.important,
+                        "recipient_id": user_data.id
+                    }
+                    table = "inbox";
                 }
 
                 // compose data to send as arguement
                 const to_query = {
-                    need: need,
-                    table: query.menu,
+                    filtered,
+                    table,
                     id: user_data.id
                 }
-                
+
                 response = await this
                     .messageService
                     .getMessages(to_query)
@@ -87,7 +91,7 @@ export class MessageController {
             } else {
                 return { 
                     statusCode: "404",
-                    message: `Invalid menu - (${query.menu})`
+                    message: `Invalid menu - (${table})`
                 }
             }
 
@@ -118,7 +122,7 @@ export class MessageController {
             
             else {
                 if (param.menu === "inbox") {        
-                    response = await this.updateReadUnread(response)
+                    response = await this.updateReadUnread(response.id)
                         .then( result => {
                             return common
                                 .formatResponse(
@@ -153,6 +157,9 @@ export class MessageController {
             if (!cookie)
                 throw new ForbiddenException;
 
+            // Retrieve sender data
+            let sender_data = await this.jwtService.verifyAsync(cookie);
+
             // Retrieve recipient data
             let recipient_data = await 
                 this
@@ -167,12 +174,18 @@ export class MessageController {
             } else {
                 recipient_data = recipient_data.next()._settledValue;
 
+                // construct message data
                 if (!is_exist) 
                     message.created_date = String(Date.now());
-              
+                
                 message.updated_date = String(Date.now()); 
                 message.recipient_id = recipient_data.id;
-
+                message.menu_state = 0;
+                message.sender = sender_data.email
+                message.sender_id = sender_data.id;
+                message.message_origin_id = "";
+                message.read = false;
+            
                 // Insert data to recipient's INBOX
                 formatted_response =  await this
                     .messageService
@@ -246,8 +259,14 @@ export class MessageController {
             if (!cookie)
                 throw new ForbiddenException;
 
+            // Retrieve sender data
+            let sender_data = await this.jwtService.verifyAsync(cookie);
+
+            // construct message data
             message.created_date = String(Date.now());
             message.updated_date = String(Date.now());
+            message.sender = sender_data.email;
+            message.sender_id = sender_data.id;
             
             let response =  await this
                 .messageService
@@ -353,6 +372,7 @@ export class MessageController {
         @Param() param,
         @Body() message: Message): Promise<ResponseFormat> {
 
+            let formatted_response: ResponseFormat;
             const cookie = request.cookies["jwt"];
             if (!cookie) 
                 throw new ForbiddenException;
@@ -372,9 +392,11 @@ export class MessageController {
             message.recipient_id = reply_recipient_id;
             message.created_date = String(Date.now());
             message.updated_date = String(Date.now());
+            message.read = false;
+            message.menu_state = 0;
 
-            //Send reply to sender's INBOX
-            let response = await this
+            // Send reply to sender's INBOX
+            formatted_response = await this
                 .messageService
                 .sendMessage("inbox", message)
                     .then( result => {
@@ -390,13 +412,32 @@ export class MessageController {
                             )
                     })
             
+            // Insert data to sender's SENT
+            if (formatted_response.success) {
+                let response = await this
+                    .messageService
+                    .sendMessage("sent",message)
+                        .then( result => {
+                            return common
+                                .formatResponse(
+                                    [result],true,"Message Sent"
+                                )
+                        })
+                        .catch ( error => {
+                            return common
+                            .formatResponse([error], false, "Failed");
+                        })
+            }
+            
             this
             .loggerService
             .insertLogs(
-                common.formatLogs("replyToMessage",message, response)
+                common.formatLogs(
+                    "replyToMessage",message, formatted_response
+                )
             );
 
-            return response;
+            return formatted_response;
     }
 
     @Put(":menu/:message_id/:state")
@@ -461,8 +502,8 @@ export class MessageController {
         return formatted_response
     }
 
-    async updateReadUnread(message: Message): Promise<Message> {
-        return await this.messageService.updateReadUnread(message)
+    async updateReadUnread(message_id: string): Promise<Message> {
+        return await this.messageService.updateReadUnread(message_id)
     }
 
     

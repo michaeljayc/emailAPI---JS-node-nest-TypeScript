@@ -25,7 +25,7 @@ let MessageService = class MessageService {
         return await rethink
             .db(DB)
             .table(data.table)
-            .filter(data.need)
+            .filter(data.filtered)
             .orderBy('updated_date')
             .run(this.connection);
     }
@@ -43,18 +43,17 @@ let MessageService = class MessageService {
             .insert(message)
             .run(this.connection);
     }
-    async updateReadUnread(message) {
+    async updateReadUnread(message_id) {
         let res = await rethink
             .db(DB)
             .table("inbox")
-            .get(message.id)
+            .get(message_id)
             .update({
             "read": true,
-            "unread": false,
             "updated_date": String(Date.now())
         })
             .run(this.connection);
-        return await this.getMessageDetails("inbox", message.id);
+        return await this.getMessageDetails("inbox", message_id);
     }
     async updateMessage(table, id, message) {
         return await rethink

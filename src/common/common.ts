@@ -3,6 +3,16 @@ import User from "src/users/user.entity";
 
 const DATE = new Date;
 
+export const Menu =  {
+    "inbox": 1,
+    "sent": 2,
+    "drafts": 3,
+    "starred": 4,
+    "important": 5
+}
+
+export const menu_tables = ["inbox","sent","drafts"];
+
 export type loginCredentials = {
     email: string;
     password: string;
@@ -68,16 +78,6 @@ export const truncatePassword = (user:User): User => {
     console.log(user);
     return user;
 }
-
-export const Menu =  {
-    "inbox": 1,
-    "sent": 2,
-    "drafts": 3,
-    "starred": 4,
-    "important": 5
-}
-
-export const menu_tables = ["inbox","sent","drafts"];
 
 export const is_valid_menu_tables = (menu: string): boolean => {  
     return menu_tables.includes(menu);

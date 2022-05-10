@@ -83,6 +83,8 @@ let UserController = UserController_1 = class UserController {
         let _a = request.body, { password } = _a, param = __rest(_a, ["password"]);
         let formatted_response;
         const cookie = request.cookies['jwt'];
+        if (!cookie)
+            throw new common_1.ForbiddenException;
         const data = await this.jwtService.verifyAsync(cookie);
         const user_data = await this.userService.getUserById(data.id);
         formatted_response = common.formatResponse([user_data], true, "Success");

@@ -1,7 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.is_valid_menu = exports.is_valid_menu_tables = exports.menu_tables = exports.Menu = exports.truncatePassword = exports.formatLogs = exports.formatResponse = exports.setDateTime = void 0;
+exports.is_valid_menu = exports.is_valid_menu_tables = exports.truncatePassword = exports.formatLogs = exports.formatResponse = exports.setDateTime = exports.menu_tables = exports.Menu = void 0;
 const DATE = new Date;
+exports.Menu = {
+    "inbox": 1,
+    "sent": 2,
+    "drafts": 3,
+    "starred": 4,
+    "important": 5
+};
+exports.menu_tables = ["inbox", "sent", "drafts"];
 const setDateTime = () => {
     return DATE.toLocaleDateString() + ' - ' + DATE.toLocaleTimeString();
 };
@@ -38,14 +46,6 @@ const truncatePassword = (user) => {
     return user;
 };
 exports.truncatePassword = truncatePassword;
-exports.Menu = {
-    "inbox": 1,
-    "sent": 2,
-    "drafts": 3,
-    "starred": 4,
-    "important": 5
-};
-exports.menu_tables = ["inbox", "sent", "drafts"];
 const is_valid_menu_tables = (menu) => {
     return exports.menu_tables.includes(menu);
 };
