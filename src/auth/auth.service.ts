@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { User } from "src/users/user.entity";
 import * as rethink from "rethinkdb";
 import * as common from "src/common/common";
 const bcrypt = require('bcrypt');
@@ -24,20 +23,6 @@ export class AuthService {
             })
             .run(this.connection)
     }
-
-    // async validateUser(credentials: common.loginCredentials ): Promise<any> {
-    //     const user_data = await this.getUserData(credentials);
-    //     if (Object.keys(user_data._responses).length === 0) {
-    //         return "error";
-    //     }
-
-
-    //     return;
-    // }
-
-//     // generateJWT(user: User): Observable <string> {
-//     //     return from(this.jwtService.signAsync({user}));
-//     // }
 
     async ecnryptPassword(password: string): Promise<string> {
         // Encrypt Password
