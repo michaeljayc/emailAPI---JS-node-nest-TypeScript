@@ -14,12 +14,12 @@ export class AuthService {
         this.connection = connection;
     }
 
-    async getUserData(credentials: common.loginCredentials): Promise<any> {
+    async getUserData(email: string): Promise<any> {
         return await rethink
             .db(DB)
             .table(TABLE)
             .filter({
-                'email':credentials.email
+                'email': email
             })
             .run(this.connection)
     }

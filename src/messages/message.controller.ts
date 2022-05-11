@@ -4,7 +4,6 @@ import {
     Delete, 
     ForbiddenException, 
     Get, 
-    NotAcceptableException, 
     Param, 
     Post, 
     Put, 

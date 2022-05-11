@@ -22,12 +22,12 @@ let AuthService = class AuthService {
     constructor(connection) {
         this.connection = connection;
     }
-    async getUserData(credentials) {
+    async getUserData(email) {
         return await rethink
             .db(DB)
             .table(TABLE)
             .filter({
-            'email': credentials.email
+            'email': email
         })
             .run(this.connection);
     }

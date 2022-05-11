@@ -355,7 +355,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "getMessages", null);
 __decorate([
-    (0, common_1.Get)(":menu/details/:message_id"),
+    (0, common_1.Get)(":menu/:action/:message_id"),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)()),
     __metadata("design:type", Function),
