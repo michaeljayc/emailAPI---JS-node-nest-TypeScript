@@ -30,23 +30,27 @@ export interface ResponseFormat {
     datas?: any;
 }
 
-export const formatResponse = (data?: any, isSuccessful?: boolean, status?: string): ResponseFormat => {
-    let truncated_data = data ? data : null;
+export const formatResponse = (data?: any,
+    isSuccessful?: boolean, 
+    status?: string)
+    : ResponseFormat => {
+        
+        let truncated_data = data ? data : null;
 
-    if (truncated_data !== null) {
-        truncated_data.forEach( value => {
-            delete value.password;
-        })        
-    }
+        if (truncated_data !== null) {
+            truncated_data.forEach( value => {
+                delete value.password;
+            })        
+        }
 
-    const response = {
-        count: Object.keys(data).length,
-        success: (isSuccessful) ? isSuccessful : false,
-        message: (status) ? status : "Failed",
-        datas: truncated_data
-    }
+        const response = {
+            count: Object.keys(data).length,
+            success: (isSuccessful) ? isSuccessful : false,
+            message: (status) ? status : "Failed",
+            datas: truncated_data
+        }
 
-    return response;
+        return response;
 }
 
 export type Logs = {

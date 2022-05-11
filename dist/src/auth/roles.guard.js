@@ -22,7 +22,9 @@ let RolesGuard = class RolesGuard {
         this.jwtService = jwtService;
     }
     async canActivate(context) {
-        const requiredRole = this.reflector.getAllAndOverride(role_decorator_1.ROLES_KEY, [
+        const requiredRole = this
+            .reflector
+            .getAllAndOverride(role_decorator_1.ROLES_KEY, [
             context.getHandler(),
             context.getClass(),
         ]);
@@ -32,8 +34,12 @@ let RolesGuard = class RolesGuard {
         const data = context.switchToHttp().getRequest();
         if (!data.cookies.jwt)
             throw new common_1.ForbiddenException;
-        let user_data = await this.jwtService.verifyAsync(data.cookies.jwt);
-        let user = await this.authService.getUserData(user_data.email);
+        let user_data = await this
+            .jwtService
+            .verifyAsync(data.cookies.jwt);
+        let user = await this
+            .authService
+            .getUserData(user_data.email);
         if (Object.keys(user._responses).length !== 0)
             user = user.next()._settledValue;
         return requiredRole === user.role_type_id;

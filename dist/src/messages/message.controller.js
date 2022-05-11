@@ -36,7 +36,9 @@ let MessageController = class MessageController {
         if (!cookie)
             throw new common_1.ForbiddenException;
         if ((0, common_2.is_valid_menu)(table)) {
-            const user_data = await this.jwtService.verifyAsync(cookie);
+            const user_data = await this
+                .jwtService
+                .verifyAsync(cookie);
             let filtered;
             if ((0, common_2.is_valid_menu_tables)(table)) {
                 if (table === "inbox") {
@@ -322,7 +324,8 @@ let MessageController = class MessageController {
                     .messageService
                     .updateMessage(param.menu, param.message_id, message)
                     .then(result => {
-                    return common.formatResponse([message], true, `Message menu_state updated`);
+                    return common
+                        .formatResponse([message], true, `Message menu_state updated`);
                 })
                     .catch(error => {
                     return common.formatResponse([error], false, `Failed`);

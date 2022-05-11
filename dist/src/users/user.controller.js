@@ -52,16 +52,22 @@ let UserController = UserController_1 = class UserController {
             };
         user.created_date = common.setDateTime();
         user.updated_date = common.setDateTime();
-        user.password = await this.authService.ecnryptPassword(user.password);
+        user.password = await this
+            .authService
+            .ecnryptPassword(user.password);
         let response = await this.userService.registerUser(user)
             .then(result => {
             return result;
         })
             .catch(error => { return error; });
         if (response.inserted === 1) {
-            response = common.formatResponse([user], true, "Registration Successful");
+            response = common
+                .formatResponse([user], true, "Registration Successful");
         }
-        this.loggerService.insertLogs(common.formatLogs("registerUser", user, response));
+        this
+            .loggerService
+            .insertLogs(common
+            .formatLogs("registerUser", user, response));
         return response;
     }
     async loginUser(credentials, response) {
@@ -71,9 +77,12 @@ let UserController = UserController_1 = class UserController {
                 message: "Fields are empty"
             };
         let user_data;
-        let response_data = await this.userService.getUserByEmail(credentials.email);
+        let response_data = await this
+            .userService
+            .getUserByEmail(credentials.email);
         if (Object.keys(response_data._responses).length === 0) {
-            return response_data = error.userEmailDoesNotExist(credentials.email);
+            return response_data = error
+                .userEmailDoesNotExist(credentials.email);
         }
         user_data = response_data.next()._settledValue;
         if (!await this.authService.comparePassword(credentials.password, user_data.password)) {
@@ -84,8 +93,12 @@ let UserController = UserController_1 = class UserController {
             username: user_data.username,
             email: user_data.email
         });
-        response_data = common.formatResponse([user_data], true, "Login Successful.");
-        this.loggerService.insertLogs(common.formatLogs("loginUser", credentials, response_data));
+        response_data = common
+            .formatResponse([user_data], true, "Login Successful.");
+        this
+            .loggerService
+            .insertLogs(common
+            .formatLogs("loginUser", credentials, response_data));
         response.cookie("jwt", jwt, { httpOnly: true });
         return response_data;
     }
@@ -97,8 +110,12 @@ let UserController = UserController_1 = class UserController {
             throw new common_1.ForbiddenException;
         const data = await this.jwtService.verifyAsync(cookie);
         const user_data = await this.userService.getUserById(data.id);
-        formatted_response = common.formatResponse([user_data], true, "Success");
-        this.loggerService.insertLogs(common.formatLogs("getUser", param, formatted_response));
+        formatted_response = common
+            .formatResponse([user_data], true, "Success");
+        this
+            .loggerService
+            .insertLogs(common
+            .formatLogs("getUser", param, formatted_response));
         return formatted_response;
     }
     async getAllUsers() {
@@ -106,19 +123,28 @@ let UserController = UserController_1 = class UserController {
             .then(result => {
             return result;
         });
-        response = common.formatResponse(response, true, "Success");
-        this.loggerService.insertLogs(common.formatLogs("getAllUsers", {}, response));
+        response = common
+            .formatResponse(response, true, "Success");
+        this
+            .loggerService
+            .insertLogs(common
+            .formatLogs("getAllUsers", {}, response));
         return response;
     }
     async editUser(request, param) {
         const username = param.username;
         let response;
-        let data = await this.jwtService.verifyAsync(request.cookies['jwt']);
+        let data = await this
+            .jwtService
+            .verifyAsync(request.cookies['jwt']);
         if (data.username === username) {
-            let user_data = await this.userService.getUserByUsername(username);
+            let user_data = await this
+                .userService
+                .getUserByUsername(username);
             if (Object.keys(user_data._responses).length > 0) {
                 user_data = user_data.next()._settledValue;
-                response = common.formatResponse([user_data], true, "Success");
+                response = common
+                    .formatResponse([user_data], true, "Success");
             }
             else {
                 response = common.formatResponse([]);
@@ -127,7 +153,10 @@ let UserController = UserController_1 = class UserController {
         else {
             throw new common_1.ForbiddenException;
         }
-        this.loggerService.insertLogs(common.formatLogs("editUser", param, response));
+        this
+            .loggerService
+            .insertLogs(common
+            .formatLogs("editUser", param, response));
         return response;
     }
     async updateUser(user, request) {
@@ -135,22 +164,32 @@ let UserController = UserController_1 = class UserController {
         user.updated_date = common.setDateTime();
         let response = await this.userService.updateUser(user);
         if (response.replaced !== 1)
-            formatted_response = common.formatResponse([user], false, "Failed");
+            formatted_response = common
+                .formatResponse([user], false, "Failed");
         else
-            formatted_response = common.formatResponse([user], true, "Update Successful.");
-        this.loggerService.insertLogs(common.formatLogs("updateUser", user, formatted_response));
+            formatted_response = common
+                .formatResponse([user], true, "Update Successful.");
+        this
+            .loggerService
+            .insertLogs(common
+            .formatLogs("updateUser", user, formatted_response));
         return formatted_response;
     }
     async deleteUser(query) {
         let formatted_response;
         let response = await this.userService.getUserById(query.id)
             .then(result => {
-            return common.formatResponse([result], true, "Deleted successfully");
+            return common
+                .formatResponse([result], true, "Deleted successfully");
         })
             .catch(error => {
-            return common.formatResponse([error], false, "User does not exist.");
+            return common
+                .formatResponse([error], false, "User does not exist.");
         });
-        this.loggerService.insertLogs(common.formatLogs("deleteUser", query, response));
+        this
+            .loggerService
+            .insertLogs(common
+            .formatLogs("deleteUser", query, response));
         return response;
     }
     async logoutUser(response) {
