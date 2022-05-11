@@ -45,6 +45,11 @@ let UserController = UserController_1 = class UserController {
         this.logger = new common_1.Logger(UserController_1.name);
     }
     async registerUser(user) {
+        if (user)
+            return {
+                success: false,
+                message: "Fields are empty"
+            };
         user.created_date = common.setDateTime();
         user.updated_date = common.setDateTime();
         user.password = await this.authService.ecnryptPassword(user.password);
@@ -60,6 +65,11 @@ let UserController = UserController_1 = class UserController {
         return response;
     }
     async loginUser(credentials, response) {
+        if (credentials)
+            return {
+                success: false,
+                message: "Fields are empty"
+            };
         let user_data;
         let response_data = await this.userService.getUserByEmail(credentials.email);
         if (Object.keys(response_data._responses).length === 0) {
@@ -120,7 +130,7 @@ let UserController = UserController_1 = class UserController {
         this.loggerService.insertLogs(common.formatLogs("editUser", param, response));
         return response;
     }
-    async updateUser(id, user, request) {
+    async updateUser(user, request) {
         let formatted_response;
         user.updated_date = common.setDateTime();
         let response = await this.userService.updateUser(user);
@@ -131,24 +141,21 @@ let UserController = UserController_1 = class UserController {
         this.loggerService.insertLogs(common.formatLogs("updateUser", user, formatted_response));
         return formatted_response;
     }
-    async deleteUser(param, request) {
+    async deleteUser(query) {
         let formatted_response;
-        let user_data = await this.userService.getUserById(param.id);
-        if (!user_data) {
-            formatted_response = common.formatResponse([], false, "User does not exist.");
-        }
-        else {
-            let response = await this.userService.deleteUser(param.id);
-            formatted_response = common.formatResponse([user_data], true, "Deleted successfully");
-        }
-        this.loggerService.insertLogs(common.formatLogs("deleteUser", param, formatted_response));
-        return formatted_response;
+        let response = await this.userService.getUserById(query.id)
+            .then(result => {
+            return common.formatResponse([result], true, "Deleted successfully");
+        })
+            .catch(error => {
+            return common.formatResponse([error], false, "User does not exist.");
+        });
+        this.loggerService.insertLogs(common.formatLogs("deleteUser", query, response));
+        return response;
     }
     async logoutUser(response) {
         response.clearCookie("jwt");
-        return {
-            "message": "success"
-        };
+        return common.formatResponse([], true, "Logout successful.");
     }
 };
 __decorate([
@@ -190,22 +197,20 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "editUser", null);
 __decorate([
-    (0, common_1.Put)("update/:id"),
+    (0, common_1.Put)("update"),
     (0, role_decorator_1.Roles)(role_enum_1.Role.Admin),
-    __param(0, (0, common_1.Param)()),
-    __param(1, (0, common_1.Body)()),
-    __param(2, (0, common_1.Req)()),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, user_entity_1.User, Object]),
+    __metadata("design:paramtypes", [user_entity_1.User, Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "updateUser", null);
 __decorate([
-    (0, common_1.Delete)("delete/:id"),
+    (0, common_1.Delete)("delete"),
     (0, role_decorator_1.Roles)(role_enum_1.Role.Admin),
-    __param(0, (0, common_1.Param)()),
-    __param(1, (0, common_1.Req)()),
+    __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "deleteUser", null);
 __decorate([

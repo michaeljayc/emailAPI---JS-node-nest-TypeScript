@@ -30,6 +30,8 @@ let RolesGuard = class RolesGuard {
             return true;
         }
         const data = context.switchToHttp().getRequest();
+        if (!data.cookies.jwt)
+            throw new common_1.ForbiddenException;
         let user_data = await this.jwtService.verifyAsync(data.cookies.jwt);
         let user = await this.authService.getUserData(user_data.email);
         if (Object.keys(user._responses).length !== 0)
