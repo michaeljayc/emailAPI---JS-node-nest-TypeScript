@@ -4,7 +4,6 @@ import {
     Delete, 
     ForbiddenException, 
     Get, 
-    NotAcceptableException, 
     Param, 
     Post, 
     Put, 
@@ -49,7 +48,10 @@ export class MessageController {
             if (is_valid_menu(table)) {
 
                 // Get cookie data
-                const user_data = await this.jwtService.verifyAsync(cookie);
+                const user_data = await 
+                    this
+                    .jwtService
+                    .verifyAsync(cookie);
                 let filtered: {};
 
                 if (is_valid_menu_tables(table)) {
@@ -82,11 +84,15 @@ export class MessageController {
                     .getMessages(to_query)
                         .then( result => {
                             formatted_response = common
-                                .formatResponse([result], true, "Success");
+                                .formatResponse(
+                                    [result], true, "Success"
+                                );
                         })
                         .catch( error => {
                             formatted_response = common
-                                .formatResponse([error], false, "Failed");
+                                .formatResponse(
+                                    [error], false, "Failed"
+                                );
                         })
             } else {
                 return { 
@@ -105,7 +111,7 @@ export class MessageController {
             return formatted_response;
     }
 
-    @Get(":menu/details/:message_id")
+    @Get(":menu/:action/:message_id")
     async getMessageDetails(@Req() request: Request,
         @Param() param): Promise<ResponseFormat> {
 
@@ -192,12 +198,16 @@ export class MessageController {
                     .sendMessage("inbox",message)
                         .then( result => {
                             return common
-                                .formatResponse([result], true, "Message Sent");
+                                .formatResponse(
+                                    [result], true, "Message Sent"
+                                );
 
                         })
                         .catch( error => {
                             return  common
-                                .formatResponse([error], false, "Failed");
+                                .formatResponse(
+                                    [error], false, "Failed"
+                                );
                         })
 
                 // Insert data to sender's SENT
@@ -213,7 +223,9 @@ export class MessageController {
                             })
                             .catch ( error => {
                                 return common
-                                .formatResponse([error], false, "Failed");
+                                .formatResponse(
+                                    [error], false, "Failed"
+                                );
                             })
                 }
 
@@ -472,17 +484,22 @@ export class MessageController {
                     let response = await
                         this
                         .messageService
-                        .updateMessage(param.menu, param.message_id, message)
-                            .then( result => {
-                                return common.formatResponse(
-                                    [message], true, `Message menu_state updated`
-                                )
-                            })
-                            .catch( error => {
-                                return common.formatResponse(
-                                    [error], false, `Failed`
-                                )
-                            })
+                        .updateMessage(param.menu, 
+                            param.message_id, 
+                            message)
+                                .then( result => {
+                                    return common
+                                        .formatResponse(
+                                            [message], 
+                                            true, 
+                                            `Message menu_state updated`
+                                        )
+                                })
+                                .catch( error => {
+                                    return common.formatResponse(
+                                        [error], false, `Failed`
+                                    )
+                                })
 
                     formatted_response = response;
                 } else {

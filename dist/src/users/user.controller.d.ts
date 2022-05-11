@@ -12,14 +12,12 @@ export declare class UserController {
     private jwtService;
     private readonly logger;
     constructor(userService: UserService, loggerService: LoggerService, authService: AuthService, jwtService: JwtService);
-    registerUser(user: User): Promise<common.ResponseFormat>;
-    loginUser(credentials: common.loginCredentials, response: Response): Promise<common.ResponseFormat>;
+    registerUser(user: User): Promise<common.ResponseFormat | any>;
+    loginUser(credentials: common.loginCredentials, response: Response): Promise<common.ResponseFormat | any>;
     getUser(request: Request): Promise<common.ResponseFormat>;
     getAllUsers(): Promise<common.ResponseFormat>;
     editUser(request: Request, param: any): Promise<common.ResponseFormat>;
-    updateUser(id: string, user: User, request: Request): Promise<common.ResponseFormat>;
-    deleteUser(param: any, request: Request): Promise<common.ResponseFormat>;
-    logoutUser(response: Response): Promise<{
-        message: string;
-    }>;
+    updateUser(user: User, request: Request): Promise<common.ResponseFormat>;
+    deleteUser(query: any): Promise<common.ResponseFormat>;
+    logoutUser(response: Response): Promise<common.ResponseFormat>;
 }

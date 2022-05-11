@@ -14,31 +14,42 @@ const common_1 = require("@nestjs/common");
 const core_1 = require("@nestjs/core");
 const role_decorator_1 = require("../user_roles/role.decorator");
 const auth_service_1 = require("./auth.service");
+const jwt_1 = require("@nestjs/jwt");
 let RolesGuard = class RolesGuard {
-    constructor(reflector, authService) {
+    constructor(reflector, authService, jwtService) {
         this.reflector = reflector;
         this.authService = authService;
+        this.jwtService = jwtService;
     }
     async canActivate(context) {
-        const requiredRole = this.reflector.getAllAndOverride(role_decorator_1.ROLES_KEY, [
+        const requiredRole = this
+            .reflector
+            .getAllAndOverride(role_decorator_1.ROLES_KEY, [
             context.getHandler(),
             context.getClass(),
         ]);
         if (!requiredRole) {
             return true;
         }
-        const user = context.switchToHttp().getRequest();
-        let user_data = await this.authService.getUserData(user.body);
-        if (Object.keys(user_data._responses).length !== 0) {
-            user_data = user_data.next()._settledValue;
-        }
-        return requiredRole === user_data.role_type_id;
+        const data = context.switchToHttp().getRequest();
+        if (!data.cookies.jwt)
+            throw new common_1.ForbiddenException;
+        let user_data = await this
+            .jwtService
+            .verifyAsync(data.cookies.jwt);
+        let user = await this
+            .authService
+            .getUserData(user_data.email);
+        if (Object.keys(user._responses).length !== 0)
+            user = user.next()._settledValue;
+        return requiredRole === user.role_type_id;
     }
 };
 RolesGuard = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [core_1.Reflector,
-        auth_service_1.AuthService])
+        auth_service_1.AuthService,
+        jwt_1.JwtService])
 ], RolesGuard);
 exports.RolesGuard = RolesGuard;
 //# sourceMappingURL=roles.guard.js.map
