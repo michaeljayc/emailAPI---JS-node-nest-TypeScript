@@ -30,6 +30,7 @@ AppModule = __decorate([
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
+        exports: [app_service_1.AppService]
     })
 ], AppModule);
 exports.AppModule = AppModule;

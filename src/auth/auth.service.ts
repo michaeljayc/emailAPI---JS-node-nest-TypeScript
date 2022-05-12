@@ -1,6 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
 import * as rethink from "rethinkdb";
-import * as common from "src/common/common";
 const bcrypt = require('bcrypt');
 
 const TABLE = "users";
