@@ -28,4 +28,4 @@ const formatLogs = (func_name, data, response) => ({
     response: response
 });
 exports.formatLogs = formatLogs;
-//# sourceMappingURL=common.js.map
+//# sourceMappingURL=common.functions.js.map

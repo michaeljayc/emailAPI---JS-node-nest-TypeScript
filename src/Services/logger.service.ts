@@ -1,6 +1,6 @@
 import { ConsoleLogger, Inject, Injectable } from "@nestjs/common";
 import * as rethink from "rethinkdb";
-import { Logs } from "../common/common";
+import { TLogs } from "../common/common.types";
 
 const DB = "emailAPI";
 const TABLE = "logs";
@@ -14,7 +14,7 @@ export class LoggerService {
         this.connection = connection;
     }
 
-    async insertLogs(log: Logs) {
+    async insertLogs(log: TLogs) {
         return await rethink
             .db(DB)
             .table(TABLE)

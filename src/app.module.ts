@@ -19,5 +19,6 @@ import { MessageModule } from './messages/message.module';
   ],
   controllers: [AppController],
   providers: [AppService],
+  exports:[AppService]
 })
 export class AppModule {}

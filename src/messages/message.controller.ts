@@ -11,18 +11,18 @@ import {
     Req 
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { ResponseFormat } from "src/common/common";
+import { IResponseFormat } from "../common/common.interface";
 import Message from "./message.entity";
 import { Request } from "express";
 import MessageService from "./message.service";
-import * as common from "src/common/common";
+import { formatResponse, formatLogs } from "src/common/common.functions";
 import LoggerService from "src/Services/logger.service";
 import { UserService } from "src/users/user.service";
 import { 
-    is_valid_menu, 
+    isValidMenu, 
     Menu,
-    is_valid_menu_tables
-} from "src/common/common";
+    isValidMenuTables
+} from "./message.common";
 
 @Controller("messages")
 export class MessageController {
@@ -34,18 +34,17 @@ export class MessageController {
 
     @Get("")
     async getMessages(@Req() request: Request,
-        @Query() query): Promise<ResponseFormat | any> {
+        @Query() query): Promise<IResponseFormat | any> {
 
             let table = query.menu ? query.menu : "inbox";
-            let response: any;
-            let formatted_response: ResponseFormat;
+            let formatted_response: IResponseFormat;
             const cookie = request.cookies["jwt"];
 
             // If not logged-in, forbid access
             if (!cookie)
                 throw new ForbiddenException;
 
-            if (is_valid_menu(table)) {
+            if (isValidMenu(table)) {
 
                 // Get cookie data
                 const user_data = await 
@@ -54,7 +53,7 @@ export class MessageController {
                     .verifyAsync(cookie);
                 let filtered: {};
 
-                if (is_valid_menu_tables(table)) {
+                if (isValidMenuTables(table)) {
                     
                     // Get the id to filter
                     if (table === "inbox") {
@@ -79,18 +78,16 @@ export class MessageController {
                     id: user_data.id
                 }
 
-                response = await this
+                formatted_response = await this
                     .messageService
                     .getMessages(to_query)
                         .then( result => {
-                            formatted_response = common
-                                .formatResponse(
+                            return formatResponse(
                                     [result], true, "Success"
                                 );
                         })
                         .catch( error => {
-                            formatted_response = common
-                                .formatResponse(
+                            return formatResponse(
                                     [error], false, "Failed"
                                 );
                         })
@@ -103,8 +100,7 @@ export class MessageController {
 
             this
             .loggerService
-            .insertLogs(common
-                .formatLogs(
+            .insertLogs(formatLogs(
                     "getMessages", query, formatted_response)
                 )
             
@@ -113,7 +109,7 @@ export class MessageController {
 
     @Get(":menu/:action/:message_id")
     async getMessageDetails(@Req() request: Request,
-        @Param() param): Promise<ResponseFormat> {
+        @Param() param): Promise<IResponseFormat> {
 
             const cookie = request.cookies["jwt"];
             if (!cookie)
@@ -123,30 +119,26 @@ export class MessageController {
                 .messageService
                 .getMessageDetails(param.menu, param.message_id)
             if (!response) 
-                response = common
-                    .formatResponse([], false, "Message does not exist.");
+                response = formatResponse([], false, "Message does not exist.");
             
             else {
                 if (param.menu === "inbox") {        
                     response = await this.updateReadUnread(response.id)
                         .then( result => {
-                            return common
-                                .formatResponse(
+                            return formatResponse(
                                     [result], true, "Success"
                                 )
                         })
                         .catch( error => {
-                            return common
-                                .formatResponse(
-                                    [], false, "Failed"
+                            return formatResponse(
+                                    [error], false, "Failed"
                                 )
                         })
                 }     
             } 
             
             this.loggerService
-                .insertLogs(common
-                    .formatLogs("getMessageDetails",
+                .insertLogs(formatLogs("getMessageDetails",
                         param,
                         response))
 
@@ -155,7 +147,7 @@ export class MessageController {
     
     @Post("send")
     async sendMessage(@Req() request: Request,
-        @Body() message: Message): Promise<ResponseFormat> {
+        @Body() message: Message): Promise<IResponseFormat> {
             
             let formatted_response: any;
             let is_exist = message.id ? true : false;
@@ -173,10 +165,11 @@ export class MessageController {
                 .getUserByEmail(message.recipient);
             
             if (Object.keys(recipient_data._responses).length < 1) {
-                formatted_response = common.formatResponse(
+                formatted_response = formatResponse(
                     [message],
                     false,
-                    "Receipient does not exist.");
+                    "Receipient does not exist."
+                );
             } else {
                 recipient_data = recipient_data.next()._settledValue;
 
@@ -197,17 +190,15 @@ export class MessageController {
                     .messageService
                     .sendMessage("inbox",message)
                         .then( result => {
-                            return common
-                                .formatResponse(
-                                    [result], true, "Message Sent"
-                                );
+                            return formatResponse(
+                                [result], true, "Message Sent"
+                            );
 
                         })
                         .catch( error => {
-                            return  common
-                                .formatResponse(
-                                    [error], false, "Failed"
-                                );
+                            return formatResponse(
+                                [error], false, "Failed"
+                            );
                         })
 
                 // Insert data to sender's SENT
@@ -216,14 +207,12 @@ export class MessageController {
                         .messageService
                         .sendMessage("sent",message)
                             .then( result => {
-                                return common
-                                    .formatResponse(
-                                        [result],true,"Message Sent"
-                                    )
+                                return formatResponse(
+                                    [result],true,"Message Sent"
+                                )
                             })
                             .catch ( error => {
-                                return common
-                                .formatResponse(
+                                return formatResponse(
                                     [error], false, "Failed"
                                 );
                             })
@@ -237,16 +226,14 @@ export class MessageController {
                         .messageService
                         .deleteMessage("drafts",message.id)
                             .then( result => {
-                                return common
-                                    .formatResponse(
-                                        [result],true,"Success"
-                                    )
+                                return formatResponse(
+                                    [result],true,"Success"
+                                )
                             })
                             .catch( error => {
-                                return common
-                                    .formatResponse(
-                                        [error],false,"Failed"
-                                    )
+                                return formatResponse(
+                                    [error],false,"Failed"
+                                )
                             })
 
                 }
@@ -254,8 +241,7 @@ export class MessageController {
 
             this
             .loggerService
-            .insertLogs(common
-                .formatLogs(
+            .insertLogs(formatLogs(
                     "sendMessage", message, formatted_response
                 )
             )
@@ -265,7 +251,7 @@ export class MessageController {
 
     @Post("save-as-draft")
     async saveAsDraft(@Req() request: Request,
-        @Body() message: Message): Promise<ResponseFormat> {
+        @Body() message: Message): Promise<IResponseFormat> {
             
             const cookie = request.cookies["jwt"];
             if (!cookie)
@@ -284,31 +270,29 @@ export class MessageController {
                 .messageService
                 .sendMessage("drafts",message)
                     .then( result => {
-                        return common
-                            .formatResponse(
-                                [message], true, "Saved as draft"
-                            );
+                        return formatResponse(
+                            [message], true, "Saved as draft"
+                        );
                     })
                     .catch( error => {
-                        return common
-                            .formatResponse(
-                                [message], false, "Failed"
-                            );
+                        return formatResponse(
+                            [message], false, "Failed"
+                        );
                     })
             
             
             this.loggerService.insertLogs
-                (common.formatLogs("saveAsDraft", message, response))
+                (formatLogs("saveAsDraft", message, response))
             return response;
     }
 
     @Put("drafts/update")
     async updateDraftedMessage(@Req() request: Request,
         @Body() message:Message,    
-        @Query() query): Promise<ResponseFormat> {
+        @Query() query): Promise<IResponseFormat> {
             
             const message_id = query.id;
-            let formatted_response: ResponseFormat;
+            let formatted_response: IResponseFormat;
             const cookie = request.cookies["jwt"];
             if (!cookie)
                 throw new ForbiddenException;
@@ -320,19 +304,19 @@ export class MessageController {
                 .updateMessage("drafts",message_id,message);
 
             if (response.replaced === 1)
-                formatted_response = common
-                    .formatResponse([response], true, "Message updated.")
+                formatted_response = formatResponse(
+                    [response], true, "Message updated."
+                )
             else 
-                formatted_response = common
-                    .formatResponse(
-                        [response], false, "Failed to update message."
-                    )
+                formatted_response = formatResponse(
+                    [response], false, "Failed to update message."
+                )
             
             this.loggerService
-                .insertLogs(common
-                    .formatLogs(
-                        "updateMessage",response,formatted_response
-                        ))
+                .insertLogs(formatLogs(
+                    "updateMessage",response,formatted_response
+                    )
+                )
                         
             return formatted_response;
     }
@@ -340,7 +324,7 @@ export class MessageController {
     @Delete(":menu/delete")
     async deleteMessage(@Req() request:Request,
         @Param() param,
-        @Query() query): Promise<ResponseFormat> {
+        @Query() query): Promise<IResponseFormat> {
             
             const table = param.menu;
             const message_id = query.id;
@@ -354,27 +338,26 @@ export class MessageController {
                 .deleteMessage(table, message_id)
                     .then( result => {
                         if (result.deleted === 1){
-                            return common
-                            .formatResponse(
+                            return formatResponse(
                                 [result], true, "Message deleted."
                             )   
                         } else {
-                            return common
-                            .formatResponse(
+                            return formatResponse(
                                 [result], false, "Message does not exist."
                             ) 
                         }
                     })
                     .catch( error => {
-                        return common
-                            .formatResponse([error], true, "Failed.")
+                        return formatResponse(
+                            [error], true, "Failed."
+                        )
                     })
             
             this.loggerService
-                .insertLogs(common
-                    .formatLogs(
+                .insertLogs(formatLogs(
                         "deleteMessage", {param,query}, response
-                    ))
+                    )
+                )
 
             return response;
     }
@@ -382,9 +365,9 @@ export class MessageController {
     @Post("inbox/reply/:message_id")
     async replyToMessage(@Req() request: Request,
         @Param() param,
-        @Body() message: Message): Promise<ResponseFormat> {
+        @Body() message: Message): Promise<IResponseFormat> {
 
-            let formatted_response: ResponseFormat;
+            let formatted_response: IResponseFormat;
             const cookie = request.cookies["jwt"];
             if (!cookie) 
                 throw new ForbiddenException;
@@ -412,16 +395,14 @@ export class MessageController {
                 .messageService
                 .sendMessage("inbox", message)
                     .then( result => {
-                        return common
-                            .formatResponse(
-                                [result], true, "Message sent."
-                            )
+                        return formatResponse(
+                            [result], true, "Message sent."
+                        )
                     })
                     .catch ( error => {
-                        return common
-                            .formatResponse(
-                                [error], false, "Failed."
-                            )
+                        return formatResponse(
+                            [error], false, "Failed."
+                        )
                     })
             
             // Insert data to sender's SENT
@@ -430,22 +411,21 @@ export class MessageController {
                     .messageService
                     .sendMessage("sent",message)
                         .then( result => {
-                            return common
-                                .formatResponse(
-                                    [result],true,"Message Sent"
-                                )
+                            return formatResponse(
+                                [result],true,"Message Sent"
+                            )
                         })
                         .catch ( error => {
-                            return common
-                            .formatResponse([error], false, "Failed");
+                            return formatResponse(
+                                [error], false, "Failed"
+                            );
                         })
             }
             
             this
             .loggerService
-            .insertLogs(
-                common.formatLogs(
-                    "replyToMessage",message, formatted_response
+            .insertLogs(formatLogs(
+                "replyToMessage",message, formatted_response
                 )
             );
 
@@ -454,14 +434,14 @@ export class MessageController {
 
     @Put(":menu/:message_id/:state")
     async setMenuState(@Req() request: Request,
-        @Param() param): Promise<ResponseFormat | any> {
+        @Param() param): Promise<IResponseFormat | any> {
             
-            let formatted_response: ResponseFormat = null;
+            let formatted_response: IResponseFormat = null;
             const cookie = request.cookies["jwt"];
             if (!cookie)
                 throw new ForbiddenException;
             
-            if (is_valid_menu_tables(param.menu)) {
+            if (isValidMenuTables(param.menu)) {
 
                 let message = await 
                     this
@@ -472,9 +452,7 @@ export class MessageController {
                     // check if message is already starred or important
                     if (message.menu_state === Menu.starred || 
                         message.menu_state === Menu.important ) {
-                        
                             message.menu_state = 0;
-
                     }  else {
                         message.menu_state = param.state === "starred" ?
                         Menu.starred :
@@ -488,23 +466,22 @@ export class MessageController {
                             param.message_id, 
                             message)
                                 .then( result => {
-                                    return common
-                                        .formatResponse(
-                                            [message], 
-                                            true, 
-                                            `Message menu_state updated`
-                                        )
+                                    return formatResponse(
+                                        [message], 
+                                        true, 
+                                        `Message menu_state updated`
+                                    )
                                 })
                                 .catch( error => {
-                                    return common.formatResponse(
+                                    return formatResponse(
                                         [error], false, `Failed`
                                     )
                                 })
 
                     formatted_response = response;
                 } else {
-                    formatted_response = common
-                        .formatResponse([param],
+                    formatted_response = formatResponse(
+                        [param],
                         false,
                         "Message not found."
                     )

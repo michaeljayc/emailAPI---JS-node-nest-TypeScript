@@ -30,8 +30,8 @@ const user_service_1 = require("./user.service");
 const logger_service_1 = require("../Services/logger.service");
 const auth_service_1 = require("../auth/auth.service");
 const user_entity_1 = require("./user.entity");
-const common = require("../common/common");
-const error = require("../common/errors");
+const common_functions_1 = require("../common/common.functions");
+const user_errors_1 = require("./user.errors");
 const jwt_1 = require("@nestjs/jwt");
 const role_enum_1 = require("../user_roles/role.enum");
 const role_decorator_1 = require("../user_roles/role.decorator");
@@ -45,13 +45,13 @@ let UserController = UserController_1 = class UserController {
         this.logger = new common_1.Logger(UserController_1.name);
     }
     async registerUser(user) {
-        if (user)
+        if (!user)
             return {
                 success: false,
                 message: "Fields are empty"
             };
-        user.created_date = common.setDateTime();
-        user.updated_date = common.setDateTime();
+        user.created_date = (0, common_functions_1.setDateTime)();
+        user.updated_date = (0, common_functions_1.setDateTime)();
         user.password = await this
             .authService
             .ecnryptPassword(user.password);
@@ -61,17 +61,15 @@ let UserController = UserController_1 = class UserController {
         })
             .catch(error => { return error; });
         if (response.inserted === 1) {
-            response = common
-                .formatResponse([user], true, "Registration Successful");
+            response = (0, common_functions_1.formatResponse)([user], true, "Registration Successful");
         }
         this
             .loggerService
-            .insertLogs(common
-            .formatLogs("registerUser", user, response));
+            .insertLogs((0, common_functions_1.formatLogs)("registerUser", user, response));
         return response;
     }
     async loginUser(credentials, response) {
-        if (credentials)
+        if (!credentials)
             return {
                 success: false,
                 message: "Fields are empty"
@@ -81,24 +79,22 @@ let UserController = UserController_1 = class UserController {
             .userService
             .getUserByEmail(credentials.email);
         if (Object.keys(response_data._responses).length === 0) {
-            return response_data = error
-                .userEmailDoesNotExist(credentials.email);
+            return response_data =
+                (0, user_errors_1.userEmailDoesNotExist)(credentials.email);
         }
         user_data = response_data.next()._settledValue;
         if (!await this.authService.comparePassword(credentials.password, user_data.password)) {
-            return response_data = error.incorrectUserPassword();
+            return response_data = (0, user_errors_1.incorrectUserPassword)();
         }
         const jwt = await this.jwtService.signAsync({
             id: user_data.id,
             username: user_data.username,
             email: user_data.email
         });
-        response_data = common
-            .formatResponse([user_data], true, "Login Successful.");
+        response_data = (0, common_functions_1.formatResponse)([user_data], true, "Login Successful.");
         this
             .loggerService
-            .insertLogs(common
-            .formatLogs("loginUser", credentials, response_data));
+            .insertLogs((0, common_functions_1.formatLogs)("loginUser", credentials, response_data));
         response.cookie("jwt", jwt, { httpOnly: true });
         return response_data;
     }
@@ -110,12 +106,10 @@ let UserController = UserController_1 = class UserController {
             throw new common_1.ForbiddenException;
         const data = await this.jwtService.verifyAsync(cookie);
         const user_data = await this.userService.getUserById(data.id);
-        formatted_response = common
-            .formatResponse([user_data], true, "Success");
+        formatted_response = (0, common_functions_1.formatResponse)([user_data], true, "Success");
         this
             .loggerService
-            .insertLogs(common
-            .formatLogs("getUser", param, formatted_response));
+            .insertLogs((0, common_functions_1.formatLogs)("getUser", param, formatted_response));
         return formatted_response;
     }
     async getAllUsers() {
@@ -123,12 +117,10 @@ let UserController = UserController_1 = class UserController {
             .then(result => {
             return result;
         });
-        response = common
-            .formatResponse(response, true, "Success");
+        response = (0, common_functions_1.formatResponse)(response, true, "Success");
         this
             .loggerService
-            .insertLogs(common
-            .formatLogs("getAllUsers", {}, response));
+            .insertLogs((0, common_functions_1.formatLogs)("getAllUsers", {}, response));
         return response;
     }
     async editUser(request, param) {
@@ -143,11 +135,10 @@ let UserController = UserController_1 = class UserController {
                 .getUserByUsername(username);
             if (Object.keys(user_data._responses).length > 0) {
                 user_data = user_data.next()._settledValue;
-                response = common
-                    .formatResponse([user_data], true, "Success");
+                response = (0, common_functions_1.formatResponse)([user_data], true, "Success");
             }
             else {
-                response = common.formatResponse([]);
+                response = (0, common_functions_1.formatResponse)([]);
             }
         }
         else {
@@ -155,46 +146,39 @@ let UserController = UserController_1 = class UserController {
         }
         this
             .loggerService
-            .insertLogs(common
-            .formatLogs("editUser", param, response));
+            .insertLogs((0, common_functions_1.formatLogs)("editUser", param, response));
         return response;
     }
     async updateUser(user, request) {
         let formatted_response;
-        user.updated_date = common.setDateTime();
+        user.updated_date = (0, common_functions_1.setDateTime)();
         let response = await this.userService.updateUser(user);
         if (response.replaced !== 1)
-            formatted_response = common
-                .formatResponse([user], false, "Failed");
+            formatted_response = (0, common_functions_1.formatResponse)([user], false, "Failed");
         else
-            formatted_response = common
-                .formatResponse([user], true, "Update Successful.");
+            formatted_response = (0, common_functions_1.formatResponse)([user], true, "Update Successful.");
         this
             .loggerService
-            .insertLogs(common
-            .formatLogs("updateUser", user, formatted_response));
+            .insertLogs((0, common_functions_1.formatLogs)("updateUser", user, formatted_response));
         return formatted_response;
     }
     async deleteUser(query) {
         let formatted_response;
         let response = await this.userService.getUserById(query.id)
             .then(result => {
-            return common
-                .formatResponse([result], true, "Deleted successfully");
+            return (0, common_functions_1.formatResponse)([result], true, "Deleted successfully");
         })
             .catch(error => {
-            return common
-                .formatResponse([error], false, "User does not exist.");
+            return (0, common_functions_1.formatResponse)([error], false, "User does not exist.");
         });
         this
             .loggerService
-            .insertLogs(common
-            .formatLogs("deleteUser", query, response));
+            .insertLogs((0, common_functions_1.formatLogs)("deleteUser", query, response));
         return response;
     }
     async logoutUser(response) {
         response.clearCookie("jwt");
-        return common.formatResponse([], true, "Logout successful.");
+        return (0, common_functions_1.formatResponse)([], true, "Logout successful.");
     }
 };
 __decorate([

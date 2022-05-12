@@ -16,8 +16,13 @@ import { UserService } from "./user.service";
 import { LoggerService } from "src/Services/logger.service";
 import { AuthService } from "src/auth/auth.service";
 import { User } from "./user.entity";
-import * as common from "src/common/common";
-import * as error from "src/common/errors";
+import { IResponseFormat } from "src/common/common.interface";
+import { TLoginCredentials } from "./user.types";
+import { formatResponse, formatLogs, setDateTime } from "src/common/common.functions";
+import { 
+    userEmailDoesNotExist, 
+    incorrectUserPassword 
+} from "./user.errors";
 import { JwtService } from "@nestjs/jwt";
 import { Response, Request } from "express";
 import { Role } from "src/user_roles/role.enum";
@@ -36,17 +41,17 @@ export class UserController {
 
     @Post("register")
     async registerUser(@Body() user:User)
-        : Promise<common.ResponseFormat |  any> {
+        : Promise<IResponseFormat |  any> {
         
-        if (user) 
+        if (!user) 
             return {
                 success: false,
                 message: "Fields are empty"
             }
 
         // Set create  and update datetime
-        user.created_date = common.setDateTime();
-        user.updated_date = common.setDateTime();
+        user.created_date = setDateTime();
+        user.updated_date = setDateTime();
         
         // Encrypt Password
         user.password = await 
@@ -61,16 +66,14 @@ export class UserController {
             .catch( error => { return error });
         
         if (response.inserted === 1) {
-            response = common
-                .formatResponse(
+            response = formatResponse(
                     [user],true, "Registration Successful"
                 );
         }
 
         this
         .loggerService
-        .insertLogs(common
-            .formatLogs(
+        .insertLogs(formatLogs(
                 "registerUser", user, response
                 )
         );
@@ -80,11 +83,11 @@ export class UserController {
 
     @Post("login")
     async loginUser(
-        @Body() credentials: common.loginCredentials,
+        @Body() credentials: TLoginCredentials,
         @Res({passthrough: true}) response: Response)
-        : Promise<common.ResponseFormat | any> {
+        : Promise<IResponseFormat | any> {
         
-            if (credentials)
+            if (!credentials)
                 return {
                     success: false,
                     message: "Fields are empty"
@@ -96,8 +99,8 @@ export class UserController {
                 .userService
                 .getUserByEmail(credentials.email);
             if (Object.keys(response_data._responses).length === 0) {
-                return response_data = error
-                    .userEmailDoesNotExist(credentials.email);
+                return response_data = 
+                    userEmailDoesNotExist(credentials.email);
             }
 
             user_data = response_data.next()._settledValue;
@@ -105,7 +108,7 @@ export class UserController {
                 credentials.password, 
                 user_data.password)) {
 
-                    return response_data = error.incorrectUserPassword();
+                    return response_data = incorrectUserPassword();
             }
 
             // Data store in the cookie
@@ -117,14 +120,12 @@ export class UserController {
                 }
             )
 
-            response_data = common
-                .formatResponse(
+            response_data = formatResponse(
                     [user_data], true, "Login Successful."
                 );
             this
             .loggerService
-            .insertLogs(common
-                .formatLogs(
+            .insertLogs(formatLogs(
                     "loginUser", credentials, response_data
                 )
             );
@@ -135,10 +136,10 @@ export class UserController {
 
     @Get("user")
     async getUser(@Req() request: Request)
-        : Promise<common.ResponseFormat> {
+        : Promise<IResponseFormat> {
 
             let {password, ...param} = request.body;
-            let formatted_response: common.ResponseFormat;
+            let formatted_response: IResponseFormat;
             const cookie = request.cookies['jwt'];
             
             if (!cookie) 
@@ -147,13 +148,11 @@ export class UserController {
             const data = await this.jwtService.verifyAsync(cookie);
             const user_data = await 
                 this.userService.getUserById(data.id);
-            formatted_response = common
-                .formatResponse([user_data],true, "Success");
+            formatted_response = formatResponse([user_data],true, "Success");
 
             this
             .loggerService
-            .insertLogs(common
-                .formatLogs(
+            .insertLogs(formatLogs(
                     "getUser", param, formatted_response
                 )
             );
@@ -163,21 +162,19 @@ export class UserController {
 
     @Get("users")
     @Roles(Role.Admin)
-    async getAllUsers(): Promise<common.ResponseFormat> {
+    async getAllUsers(): Promise<IResponseFormat> {
         let response: any = await this.userService.getAllUsers()
             .then( result => {
                 return result
             })
   
-        response = common
-            .formatResponse(
+        response = formatResponse(
                 response,true,"Success"
             )
         
         this
         .loggerService
-        .insertLogs(common
-            .formatLogs(
+        .insertLogs(formatLogs(
                 "getAllUsers", {}, response
             )
         );
@@ -188,10 +185,10 @@ export class UserController {
     @Get("edit/:username")
     @Roles(Role.Admin)
     async editUser(@Req() request:Request,
-        @Param() param): Promise<common.ResponseFormat> {
+        @Param() param): Promise<IResponseFormat> {
         
         const username = param.username;
-        let response: common.ResponseFormat;
+        let response: IResponseFormat;
 
         //Get cookie - 'username' and compare with parameter
         let data = await 
@@ -207,13 +204,12 @@ export class UserController {
         
             if (Object.keys(user_data._responses).length >  0) {
                 user_data = user_data.next()._settledValue;
-                response = common
-                    .formatResponse(
+                response = formatResponse(
                         [user_data], true, "Success"
                     );
             } 
             else {
-                response = common.formatResponse([]);
+                response = formatResponse([]);
             }
         } else {
             throw new ForbiddenException;
@@ -222,8 +218,7 @@ export class UserController {
     
         this
         .loggerService
-        .insertLogs(common
-            .formatLogs(
+        .insertLogs(formatLogs(
                 "editUser", param, response
             )
         );
@@ -234,27 +229,24 @@ export class UserController {
     @Put("update")
     @Roles(Role.Admin)
     async updateUser(@Body() user: User,
-        @Req() request: Request): Promise<common.ResponseFormat> {
+        @Req() request: Request): Promise<IResponseFormat> {
 
-            let formatted_response: common.ResponseFormat;
-            user.updated_date = common.setDateTime();
+            let formatted_response: IResponseFormat;
+            user.updated_date = setDateTime();
 
             let response = await this.userService.updateUser(user);
             if (response.replaced !== 1)
-                formatted_response = common
-                    .formatResponse(
+                formatted_response = formatResponse(
                         [user], false, "Failed"
                     );
             else
-                formatted_response = common
-                    .formatResponse(
+                formatted_response = formatResponse(
                         [user], true, "Update Successful."
                     )
 
             this
             .loggerService
-            .insertLogs(common
-                .formatLogs(
+            .insertLogs(formatLogs(
                     "updateUser",user, formatted_response
                 )
             )
@@ -264,27 +256,24 @@ export class UserController {
 
     @Delete("delete")
     @Roles(Role.Admin)
-    async deleteUser(@Query() query): Promise<common.ResponseFormat> {
+    async deleteUser(@Query() query): Promise<IResponseFormat> {
             
-            let formatted_response: common.ResponseFormat;
+            let formatted_response: IResponseFormat;
             let response = await this.userService.getUserById(query.id)
                 .then( result => {
-                    return common
-                        .formatResponse(
+                    return formatResponse(
                             [result], true, "Deleted successfully"
                         )
                 })
                 .catch( error => {
-                    return common
-                        .formatResponse(
+                    return formatResponse(
                             [error], false, "User does not exist."
                         );
                 })
 
             this
             .loggerService
-            .insertLogs(common
-                .formatLogs(
+            .insertLogs(formatLogs(
                     "deleteUser", query, response
                 )
             )
@@ -295,7 +284,7 @@ export class UserController {
     @Post("logout")
     async logoutUser(@Res({passthrough: true}) response: Response) {
         response.clearCookie("jwt");
-        return common.formatResponse([],true, "Logout successful.");
+        return formatResponse([],true, "Logout successful.");
     }
 
 }
