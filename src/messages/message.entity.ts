@@ -9,7 +9,8 @@ export class Message {
     subject: string;
     message: string;
     menu_state: number;
-    read: false;
+    read: boolean;
+    drafted: boolean;
     created_date: string;
     updated_date: string;
 
@@ -23,6 +24,7 @@ export class Message {
         message: string,
         menu_state: number,
         read: false,
+        drafted: false,
         created_date: string,
         updated_date: string){}
 }
