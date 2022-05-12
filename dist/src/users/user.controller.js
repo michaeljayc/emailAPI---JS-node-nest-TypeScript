@@ -35,6 +35,7 @@ const user_errors_1 = require("./user.errors");
 const jwt_1 = require("@nestjs/jwt");
 const role_enum_1 = require("../user_roles/role.enum");
 const role_decorator_1 = require("../user_roles/role.decorator");
+const logging_interceptor_1 = require("../Services/logging.interceptor");
 const DATE = new Date;
 let UserController = UserController_1 = class UserController {
     constructor(userService, loggerService, authService, jwtService) {
@@ -99,17 +100,16 @@ let UserController = UserController_1 = class UserController {
         return response_data;
     }
     async getUser(request) {
-        let _a = request.body, { password } = _a, param = __rest(_a, ["password"]);
         let formatted_response;
         const cookie = request.cookies['jwt'];
         if (!cookie)
-            throw new common_1.ForbiddenException;
+            throw new common_1.HttpException('Forbidden', common_1.HttpStatus.FORBIDDEN);
         const data = await this.jwtService.verifyAsync(cookie);
-        const user_data = await this.userService.getUserById(data.id);
+        const _a = await this.userService.getUserById(data.id), { password } = _a, user_data = __rest(_a, ["password"]);
         formatted_response = (0, common_functions_1.formatResponse)([user_data], true, "Success");
         this
             .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("getUser", param, formatted_response));
+            .insertLogs((0, common_functions_1.formatLogs)("getUser", user_data, formatted_response));
         return formatted_response;
     }
     async getAllUsers() {
@@ -197,6 +197,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "loginUser", null);
 __decorate([
+    (0, common_1.UseInterceptors)(new logging_interceptor_1.LoggingInterceptor()),
     (0, common_1.Get)("user"),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),

@@ -13,37 +13,37 @@ export class RolesGuard implements CanActivate {
         private jwtService: JwtService) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const requiredRole = this
-          .reflector
-          .getAllAndOverride<Role>(
-            ROLES_KEY, [
-              context.getHandler(),
-              context.getClass(),
-            ]
-          );
+      const requiredRole = this
+        .reflector
+        .getAllAndOverride<Role>(
+          ROLES_KEY, [
+            context.getHandler(),
+            context.getClass(),
+          ]
+        );
 
-        if (!requiredRole) {
-          return true;
-        }
+      if (!requiredRole) {
+        return true;
+      }
 
-        const data = context.switchToHttp().getRequest();
-  
-        if (!data.cookies.jwt)
-          throw new ForbiddenException;
+      const data = context.switchToHttp().getRequest();
 
-        let user_data = await 
-          this
-          .jwtService
-          .verifyAsync(data.cookies.jwt)
-          
-        let user = await 
-          this
-          .authService
-          .getUserData(user_data.email);
+      if (!data.cookies.jwt)
+        throw new ForbiddenException;
+
+      let user_data = await 
+        this
+        .jwtService
+        .verifyAsync(data.cookies.jwt)
         
-        if (Object.keys(user._responses).length !== 0) 
-          user = user.next()._settledValue
-        
-        return requiredRole === user.role_type_id;
+      let user = await 
+        this
+        .authService
+        .getUserData(user_data.email);
+      
+      if (Object.keys(user._responses).length !== 0) 
+        user = user.next()._settledValue
+      
+      return requiredRole === user.role_type_id;
     }
 }

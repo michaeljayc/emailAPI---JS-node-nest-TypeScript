@@ -4,13 +4,17 @@ import {
     Delete, 
     ForbiddenException, 
     Get, 
+    HttpException, 
+    HttpStatus, 
     Logger, 
     Param, 
     Post, 
     Put, 
     Query, 
     Req, 
-    Res 
+    Res, 
+    UseFilters, 
+    UseInterceptors
 } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { LoggerService } from "src/Services/logger.service";
@@ -27,6 +31,8 @@ import { JwtService } from "@nestjs/jwt";
 import { Response, Request } from "express";
 import { Role } from "src/user_roles/role.enum";
 import { Roles } from "src/user_roles/role.decorator";
+import { LoggingInterceptor } from "src/Services/logging.interceptor";
+import { HttpExceptionFilter } from "src/Services/http-exception.filter";
 
 const DATE = new Date;
 
@@ -134,26 +140,27 @@ export class UserController {
             return response_data;
     }
 
+    @UseInterceptors(new LoggingInterceptor())
     @Get("user")
     async getUser(@Req() request: Request)
         : Promise<IResponseFormat> {
 
-            let {password, ...param} = request.body;
+            // let {password, ...param} = request.body;
             let formatted_response: IResponseFormat;
             const cookie = request.cookies['jwt'];
             
             if (!cookie) 
-                throw new ForbiddenException;
+                throw new HttpException('Forbidden', HttpStatus.FORBIDDEN)
 
             const data = await this.jwtService.verifyAsync(cookie);
-            const user_data = await 
+            const {password, ...user_data} = await 
                 this.userService.getUserById(data.id);
             formatted_response = formatResponse([user_data],true, "Success");
 
             this
             .loggerService
             .insertLogs(formatLogs(
-                    "getUser", param, formatted_response
+                    "getUser", user_data, formatted_response
                 )
             );
 
@@ -161,6 +168,7 @@ export class UserController {
     }
 
     @Get("users")
+    //@UseFilters(new HttpExceptionFilter())
     @Roles(Role.Admin)
     async getAllUsers(): Promise<IResponseFormat> {
         let response: any = await this.userService.getAllUsers()
