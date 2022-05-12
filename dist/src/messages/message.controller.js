@@ -29,6 +29,7 @@ let MessageController = class MessageController {
         this.userService = userService;
     }
     async getMessages(request, query) {
+        let filtered;
         let table = query.menu ? query.menu : "inbox";
         let formatted_response;
         const cookie = request.cookies["jwt"];
@@ -38,15 +39,11 @@ let MessageController = class MessageController {
             const user_data = await this
                 .jwtService
                 .verifyAsync(cookie);
-            let filtered;
             if ((0, message_common_1.isValidMenuTables)(table)) {
-                if (table === "inbox") {
+                if (table === "inbox")
                     filtered = { "recipient_id": user_data.id };
-                    filtered["recipient_id"];
-                }
-                else {
+                else
                     filtered = { "sender_id": user_data.id };
-                }
             }
             else {
                 filtered = { "menu_state": query.menu === "starred" ?
@@ -55,14 +52,13 @@ let MessageController = class MessageController {
                 };
                 table = "inbox";
             }
-            const to_query = {
+            formatted_response = await this
+                .messageService
+                .getMessages({
                 filtered,
                 table,
                 id: user_data.id
-            };
-            formatted_response = await this
-                .messageService
-                .getMessages(to_query)
+            })
                 .then(result => {
                 return (0, common_functions_1.formatResponse)([result], true, "Success");
             })
@@ -94,7 +90,15 @@ let MessageController = class MessageController {
             if (param.menu === "inbox") {
                 response = await this.updateReadUnread(response.id)
                     .then(result => {
-                    return (0, common_functions_1.formatResponse)([result], true, "Success");
+                    return (0, common_functions_1.formatResponse)([{
+                            recipient: result.recipient,
+                            recipient_id: result.recipient_id,
+                            sender: result.sender,
+                            sender_id: result.sender_id,
+                            subject: result.subject,
+                            message: result.message,
+                            message_origin_id: result.message_origin_id
+                        }], true, "Success");
                 })
                     .catch(error => {
                     return (0, common_functions_1.formatResponse)([error], false, "Failed");
@@ -107,7 +111,7 @@ let MessageController = class MessageController {
     }
     async sendMessage(request, message) {
         let formatted_response;
-        let is_exist = message.id ? true : false;
+        const drafted_message = message === null || message === void 0 ? void 0 : message.drafted;
         const cookie = request.cookies["jwt"];
         if (!cookie)
             throw new common_1.ForbiddenException;
@@ -120,8 +124,7 @@ let MessageController = class MessageController {
         }
         else {
             recipient_data = recipient_data.next()._settledValue;
-            if (!is_exist)
-                message.created_date = String(Date.now());
+            message.created_date = String(Date.now());
             message.updated_date = String(Date.now());
             message.recipient_id = recipient_data.id;
             message.menu_state = 0;
@@ -129,6 +132,7 @@ let MessageController = class MessageController {
             message.sender_id = sender_data.id;
             message.message_origin_id = "";
             message.read = false;
+            message.drafted = false;
             formatted_response = await this
                 .messageService
                 .sendMessage("inbox", message)
@@ -149,7 +153,7 @@ let MessageController = class MessageController {
                     return (0, common_functions_1.formatResponse)([error], false, "Failed");
                 });
             }
-            if (is_exist) {
+            if (drafted_message) {
                 let response = await this
                     .messageService
                     .deleteMessage("drafts", message.id)
@@ -175,6 +179,7 @@ let MessageController = class MessageController {
         message.updated_date = String(Date.now());
         message.sender = sender_data.email;
         message.sender_id = sender_data.id;
+        message.drafted = true;
         let response = await this
             .messageService
             .sendMessage("drafts", message)
@@ -229,7 +234,7 @@ let MessageController = class MessageController {
             .insertLogs((0, common_functions_1.formatLogs)("deleteMessage", { param, query }, response));
         return response;
     }
-    async replyToMessage(request, param, message) {
+    async replyToMessage(request, query, message) {
         let formatted_response;
         const cookie = request.cookies["jwt"];
         if (!cookie)
@@ -237,7 +242,7 @@ let MessageController = class MessageController {
         const reply_recipient = message.sender;
         const reply_recipient_id = message.sender_id;
         if (!message.message_origin_id) {
-            message.message_origin_id = param.message_id;
+            message.message_origin_id = query.message_id;
             message.subject = `RE: ${message.subject}`;
         }
         message.sender = message.recipient;
@@ -247,6 +252,7 @@ let MessageController = class MessageController {
         message.created_date = String(Date.now());
         message.updated_date = String(Date.now());
         message.read = false;
+        message.drafted = false;
         message.menu_state = 0;
         formatted_response = await this
             .messageService
@@ -370,9 +376,9 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "deleteMessage", null);
 __decorate([
-    (0, common_1.Post)("inbox/reply/:message_id"),
+    (0, common_1.Post)("inbox/reply"),
     __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Param)()),
+    __param(1, (0, common_1.Query)()),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Object, message_entity_1.default]),

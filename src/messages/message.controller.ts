@@ -23,6 +23,7 @@ import {
     Menu,
     isValidMenuTables
 } from "./message.common";
+import { IReplyMessageFormat } from "./message.interface";
 
 @Controller("messages")
 export class MessageController {
@@ -36,33 +37,28 @@ export class MessageController {
     async getMessages(@Req() request: Request,
         @Query() query): Promise<IResponseFormat | any> {
 
+            let filtered: {};
             let table = query.menu ? query.menu : "inbox";
             let formatted_response: IResponseFormat;
             const cookie = request.cookies["jwt"];
-
+            
             // If not logged-in, forbid access
             if (!cookie)
                 throw new ForbiddenException;
 
             if (isValidMenu(table)) {
-
                 // Get cookie data
                 const user_data = await 
                     this
                     .jwtService
                     .verifyAsync(cookie);
-                let filtered: {};
 
                 if (isValidMenuTables(table)) {
-                    
                     // Get the id to filter
-                    if (table === "inbox") {
+                    if (table === "inbox")
                         filtered = {"recipient_id": user_data.id}
-                        filtered["recipient_id"]
-                    } else {
+                    else 
                         filtered = {"sender_id": user_data.id}
-                    }
-
                 } else {
                     filtered = {"menu_state": query.menu === "starred" ?
                         Menu.starred : Menu.important,
@@ -71,16 +67,13 @@ export class MessageController {
                     table = "inbox";
                 }
 
-                // compose data to send as arguement
-                const to_query = {
-                    filtered,
-                    table,
-                    id: user_data.id
-                }
-
                 formatted_response = await this
                     .messageService
-                    .getMessages(to_query)
+                    .getMessages({
+                        filtered,
+                        table,
+                        id: user_data.id
+                    })
                         .then( result => {
                             return formatResponse(
                                     [result], true, "Success"
@@ -107,6 +100,9 @@ export class MessageController {
             return formatted_response;
     }
 
+    // http://localhost:3000/api/messages/inbox/details/:message_id
+    // OR 
+    // http://localhost:3000/api/messages/inbox/reply/:message_id
     @Get(":menu/:action/:message_id")
     async getMessageDetails(@Req() request: Request,
         @Param() param): Promise<IResponseFormat> {
@@ -126,14 +122,27 @@ export class MessageController {
                     response = await this.updateReadUnread(response.id)
                         .then( result => {
                             return formatResponse(
-                                    [result], true, "Success"
-                                )
+                                [{
+                                    recipient: result.recipient,
+                                    recipient_id: result.recipient_id,
+                                    sender: result.sender,
+                                    sender_id: result.sender_id,
+                                    subject: result.subject,
+                                    message: result.message,
+                                    message_origin_id: 
+                                        result.message_origin_id
+                                }],
+                                true,
+                                "Success"
+                            )
                         })
                         .catch( error => {
                             return formatResponse(
                                     [error], false, "Failed"
                                 )
                         })
+                    
+                    
                 }     
             } 
             
@@ -150,8 +159,9 @@ export class MessageController {
         @Body() message: Message): Promise<IResponseFormat> {
             
             let formatted_response: any;
-            let is_exist = message.id ? true : false;
+            const drafted_message = message?.drafted;
             const cookie = request.cookies["jwt"];
+
             if (!cookie)
                 throw new ForbiddenException;
 
@@ -173,10 +183,8 @@ export class MessageController {
             } else {
                 recipient_data = recipient_data.next()._settledValue;
 
-                // construct message data
-                if (!is_exist) 
-                    message.created_date = String(Date.now());
-                
+                // add data to construct message
+                message.created_date = String(Date.now());
                 message.updated_date = String(Date.now()); 
                 message.recipient_id = recipient_data.id;
                 message.menu_state = 0;
@@ -184,6 +192,7 @@ export class MessageController {
                 message.sender_id = sender_data.id;
                 message.message_origin_id = "";
                 message.read = false;
+                message.drafted = false;
             
                 // Insert data to recipient's INBOX
                 formatted_response =  await this
@@ -220,7 +229,7 @@ export class MessageController {
 
                 // Check if message already exists or new
                 // If exists, delete in drafts after sending
-                if (is_exist) {
+                if (drafted_message) {
                     let response =  await 
                         this
                         .messageService
@@ -246,7 +255,7 @@ export class MessageController {
                 )
             )
             
-            return formatted_response;
+        return formatted_response;
     }
 
     @Post("save-as-draft")
@@ -265,6 +274,7 @@ export class MessageController {
             message.updated_date = String(Date.now());
             message.sender = sender_data.email;
             message.sender_id = sender_data.id;
+            message.drafted = true;
             
             let response =  await this
                 .messageService
@@ -362,9 +372,10 @@ export class MessageController {
             return response;
     }
 
-    @Post("inbox/reply/:message_id")
+    // http://localhost:3000/api/messages/inbox/reply?message_id=
+    @Post("inbox/reply")
     async replyToMessage(@Req() request: Request,
-        @Param() param,
+        @Query() query,
         @Body() message: Message): Promise<IResponseFormat> {
 
             let formatted_response: IResponseFormat;
@@ -377,7 +388,7 @@ export class MessageController {
 
             // Set message details
             if (!message.message_origin_id) {
-                message.message_origin_id = param.message_id;
+                message.message_origin_id = query.message_id;
                 message.subject = `RE: ${message.subject}`;
             }
 
@@ -388,9 +399,10 @@ export class MessageController {
             message.created_date = String(Date.now());
             message.updated_date = String(Date.now());
             message.read = false;
+            message.drafted = false;
             message.menu_state = 0;
 
-            // Send reply to sender's INBOX
+            // Send message to recipient's INBOX
             formatted_response = await this
                 .messageService
                 .sendMessage("inbox", message)
