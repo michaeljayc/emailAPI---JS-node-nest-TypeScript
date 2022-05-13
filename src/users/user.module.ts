@@ -9,7 +9,7 @@ import { JwtModule } from "@nestjs/jwt";
 import { AuthModule } from "src/auth/auth.module";
 import { AuthService } from "src/auth/auth.service"
 import { APP_GUARD } from "@nestjs/core";
-import { RolesGuard } from "src/auth/roles.guard";
+import { RolesGuard } from "src/guards/roles.guard";
 @Module({
     imports: [RethinkModule, 
         UserRoleModule,

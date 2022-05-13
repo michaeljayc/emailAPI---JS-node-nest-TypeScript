@@ -33,8 +33,9 @@ let MessageController = class MessageController {
         let table = query.menu ? query.menu : "inbox";
         let formatted_response;
         const cookie = request.cookies["jwt"];
-        if (!cookie)
-            throw new common_1.ForbiddenException;
+        if (!cookie) {
+            throw new common_1.ForbiddenException();
+        }
         if ((0, message_common_1.isValidMenu)(table)) {
             const user_data = await this
                 .jwtService
@@ -67,10 +68,7 @@ let MessageController = class MessageController {
             });
         }
         else {
-            return {
-                statusCode: "404",
-                message: `Invalid menu - (${table})`
-            };
+            throw new common_1.NotFoundException();
         }
         this
             .loggerService
@@ -80,12 +78,12 @@ let MessageController = class MessageController {
     async getMessageDetails(request, param) {
         const cookie = request.cookies["jwt"];
         if (!cookie)
-            throw new common_1.ForbiddenException;
+            throw new common_1.ForbiddenException();
         let response = await this
             .messageService
             .getMessageDetails(param.menu, param.message_id);
         if (!response)
-            response = (0, common_functions_1.formatResponse)([], false, "Message does not exist.");
+            throw new common_1.NotFoundException();
         else {
             if (param.menu === "inbox") {
                 response = await this.updateReadUnread(response.id)
@@ -105,7 +103,8 @@ let MessageController = class MessageController {
                 });
             }
         }
-        this.loggerService
+        this
+            .loggerService
             .insertLogs((0, common_functions_1.formatLogs)("getMessageDetails", param, response));
         return response;
     }
@@ -114,7 +113,7 @@ let MessageController = class MessageController {
         const drafted_message = message === null || message === void 0 ? void 0 : message.drafted;
         const cookie = request.cookies["jwt"];
         if (!cookie)
-            throw new common_1.ForbiddenException;
+            throw new common_1.ForbiddenException();
         let sender_data = await this.jwtService.verifyAsync(cookie);
         let recipient_data = await this
             .userService
@@ -173,7 +172,7 @@ let MessageController = class MessageController {
     async saveAsDraft(request, message) {
         const cookie = request.cookies["jwt"];
         if (!cookie)
-            throw new common_1.ForbiddenException;
+            throw new common_1.ForbiddenException();
         let sender_data = await this.jwtService.verifyAsync(cookie);
         message.created_date = String(Date.now());
         message.updated_date = String(Date.now());
@@ -189,7 +188,9 @@ let MessageController = class MessageController {
             .catch(error => {
             return (0, common_functions_1.formatResponse)([message], false, "Failed");
         });
-        this.loggerService.insertLogs((0, common_functions_1.formatLogs)("saveAsDraft", message, response));
+        this
+            .loggerService
+            .insertLogs((0, common_functions_1.formatLogs)("saveAsDraft", message, response));
         return response;
     }
     async updateDraftedMessage(request, message, query) {
@@ -197,7 +198,7 @@ let MessageController = class MessageController {
         let formatted_response;
         const cookie = request.cookies["jwt"];
         if (!cookie)
-            throw new common_1.ForbiddenException;
+            throw new common_1.ForbiddenException();
         message.updated_date = String(Date.now());
         let response = await this
             .messageService
@@ -206,7 +207,8 @@ let MessageController = class MessageController {
             formatted_response = (0, common_functions_1.formatResponse)([response], true, "Message updated.");
         else
             formatted_response = (0, common_functions_1.formatResponse)([response], false, "Failed to update message.");
-        this.loggerService
+        this
+            .loggerService
             .insertLogs((0, common_functions_1.formatLogs)("updateMessage", response, formatted_response));
         return formatted_response;
     }
@@ -215,7 +217,7 @@ let MessageController = class MessageController {
         const message_id = query.id;
         const cookie = request.cookies["jwt"];
         if (!cookie)
-            throw new common_1.ForbiddenException;
+            throw new common_1.ForbiddenException();
         let response = await this
             .messageService
             .deleteMessage(table, message_id)
@@ -230,7 +232,8 @@ let MessageController = class MessageController {
             .catch(error => {
             return (0, common_functions_1.formatResponse)([error], true, "Failed.");
         });
-        this.loggerService
+        this
+            .loggerService
             .insertLogs((0, common_functions_1.formatLogs)("deleteMessage", { param, query }, response));
         return response;
     }
@@ -238,7 +241,7 @@ let MessageController = class MessageController {
         let formatted_response;
         const cookie = request.cookies["jwt"];
         if (!cookie)
-            throw new common_1.ForbiddenException;
+            throw new common_1.ForbiddenException();
         const reply_recipient = message.sender;
         const reply_recipient_id = message.sender_id;
         if (!message.message_origin_id) {

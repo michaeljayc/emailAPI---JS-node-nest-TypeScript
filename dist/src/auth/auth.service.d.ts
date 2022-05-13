@@ -5,3 +5,4 @@ export declare class AuthService {
     ecnryptPassword(password: string): Promise<string>;
     comparePassword(newPassword: string, passwordHash: string): Promise<any>;
 }
+export default AuthService;

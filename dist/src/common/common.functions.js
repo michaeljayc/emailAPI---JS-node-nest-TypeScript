@@ -1,18 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.formatLogs = exports.formatResponse = exports.setDateTime = void 0;
+exports.hidePasswordProperty = exports.formatLogs = exports.formatResponse = exports.setDateTime = void 0;
 const DATE = new Date;
 const setDateTime = () => DATE.toLocaleDateString() + ' - ' + DATE.toLocaleTimeString();
 exports.setDateTime = setDateTime;
 const formatResponse = (data, isSuccessful, status) => {
-    let truncated_data = data !== null && data !== void 0 ? data : null;
+    var _a;
+    let truncated_data = data !== null && data !== void 0 ? data : [];
     if (!truncated_data) {
         truncated_data.forEach(value => {
-            delete value.password;
+            return value;
         });
     }
     return {
-        count: Object.keys(data).length,
+        count: (_a = truncated_data.length) !== null && _a !== void 0 ? _a : 1,
         success: (isSuccessful) ? isSuccessful : false,
         message: (status) ? status : "Failed",
         datas: truncated_data
@@ -28,4 +29,8 @@ const formatLogs = (func_name, data, response) => ({
     response: response
 });
 exports.formatLogs = formatLogs;
+const hidePasswordProperty = (user_data) => {
+    console.log(user_data);
+};
+exports.hidePasswordProperty = hidePasswordProperty;
 //# sourceMappingURL=common.functions.js.map

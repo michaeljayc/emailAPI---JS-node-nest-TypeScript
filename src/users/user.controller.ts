@@ -1,4 +1,5 @@
 import { 
+    BadRequestException,
     Body,
     Controller, 
     Delete, 
@@ -7,6 +8,7 @@ import {
     HttpException, 
     HttpStatus, 
     Logger, 
+    NotFoundException, 
     Param, 
     Post, 
     Put, 
@@ -22,7 +24,12 @@ import { AuthService } from "src/auth/auth.service";
 import { User } from "./user.entity";
 import { IResponseFormat } from "src/common/common.interface";
 import { TLoginCredentials } from "./user.types";
-import { formatResponse, formatLogs, setDateTime } from "src/common/common.functions";
+import { 
+    formatResponse, 
+    formatLogs, 
+    setDateTime, 
+    hidePasswordProperty
+} from "src/common/common.functions";
 import { 
     userEmailDoesNotExist, 
     incorrectUserPassword 
@@ -30,9 +37,7 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import { Response, Request } from "express";
 import { Role } from "src/user_roles/role.enum";
-import { Roles } from "src/user_roles/role.decorator";
-import { LoggingInterceptor } from "src/Services/logging.interceptor";
-import { HttpExceptionFilter } from "src/Services/http-exception.filter";
+import { RoleGuard } from "src/user_roles/role.decorator";
 
 const DATE = new Date;
 
@@ -49,11 +54,9 @@ export class UserController {
     async registerUser(@Body() user:User)
         : Promise<IResponseFormat |  any> {
         
-        if (!user) 
-            return {
-                success: false,
-                message: "Fields are empty"
-            }
+        if (Object.keys(user)) {
+            throw new BadRequestException()
+        }
 
         // Set create  and update datetime
         user.created_date = setDateTime();
@@ -82,7 +85,7 @@ export class UserController {
         .insertLogs(formatLogs(
                 "registerUser", user, response
                 )
-        );
+            );
 
         return response;
     }
@@ -92,30 +95,27 @@ export class UserController {
         @Body() credentials: TLoginCredentials,
         @Res({passthrough: true}) response: Response)
         : Promise<IResponseFormat | any> {
-        
-            if (!credentials)
-                return {
-                    success: false,
-                    message: "Fields are empty"
-                }
+
+            if (Object.keys(credentials).length < 1)
+               throw new BadRequestException();
 
             let user_data: any;
             let response_data: any = await 
                 this
                 .userService
                 .getUserByEmail(credentials.email);
-            if (Object.keys(response_data._responses).length === 0) {
-                return response_data = 
-                    userEmailDoesNotExist(credentials.email);
-            }
+            
+            // If Username doesn't match any, throw NotFoundException
+            if (Object.keys(response_data._responses).length === 0)
+                throw new NotFoundException()
 
             user_data = response_data.next()._settledValue;
+
+            // If Password doesn't match, throw NotFoundException
             if (! await this.authService.comparePassword(
                 credentials.password, 
-                user_data.password)) {
-
-                    return response_data = incorrectUserPassword();
-            }
+                user_data.password)) 
+                    throw new NotFoundException()
 
             // Data store in the cookie
             const jwt = await this.jwtService.signAsync(
@@ -125,10 +125,11 @@ export class UserController {
                     email: user_data.email
                 }
             )
-
+            
             response_data = formatResponse(
                     [user_data], true, "Login Successful."
                 );
+
             this
             .loggerService
             .insertLogs(formatLogs(
@@ -140,7 +141,6 @@ export class UserController {
             return response_data;
     }
 
-    @UseInterceptors(new LoggingInterceptor())
     @Get("user")
     async getUser(@Req() request: Request)
         : Promise<IResponseFormat> {
@@ -168,14 +168,13 @@ export class UserController {
     }
 
     @Get("users")
-    //@UseFilters(new HttpExceptionFilter())
-    @Roles(Role.Admin)
+    @RoleGuard(Role.Admin)
     async getAllUsers(): Promise<IResponseFormat> {
         let response: any = await this.userService.getAllUsers()
             .then( result => {
                 return result
             })
-  
+            
         response = formatResponse(
                 response,true,"Success"
             )
@@ -191,7 +190,7 @@ export class UserController {
     }
 
     @Get("edit/:username")
-    @Roles(Role.Admin)
+    @RoleGuard(Role.Admin)
     async editUser(@Req() request:Request,
         @Param() param): Promise<IResponseFormat> {
         
@@ -235,7 +234,7 @@ export class UserController {
     }
 
     @Put("update")
-    @Roles(Role.Admin)
+    @RoleGuard(Role.Admin)
     async updateUser(@Body() user: User,
         @Req() request: Request): Promise<IResponseFormat> {
 
@@ -263,7 +262,7 @@ export class UserController {
     }
 
     @Delete("delete")
-    @Roles(Role.Admin)
+    @RoleGuard(Role.Admin)
     async deleteUser(@Query() query): Promise<IResponseFormat> {
             
             let formatted_response: IResponseFormat;

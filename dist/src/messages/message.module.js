@@ -11,6 +11,8 @@ const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const database_provider_1 = require("../../rethinkdb/database.provider");
 const rethink_module_1 = require("../../rethinkdb/rethink.module");
+const auth_module_1 = require("../auth/auth.module");
+const auth_service_1 = require("../auth/auth.service");
 const logger_service_1 = require("../Services/logger.service");
 const user_service_1 = require("../users/user.service");
 const message_controller_1 = require("./message.controller");
@@ -23,12 +25,14 @@ MessageModule = __decorate([
             jwt_1.JwtModule.register({
                 secret: "secret",
                 signOptions: { expiresIn: '1d' }
-            })],
+            }),
+            auth_module_1.AuthModule],
         controllers: [message_controller_1.default],
         providers: [message_service_1.default,
             database_provider_1.default,
             logger_service_1.default,
-            user_service_1.UserService],
+            user_service_1.UserService,
+            auth_service_1.default],
     })
 ], MessageModule);
 exports.MessageModule = MessageModule;

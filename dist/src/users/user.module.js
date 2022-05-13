@@ -18,7 +18,7 @@ const jwt_1 = require("@nestjs/jwt");
 const auth_module_1 = require("../auth/auth.module");
 const auth_service_1 = require("../auth/auth.service");
 const core_1 = require("@nestjs/core");
-const roles_guard_1 = require("../auth/roles.guard");
+const roles_guard_1 = require("../guards/roles.guard");
 let UserModule = class UserModule {
 };
 UserModule = __decorate([

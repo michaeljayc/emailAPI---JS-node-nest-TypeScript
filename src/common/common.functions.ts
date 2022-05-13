@@ -11,16 +11,16 @@ export const formatResponse = (data?: any,
     status?: string)
     : IResponseFormat => {
         
-        let truncated_data = data ?? null;
+        let truncated_data = data ?? [];
 
         if (!truncated_data) {
             truncated_data.forEach( value => {
-                delete value.password;
-            })        
+                return value;
+            })
         }
 
         return {
-            count: Object.keys(data).length,
+            count: truncated_data.length ?? 1,
             success: (isSuccessful) ? isSuccessful : false,
             message: (status) ? status : "Failed",
             datas: truncated_data
@@ -40,3 +40,7 @@ export const formatLogs = (
         },
         response: response
 })
+
+export const hidePasswordProperty = (user_data: any) => {
+    console.log(user_data)
+}

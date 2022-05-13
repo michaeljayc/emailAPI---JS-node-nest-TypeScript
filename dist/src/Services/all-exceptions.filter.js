@@ -6,24 +6,16 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.HttpExceptionFilter = void 0;
+exports.AllExceptionsFilter = void 0;
 const common_1 = require("@nestjs/common");
-let HttpExceptionFilter = class HttpExceptionFilter {
+const core_1 = require("@nestjs/core");
+let AllExceptionsFilter = class AllExceptionsFilter extends core_1.BaseExceptionFilter {
     catch(exception, host) {
-        const ctx = host.switchToHttp();
-        const response = ctx.getResponse();
-        const request = ctx.getRequest();
-        response
-            .json({
-            statusCode: exception.getStatus(),
-            message: exception.message,
-            timestamp: new Date().toISOString(),
-            path: request.url,
-        });
+        super.catch(exception, host);
     }
 };
-HttpExceptionFilter = __decorate([
-    (0, common_1.Catch)(common_1.HttpException)
-], HttpExceptionFilter);
-exports.HttpExceptionFilter = HttpExceptionFilter;
-//# sourceMappingURL=http-exception.filter.js.map
+AllExceptionsFilter = __decorate([
+    (0, common_1.Catch)()
+], AllExceptionsFilter);
+exports.AllExceptionsFilter = AllExceptionsFilter;
+//# sourceMappingURL=all-exceptions.filter.js.map

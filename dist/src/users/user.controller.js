@@ -31,11 +31,9 @@ const logger_service_1 = require("../Services/logger.service");
 const auth_service_1 = require("../auth/auth.service");
 const user_entity_1 = require("./user.entity");
 const common_functions_1 = require("../common/common.functions");
-const user_errors_1 = require("./user.errors");
 const jwt_1 = require("@nestjs/jwt");
 const role_enum_1 = require("../user_roles/role.enum");
 const role_decorator_1 = require("../user_roles/role.decorator");
-const logging_interceptor_1 = require("../Services/logging.interceptor");
 const DATE = new Date;
 let UserController = UserController_1 = class UserController {
     constructor(userService, loggerService, authService, jwtService) {
@@ -46,11 +44,9 @@ let UserController = UserController_1 = class UserController {
         this.logger = new common_1.Logger(UserController_1.name);
     }
     async registerUser(user) {
-        if (!user)
-            return {
-                success: false,
-                message: "Fields are empty"
-            };
+        if (Object.keys(user)) {
+            throw new common_1.BadRequestException();
+        }
         user.created_date = (0, common_functions_1.setDateTime)();
         user.updated_date = (0, common_functions_1.setDateTime)();
         user.password = await this
@@ -70,23 +66,17 @@ let UserController = UserController_1 = class UserController {
         return response;
     }
     async loginUser(credentials, response) {
-        if (!credentials)
-            return {
-                success: false,
-                message: "Fields are empty"
-            };
+        if (Object.keys(credentials).length < 1)
+            throw new common_1.BadRequestException();
         let user_data;
         let response_data = await this
             .userService
             .getUserByEmail(credentials.email);
-        if (Object.keys(response_data._responses).length === 0) {
-            return response_data =
-                (0, user_errors_1.userEmailDoesNotExist)(credentials.email);
-        }
+        if (Object.keys(response_data._responses).length === 0)
+            throw new common_1.NotFoundException();
         user_data = response_data.next()._settledValue;
-        if (!await this.authService.comparePassword(credentials.password, user_data.password)) {
-            return response_data = (0, user_errors_1.incorrectUserPassword)();
-        }
+        if (!await this.authService.comparePassword(credentials.password, user_data.password))
+            throw new common_1.NotFoundException();
         const jwt = await this.jwtService.signAsync({
             id: user_data.id,
             username: user_data.username,
@@ -197,7 +187,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "loginUser", null);
 __decorate([
-    (0, common_1.UseInterceptors)(new logging_interceptor_1.LoggingInterceptor()),
     (0, common_1.Get)("user"),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
@@ -206,14 +195,14 @@ __decorate([
 ], UserController.prototype, "getUser", null);
 __decorate([
     (0, common_1.Get)("users"),
-    (0, role_decorator_1.Roles)(role_enum_1.Role.Admin),
+    (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "getAllUsers", null);
 __decorate([
     (0, common_1.Get)("edit/:username"),
-    (0, role_decorator_1.Roles)(role_enum_1.Role.Admin),
+    (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)()),
     __metadata("design:type", Function),
@@ -222,7 +211,7 @@ __decorate([
 ], UserController.prototype, "editUser", null);
 __decorate([
     (0, common_1.Put)("update"),
-    (0, role_decorator_1.Roles)(role_enum_1.Role.Admin),
+    (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
@@ -231,7 +220,7 @@ __decorate([
 ], UserController.prototype, "updateUser", null);
 __decorate([
     (0, common_1.Delete)("delete"),
-    (0, role_decorator_1.Roles)(role_enum_1.Role.Admin),
+    (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),

@@ -4,11 +4,12 @@ import {
     Delete, 
     ForbiddenException, 
     Get, 
+    NotFoundException, 
     Param, 
     Post, 
     Put, 
     Query, 
-    Req 
+    Req, 
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { IResponseFormat } from "../common/common.interface";
@@ -23,7 +24,6 @@ import {
     Menu,
     isValidMenuTables
 } from "./message.common";
-import { IReplyMessageFormat } from "./message.interface";
 
 @Controller("messages")
 export class MessageController {
@@ -41,10 +41,11 @@ export class MessageController {
             let table = query.menu ? query.menu : "inbox";
             let formatted_response: IResponseFormat;
             const cookie = request.cookies["jwt"];
-            
+
             // If not logged-in, forbid access
-            if (!cookie)
-                throw new ForbiddenException;
+            if (!cookie) {
+                throw new ForbiddenException()
+            }
 
             if (isValidMenu(table)) {
                 // Get cookie data
@@ -85,10 +86,7 @@ export class MessageController {
                                 );
                         })
             } else {
-                return { 
-                    statusCode: "404",
-                    message: `Invalid menu - (${table})`
-                }
+                throw new NotFoundException()
             }
 
             this
@@ -109,13 +107,13 @@ export class MessageController {
 
             const cookie = request.cookies["jwt"];
             if (!cookie)
-                throw new ForbiddenException;
+                throw new ForbiddenException();
             
             let response = await this
                 .messageService
                 .getMessageDetails(param.menu, param.message_id)
             if (!response) 
-                response = formatResponse([], false, "Message does not exist.");
+                throw new NotFoundException()
             
             else {
                 if (param.menu === "inbox") {        
@@ -146,10 +144,13 @@ export class MessageController {
                 }     
             } 
             
-            this.loggerService
-                .insertLogs(formatLogs("getMessageDetails",
+            this
+            .loggerService
+            .insertLogs(formatLogs("getMessageDetails",
                         param,
-                        response))
+                        response
+                    )
+                )
 
             return response;
     }
@@ -163,7 +164,7 @@ export class MessageController {
             const cookie = request.cookies["jwt"];
 
             if (!cookie)
-                throw new ForbiddenException;
+                throw new ForbiddenException();
 
             // Retrieve sender data
             let sender_data = await this.jwtService.verifyAsync(cookie);
@@ -251,9 +252,9 @@ export class MessageController {
             this
             .loggerService
             .insertLogs(formatLogs(
-                    "sendMessage", message, formatted_response
+                        "sendMessage", message, formatted_response
+                    )
                 )
-            )
             
         return formatted_response;
     }
@@ -264,7 +265,7 @@ export class MessageController {
             
             const cookie = request.cookies["jwt"];
             if (!cookie)
-                throw new ForbiddenException;
+                throw new ForbiddenException();
 
             // Retrieve sender data
             let sender_data = await this.jwtService.verifyAsync(cookie);
@@ -291,8 +292,13 @@ export class MessageController {
                     })
             
             
-            this.loggerService.insertLogs
-                (formatLogs("saveAsDraft", message, response))
+            this
+            .loggerService
+            .insertLogs(formatLogs(
+                        "saveAsDraft", message, response
+                    )
+                )
+
             return response;
     }
 
@@ -305,7 +311,7 @@ export class MessageController {
             let formatted_response: IResponseFormat;
             const cookie = request.cookies["jwt"];
             if (!cookie)
-                throw new ForbiddenException;
+                throw new ForbiddenException();
 
             message.updated_date = String(Date.now())    
             
@@ -322,8 +328,9 @@ export class MessageController {
                     [response], false, "Failed to update message."
                 )
             
-            this.loggerService
-                .insertLogs(formatLogs(
+            this
+            .loggerService
+            .insertLogs(formatLogs(
                     "updateMessage",response,formatted_response
                     )
                 )
@@ -341,7 +348,7 @@ export class MessageController {
 
             const cookie = request.cookies["jwt"];
             if (!cookie)
-                throw new ForbiddenException;
+                throw new ForbiddenException();
 
             let response = await this
                 .messageService
@@ -363,8 +370,9 @@ export class MessageController {
                         )
                     })
             
-            this.loggerService
-                .insertLogs(formatLogs(
+            this
+            .loggerService
+            .insertLogs(formatLogs(
                         "deleteMessage", {param,query}, response
                     )
                 )
@@ -381,7 +389,7 @@ export class MessageController {
             let formatted_response: IResponseFormat;
             const cookie = request.cookies["jwt"];
             if (!cookie) 
-                throw new ForbiddenException;
+                throw new ForbiddenException();
             
             const reply_recipient = message.sender;
             const reply_recipient_id = message.sender_id;
