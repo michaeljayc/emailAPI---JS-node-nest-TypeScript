@@ -3,7 +3,7 @@ import { IResponseFormat } from "../common/common.interface";
 import Message from "./message.entity";
 import { Request } from "express";
 import MessageService from "./message.service";
-import LoggerService from "src/Services/logger.service";
+import LoggerService from "src/services/logger.service";
 import { UserService } from "src/users/user.service";
 export declare class MessageController {
     private readonly messageService;

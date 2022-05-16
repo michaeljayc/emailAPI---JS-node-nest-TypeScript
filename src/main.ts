@@ -2,8 +2,8 @@ import { NestApplicationOptions } from '@nestjs/common';
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
-import { HttpExceptionFilter } from './Services/http-exception.filter';
-import { LoggingInterceptor } from './Services/logging.interceptor';
+import { HttpExceptionFilter } from './filters/http-exception.filter';
+import { LoggingInterceptor } from './interceptors/logging.interceptor';
 
 async function bootstrap() {
   const opts: NestApplicationOptions = {};

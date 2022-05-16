@@ -17,7 +17,7 @@ const config_1 = require("@nestjs/config");
 const auth_module_1 = require("./auth/auth.module");
 const message_module_1 = require("./messages/message.module");
 const core_1 = require("@nestjs/core");
-const http_exception_filter_1 = require("./Services/http-exception.filter");
+const http_exception_filter_1 = require("./filters/http-exception.filter");
 let AppModule = class AppModule {
 };
 AppModule = __decorate([

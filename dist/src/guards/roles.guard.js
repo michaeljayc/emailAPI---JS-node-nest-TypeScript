@@ -31,18 +31,25 @@ let RolesGuard = class RolesGuard {
         if (!requiredRole) {
             return true;
         }
+        let formatted_response;
         const data = context.switchToHttp().getRequest();
-        if (!data.cookies.jwt)
-            throw new common_1.ForbiddenException;
-        let user_data = await this
-            .jwtService
-            .verifyAsync(data.cookies.jwt);
-        let user = await this
-            .authService
-            .getUserData(user_data.email);
-        if (Object.keys(user._responses).length !== 0)
-            user = user.next()._settledValue;
-        return requiredRole === user.role_type_id;
+        try {
+            let user_data = await this
+                .jwtService
+                .verifyAsync(data.cookies.jwt);
+            let user = await this
+                .authService
+                .getUserData(user_data.email);
+            if (Object.keys(user._responses).length !== 0)
+                user = user.next()._settledValue;
+            if (requiredRole !== user.role_type_id)
+                throw new common_1.UnauthorizedException();
+            else
+                return true;
+        }
+        catch (error) {
+            throw new common_1.HttpException(error, error.statusCode);
+        }
     }
 };
 RolesGuard = __decorate([

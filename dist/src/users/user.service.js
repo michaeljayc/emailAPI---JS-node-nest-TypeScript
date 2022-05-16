@@ -65,11 +65,11 @@ let UserService = class UserService {
         })
             .run(this.connection);
     }
-    async updateUser(user) {
+    async updateUser(user, user_id) {
         return await rethink
             .db(DB)
             .table(TABLE)
-            .get(user.id)
+            .get(user_id)
             .update(user)
             .run(this.connection);
     }

@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core_1 = require("@nestjs/core");
 const cookieParser = require("cookie-parser");
 const app_module_1 = require("./app.module");
-const http_exception_filter_1 = require("./Services/http-exception.filter");
-const logging_interceptor_1 = require("./Services/logging.interceptor");
+const http_exception_filter_1 = require("./filters/http-exception.filter");
+const logging_interceptor_1 = require("./interceptors/logging.interceptor");
 async function bootstrap() {
     const opts = {};
     const app = await core_1.NestFactory.create(app_module_1.AppModule, opts);

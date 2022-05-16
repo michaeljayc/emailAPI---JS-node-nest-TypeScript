@@ -4,7 +4,7 @@ import { UserService } from "./user.service";
 import { Logger, Module } from "@nestjs/common";
 import RethinkProvider from "rethinkdb/database.provider";
 import { UserRoleModule } from "src/user_roles/user_role.module";
-import LoggerService from "src/Services/logger.service";
+import LoggerService from "src/services/logger.service";
 import { JwtModule } from "@nestjs/jwt";
 import { AuthModule } from "src/auth/auth.module";
 import { AuthService } from "src/auth/auth.service"

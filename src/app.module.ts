@@ -8,7 +8,7 @@ import { ConfigModule } from "@nestjs/config"
 import { AuthModule } from './auth/auth.module';
 import { MessageModule } from './messages/message.module';
 import { APP_FILTER } from '@nestjs/core';
-import { HttpExceptionFilter } from './Services/http-exception.filter';
+import { HttpExceptionFilter } from './filters/http-exception.filter';
 
 @Module({
   imports: [

@@ -1,4 +1,5 @@
 import { 
+    BadRequestException,
     Body, 
     Controller, 
     Delete, 
@@ -14,10 +15,10 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import { IResponseFormat } from "../common/common.interface";
 import Message from "./message.entity";
-import { Request } from "express";
+import { Request, response } from "express";
 import MessageService from "./message.service";
 import { formatResponse, formatLogs } from "src/common/common.functions";
-import LoggerService from "src/Services/logger.service";
+import LoggerService from "src/services/logger.service";
 import { UserService } from "src/users/user.service";
 import { 
     isValidMenu, 
@@ -38,61 +39,64 @@ export class MessageController {
         @Query() query): Promise<IResponseFormat | any> {
 
             let filtered: {};
-            let table = query.menu ? query.menu : "inbox";
+            let menu = query.menu ? query.menu : "inbox";
             let formatted_response: IResponseFormat;
-            const cookie = request.cookies["jwt"];
 
-            // If not logged-in, forbid access
-            if (!cookie) {
-                throw new ForbiddenException()
-            }
+            try {
+                const cookie = request.cookies["jwt"];
 
-            if (isValidMenu(table)) {
-                // Get cookie data
-                const user_data = await 
-                    this
-                    .jwtService
-                    .verifyAsync(cookie);
-
-                if (isValidMenuTables(table)) {
-                    // Get the id to filter
-                    if (table === "inbox")
-                        filtered = {"recipient_id": user_data.id}
-                    else 
-                        filtered = {"sender_id": user_data.id}
-                } else {
-                    filtered = {"menu_state": query.menu === "starred" ?
-                        Menu.starred : Menu.important,
-                        "recipient_id": user_data.id
+                if (isValidMenu(menu)) {
+                    // Get cookie data
+                    const user_data = await 
+                        this
+                        .jwtService
+                        .verifyAsync(cookie);
+    
+                    if (isValidMenuTables(menu)) {
+                        // Get the id to filter
+                        if (menu === "inbox")
+                            filtered = {"recipient_id": user_data.id}
+                        else 
+                            filtered = {"sender_id": user_data.id}
+                    } else {
+                        filtered = {"menu_state": query.menu === "starred" ?
+                            Menu.starred : Menu.important,
+                            "recipient_id": user_data.id
+                        }
+                        menu = "inbox";
                     }
-                    table = "inbox";
+                    
+                    let response = await this
+                        .messageService
+                        .getMessages({
+                            filtered,
+                            menu,
+                            id: user_data.id
+                        })
+                    
+                    formatted_response = formatResponse(
+                        response,true,"Success"
+                    );
+                            
+                           
+                } else {
+                    throw new 
+                        BadRequestException(
+                            `Invalid Menu '${menu}'`,
+                            response.statusMessage
+                        ) 
                 }
 
-                formatted_response = await this
-                    .messageService
-                    .getMessages({
-                        filtered,
-                        table,
-                        id: user_data.id
-                    })
-                        .then( result => {
-                            return formatResponse(
-                                    [result], true, "Success"
-                                );
-                        })
-                        .catch( error => {
-                            return formatResponse(
-                                    [error], false, "Failed"
-                                );
-                        })
-            } else {
-                throw new NotFoundException()
+            } catch(error) {
+                formatted_response = formatResponse(
+                    [error], false, error.status
+                )
             }
 
             this
             .loggerService
-            .insertLogs(formatLogs(
-                    "getMessages", query, formatted_response)
+            .insertLogs(formatLogs
+                    ("getMessages", query, formatted_response)
                 )
             
             return formatted_response;
@@ -105,54 +109,38 @@ export class MessageController {
     async getMessageDetails(@Req() request: Request,
         @Param() param): Promise<IResponseFormat> {
 
-            const cookie = request.cookies["jwt"];
-            if (!cookie)
-                throw new ForbiddenException();
-            
-            let response = await this
-                .messageService
-                .getMessageDetails(param.menu, param.message_id)
-            if (!response) 
-                throw new NotFoundException()
-            
-            else {
-                if (param.menu === "inbox") {        
-                    response = await this.updateReadUnread(response.id)
-                        .then( result => {
-                            return formatResponse(
-                                [{
-                                    recipient: result.recipient,
-                                    recipient_id: result.recipient_id,
-                                    sender: result.sender,
-                                    sender_id: result.sender_id,
-                                    subject: result.subject,
-                                    message: result.message,
-                                    message_origin_id: 
-                                        result.message_origin_id
-                                }],
-                                true,
-                                "Success"
-                            )
-                        })
-                        .catch( error => {
-                            return formatResponse(
-                                    [error], false, "Failed"
-                                )
-                        })
-                    
-                    
-                }     
-            } 
+            let formatted_response: IResponseFormat;
+
+            try {
+                // Check if message id exists
+                let response = await this
+                    .messageService
+                    .getMessageDetails(param.menu, param.message_id)
+
+                if (!response)
+                    throw new NotFoundException()
+
+                response = await this.updateReadUnread(response.id)
+                formatted_response = formatResponse(
+                    response,
+                    true,
+                    "Success."
+                )
+            } catch (error) {
+                formatted_response = formatResponse(
+                    [error],
+                    false,
+                    error.status
+                )
+            }
             
             this
             .loggerService
-            .insertLogs(formatLogs("getMessageDetails",
-                        param,
-                        response
-                    )
-                )
+            .insertLogs(formatLogs
+                ("getMessageDetails", param, formatted_response)
+            )
 
-            return response;
+            return formatted_response;
     }
     
     @Post("send")

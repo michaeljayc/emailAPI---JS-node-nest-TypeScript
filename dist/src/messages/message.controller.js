@@ -16,9 +16,10 @@ exports.MessageController = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const message_entity_1 = require("./message.entity");
+const express_1 = require("express");
 const message_service_1 = require("./message.service");
 const common_functions_1 = require("../common/common.functions");
-const logger_service_1 = require("../Services/logger.service");
+const logger_service_1 = require("../services/logger.service");
 const user_service_1 = require("../users/user.service");
 const message_common_1 = require("./message.common");
 let MessageController = class MessageController {
@@ -30,45 +31,42 @@ let MessageController = class MessageController {
     }
     async getMessages(request, query) {
         let filtered;
-        let table = query.menu ? query.menu : "inbox";
+        let menu = query.menu ? query.menu : "inbox";
         let formatted_response;
-        const cookie = request.cookies["jwt"];
-        if (!cookie) {
-            throw new common_1.ForbiddenException();
-        }
-        if ((0, message_common_1.isValidMenu)(table)) {
-            const user_data = await this
-                .jwtService
-                .verifyAsync(cookie);
-            if ((0, message_common_1.isValidMenuTables)(table)) {
-                if (table === "inbox")
-                    filtered = { "recipient_id": user_data.id };
-                else
-                    filtered = { "sender_id": user_data.id };
+        try {
+            const cookie = request.cookies["jwt"];
+            if ((0, message_common_1.isValidMenu)(menu)) {
+                const user_data = await this
+                    .jwtService
+                    .verifyAsync(cookie);
+                if ((0, message_common_1.isValidMenuTables)(menu)) {
+                    if (menu === "inbox")
+                        filtered = { "recipient_id": user_data.id };
+                    else
+                        filtered = { "sender_id": user_data.id };
+                }
+                else {
+                    filtered = { "menu_state": query.menu === "starred" ?
+                            message_common_1.Menu.starred : message_common_1.Menu.important,
+                        "recipient_id": user_data.id
+                    };
+                    menu = "inbox";
+                }
+                let response = await this
+                    .messageService
+                    .getMessages({
+                    filtered,
+                    menu,
+                    id: user_data.id
+                });
+                formatted_response = (0, common_functions_1.formatResponse)(response, true, "Success");
             }
             else {
-                filtered = { "menu_state": query.menu === "starred" ?
-                        message_common_1.Menu.starred : message_common_1.Menu.important,
-                    "recipient_id": user_data.id
-                };
-                table = "inbox";
+                throw new common_1.BadRequestException(`Invalid Menu '${menu}'`, express_1.response.statusMessage);
             }
-            formatted_response = await this
-                .messageService
-                .getMessages({
-                filtered,
-                table,
-                id: user_data.id
-            })
-                .then(result => {
-                return (0, common_functions_1.formatResponse)([result], true, "Success");
-            })
-                .catch(error => {
-                return (0, common_functions_1.formatResponse)([error], false, "Failed");
-            });
         }
-        else {
-            throw new common_1.NotFoundException();
+        catch (error) {
+            formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
         }
         this
             .loggerService
@@ -76,37 +74,23 @@ let MessageController = class MessageController {
         return formatted_response;
     }
     async getMessageDetails(request, param) {
-        const cookie = request.cookies["jwt"];
-        if (!cookie)
-            throw new common_1.ForbiddenException();
-        let response = await this
-            .messageService
-            .getMessageDetails(param.menu, param.message_id);
-        if (!response)
-            throw new common_1.NotFoundException();
-        else {
-            if (param.menu === "inbox") {
-                response = await this.updateReadUnread(response.id)
-                    .then(result => {
-                    return (0, common_functions_1.formatResponse)([{
-                            recipient: result.recipient,
-                            recipient_id: result.recipient_id,
-                            sender: result.sender,
-                            sender_id: result.sender_id,
-                            subject: result.subject,
-                            message: result.message,
-                            message_origin_id: result.message_origin_id
-                        }], true, "Success");
-                })
-                    .catch(error => {
-                    return (0, common_functions_1.formatResponse)([error], false, "Failed");
-                });
-            }
+        let formatted_response;
+        try {
+            let response = await this
+                .messageService
+                .getMessageDetails(param.menu, param.message_id);
+            if (!response)
+                throw new common_1.NotFoundException();
+            response = await this.updateReadUnread(response.id);
+            formatted_response = (0, common_functions_1.formatResponse)(response, true, "Success.");
+        }
+        catch (error) {
+            formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
         }
         this
             .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("getMessageDetails", param, response));
-        return response;
+            .insertLogs((0, common_functions_1.formatLogs)("getMessageDetails", param, formatted_response));
+        return formatted_response;
     }
     async sendMessage(request, message) {
         let formatted_response;

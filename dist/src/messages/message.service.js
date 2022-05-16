@@ -22,12 +22,17 @@ let MessageService = class MessageService {
         this.connection = connection;
     }
     async getMessages(data) {
-        return await rethink
-            .db(DB)
-            .table(data.table)
-            .filter(data.filtered)
-            .orderBy('updated_date')
-            .run(this.connection);
+        try {
+            return rethink
+                .db(DB)
+                .table(data.menu)
+                .filter(data.filtered)
+                .orderBy('updated_date')
+                .run(this.connection);
+        }
+        catch (error) {
+            throw new Error(error);
+        }
     }
     async getMessageDetails(table, message_id) {
         return await rethink

@@ -17,12 +17,16 @@ export class MessageService {
     async getMessages(data: any)
         : Promise<rethink.WriteResult> {
             
-            return await rethink
+            try {
+                return rethink
                 .db(DB)
-                .table(data.table)
+                .table(data.menu)
                 .filter(data.filtered)
                 .orderBy('updated_date')
                 .run(this.connection)
+            } catch (error) {
+                throw new Error(error)
+            }
     }
 
     async getMessageDetails(table: string, message_id: string)

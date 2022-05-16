@@ -4,7 +4,7 @@ import RethinkProvider from "rethinkdb/database.provider";
 import { RethinkModule } from "rethinkdb/rethink.module";
 import { AuthModule } from "src/auth/auth.module";
 import AuthService from "src/auth/auth.service";
-import LoggerService from "src/Services/logger.service";
+import LoggerService from "src/services/logger.service";
 import { UserService } from "src/users/user.service";
 import MessageController from "./message.controller";
 import MessageService from "./message.service";
