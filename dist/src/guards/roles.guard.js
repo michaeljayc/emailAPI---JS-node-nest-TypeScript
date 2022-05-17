@@ -13,12 +13,12 @@ exports.RolesGuard = void 0;
 const common_1 = require("@nestjs/common");
 const core_1 = require("@nestjs/core");
 const role_decorator_1 = require("../user_roles/role.decorator");
-const auth_service_1 = require("../auth/auth.service");
 const jwt_1 = require("@nestjs/jwt");
+const user_service_1 = require("../users/user.service");
 let RolesGuard = class RolesGuard {
-    constructor(reflector, authService, jwtService) {
+    constructor(reflector, userService, jwtService) {
         this.reflector = reflector;
-        this.authService = authService;
+        this.userService = userService;
         this.jwtService = jwtService;
     }
     async canActivate(context) {
@@ -31,15 +31,14 @@ let RolesGuard = class RolesGuard {
         if (!requiredRole) {
             return true;
         }
-        let formatted_response;
         const data = context.switchToHttp().getRequest();
         try {
             let user_data = await this
                 .jwtService
                 .verifyAsync(data.cookies.jwt);
             let user = await this
-                .authService
-                .getUserData(user_data.email);
+                .userService
+                .getUserByEmail(user_data.email);
             if (Object.keys(user._responses).length !== 0)
                 user = user.next()._settledValue;
             if (requiredRole !== user.role_type_id)
@@ -55,7 +54,7 @@ let RolesGuard = class RolesGuard {
 RolesGuard = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [core_1.Reflector,
-        auth_service_1.AuthService,
+        user_service_1.UserService,
         jwt_1.JwtService])
 ], RolesGuard);
 exports.RolesGuard = RolesGuard;

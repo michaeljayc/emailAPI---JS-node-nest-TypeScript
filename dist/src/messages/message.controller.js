@@ -46,7 +46,8 @@ let MessageController = class MessageController {
                         filtered = { "sender_id": user_data.id };
                 }
                 else {
-                    filtered = { "menu_state": query.menu === "starred" ?
+                    filtered = {
+                        "menu_state": query.menu === "starred" ?
                             message_common_1.Menu.starred : message_common_1.Menu.important,
                         "recipient_id": user_data.id
                     };
@@ -80,8 +81,9 @@ let MessageController = class MessageController {
                 .messageService
                 .getMessageDetails(param.menu, param.message_id);
             if (!response)
-                throw new common_1.NotFoundException();
-            response = await this.updateReadUnread(response.id);
+                throw new common_1.HttpException("Invalid menu or table", 404);
+            if (param.menu === "inbox")
+                response = await this.updateReadUnread(response.id);
             formatted_response = (0, common_functions_1.formatResponse)(response, true, "Success.");
         }
         catch (error) {
@@ -154,47 +156,33 @@ let MessageController = class MessageController {
         return formatted_response;
     }
     async saveAsDraft(request, message) {
-        const cookie = request.cookies["jwt"];
-        if (!cookie)
-            throw new common_1.ForbiddenException();
-        let sender_data = await this.jwtService.verifyAsync(cookie);
-        message.created_date = String(Date.now());
-        message.updated_date = String(Date.now());
-        message.sender = sender_data.email;
-        message.sender_id = sender_data.id;
-        message.drafted = true;
-        let response = await this
-            .messageService
-            .sendMessage("drafts", message)
-            .then(result => {
-            return (0, common_functions_1.formatResponse)([message], true, "Saved as draft");
-        })
-            .catch(error => {
-            return (0, common_functions_1.formatResponse)([message], false, "Failed");
-        });
+        let formatted_response;
+        try {
+            let sender_data = await this
+                .jwtService
+                .verifyAsync(request.cookies["jwt"]);
+            message.created_date = String(Date.now());
+            message.updated_date = String(Date.now());
+            message.sender = sender_data.email;
+            message.sender_id = sender_data.id;
+            message.drafted = true;
+            message.read = false;
+            let response = await this
+                .messageService
+                .sendMessage("drafts", message);
+            formatted_response = (0, common_functions_1.formatResponse)(message, true, "Saved as draft.");
+        }
+        catch (error) {
+            formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
+        }
         this
             .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("saveAsDraft", message, response));
-        return response;
+            .insertLogs((0, common_functions_1.formatLogs)("saveAsDraft", message, formatted_response));
+        return formatted_response;
     }
     async updateDraftedMessage(request, message, query) {
-        const message_id = query.id;
-        let formatted_response;
         const cookie = request.cookies["jwt"];
-        if (!cookie)
-            throw new common_1.ForbiddenException();
-        message.updated_date = String(Date.now());
-        let response = await this
-            .messageService
-            .updateMessage("drafts", message_id, message);
-        if (response.replaced === 1)
-            formatted_response = (0, common_functions_1.formatResponse)([response], true, "Message updated.");
-        else
-            formatted_response = (0, common_functions_1.formatResponse)([response], false, "Failed to update message.");
-        this
-            .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("updateMessage", response, formatted_response));
-        return formatted_response;
+        return cookie;
     }
     async deleteMessage(request, param, query) {
         const table = param.menu;

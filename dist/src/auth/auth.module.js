@@ -8,16 +8,30 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthModule = void 0;
 const common_1 = require("@nestjs/common");
+const jwt_1 = require("@nestjs/jwt");
+const passport_1 = require("@nestjs/passport");
 const database_provider_1 = require("../../rethinkdb/database.provider");
 const rethink_module_1 = require("../../rethinkdb/rethink.module");
+const user_module_1 = require("../users/user.module");
+const user_service_1 = require("../users/user.service");
 const auth_service_1 = require("./auth.service");
+const constants_1 = require("./constants");
+const jwt_strategy_1 = require("./jwt.strategy");
+const local_strategy_1 = require("./local.strategy");
 let AuthModule = class AuthModule {
 };
 AuthModule = __decorate([
     (0, common_1.Module)({
-        imports: [rethink_module_1.RethinkModule],
-        providers: [database_provider_1.default,
-            auth_service_1.AuthService],
+        imports: [rethink_module_1.RethinkModule, (0, common_1.forwardRef)(() => user_module_1.UserModule),
+            passport_1.PassportModule,
+            jwt_1.JwtModule.register({
+                secret: constants_1.jwtConstants.secret,
+                signOptions: { expiresIn: '1d' }
+            }),
+        ],
+        providers: [auth_service_1.AuthService, local_strategy_1.LocalStrategy, jwt_strategy_1.JwtStrategy, user_service_1.UserService, database_provider_1.default],
+        controllers: [],
+        exports: [auth_service_1.AuthService],
     })
 ], AuthModule);
 exports.AuthModule = AuthModule;

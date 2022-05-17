@@ -29,10 +29,12 @@ export class MessageService {
             }
     }
 
-    async getMessageDetails(table: string, message_id: string)
+    async getMessageDetails(table: string, 
+        message_id: string)
         : Promise<any> {
-
-            return await rethink
+        //    console.log("Message ID:",message_id)
+        //    console.log("Table:",table)
+            return rethink
                 .db(DB)
                 .table(table)
                 .get(message_id)
@@ -41,7 +43,7 @@ export class MessageService {
 
     async sendMessage(table: string, message: Message)
         : Promise<rethink.WriteResult> {
-            return await rethink
+            return rethink
 
                 .db(DB)
                 .table(table)
@@ -82,7 +84,8 @@ export class MessageService {
                 .run(this.connection)
     }
 
-    async deleteMessage(table: string, message_id: string)
+    async deleteMessage(table: string, 
+        message_id: string)
         : Promise<rethink.WriteResult> {
 
             return await rethink

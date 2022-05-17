@@ -86,63 +86,63 @@ export class UserController {
         return formatted_response;
     }
 
-    @Post("login")
-    async loginUser(
-        @Body() credentials: TLoginCredentials,
-        @Res({passthrough: true}) response: Response)
-        : Promise<IResponseFormat | any> {
+    // @Post("login")
+    // async loginUser(
+    //     @Body() credentials: TLoginCredentials,
+    //     @Res({passthrough: true}) response: Response)
+    //     : Promise<IResponseFormat | any> {
 
-            let formatted_response: IResponseFormat;
+    //         let formatted_response: IResponseFormat;
 
-            if (Object.keys(credentials).length < 1)
-               throw new NotFoundException();
+    //         if (Object.keys(credentials).length < 1)
+    //            throw new NotFoundException();
 
-            try {
-                let user_data: any;
-                let response_data: any = await 
-                    this
-                    .userService
-                    .getUserByEmail(credentials.email);
+    //         try {
+    //             let user_data: any;
+    //             let response_data: any = await 
+    //                 this
+    //                 .userService
+    //                 .getUserByEmail(credentials.email);
                 
-                // If Username doesn't match any, throw NotFoundException
-                if (Object.keys(response_data._responses).length === 0)
-                    throw new NotFoundException()
+    //             // If Username doesn't match any, throw NotFoundException
+    //             if (Object.keys(response_data._responses).length === 0)
+    //                 throw new NotFoundException()
     
-                user_data = response_data.next()._settledValue;
+    //             user_data = response_data.next()._settledValue;
     
-                // If Password doesn't match, throw NotFoundException
-                if (! await this.authService.comparePassword(
-                    credentials.password, user_data.password)) 
-                        throw new NotFoundException()
+    //             // If Password doesn't match, throw NotFoundException
+    //             if (! await this.authService.comparePassword(
+    //                 credentials.password, user_data.password)) 
+    //                     throw new NotFoundException()
     
-                // Data store in the cookie
-                const jwt = await this.jwtService.signAsync(
-                    {
-                        id: user_data.id, 
-                        username: user_data.username,
-                        email: user_data.email
-                    }
-                )
+    //             // Data store in the cookie
+    //             const jwt = await this.jwtService.signAsync(
+    //                 {
+    //                     id: user_data.id, 
+    //                     username: user_data.username,
+    //                     email: user_data.email
+    //                 }
+    //             )
 
-                response.cookie("jwt", jwt, {httpOnly: true});
-                formatted_response = formatResponse(
-                    [user_data], true, "Login Successful."
-                );
-            } catch (error) {
-                formatted_response = formatResponse(
-                    [error], false, "Login Failed."
-                );
-            }
+    //             response.cookie("jwt", jwt, {httpOnly: true});
+    //             formatted_response = formatResponse(
+    //                 [user_data], true, "Login Successful."
+    //             );
+    //         } catch (error) {
+    //             formatted_response = formatResponse(
+    //                 [error], false, "Login Failed."
+    //             );
+    //         }
 
-            this
-            .loggerService
-            .insertLogs(formatLogs(
-                    "loginUser", credentials, formatted_response
-                )
-            );
+    //         this
+    //         .loggerService
+    //         .insertLogs(formatLogs(
+    //                 "loginUser", credentials, formatted_response
+    //             )
+    //         );
 
-            return formatted_response;
-    }
+    //         return formatted_response;
+    // }
 
     // http://localhost:3000/api/user
     @Get("user")

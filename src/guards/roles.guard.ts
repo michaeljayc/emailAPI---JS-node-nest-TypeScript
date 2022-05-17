@@ -7,12 +7,13 @@ import { JwtService } from "@nestjs/jwt";
 import { formatResponse } from "src/common/common.functions";
 import { IResponseFormat } from "src/common/common.interface";
 import { response } from "express";
+import { UserService } from "src/users/user.service";
 
 @Injectable()
 export class RolesGuard implements CanActivate {
 
     constructor(private reflector: Reflector,
-        private authService: AuthService,
+        private userService: UserService,
         private jwtService: JwtService) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -30,7 +31,6 @@ export class RolesGuard implements CanActivate {
         return true;
       }
       
-      let formatted_response: IResponseFormat;
       const data = context.switchToHttp().getRequest();
 
       try { 
@@ -41,8 +41,8 @@ export class RolesGuard implements CanActivate {
 
         let user = await 
           this
-          .authService
-          .getUserData(user_data.email);
+          .userService
+          .getUserByEmail(user_data.email);
     
         if (Object.keys(user._responses).length !== 0) 
           user = user.next()._settledValue

@@ -35,14 +35,14 @@ let MessageService = class MessageService {
         }
     }
     async getMessageDetails(table, message_id) {
-        return await rethink
+        return rethink
             .db(DB)
             .table(table)
             .get(message_id)
             .run(this.connection);
     }
     async sendMessage(table, message) {
-        return await rethink
+        return rethink
             .db(DB)
             .table(table)
             .insert(message)

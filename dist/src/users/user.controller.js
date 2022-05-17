@@ -56,36 +56,6 @@ let UserController = UserController_1 = class UserController {
             .insertLogs((0, common_functions_1.formatLogs)("registerUser", user, formatted_response));
         return formatted_response;
     }
-    async loginUser(credentials, response) {
-        let formatted_response;
-        if (Object.keys(credentials).length < 1)
-            throw new common_1.NotFoundException();
-        try {
-            let user_data;
-            let response_data = await this
-                .userService
-                .getUserByEmail(credentials.email);
-            if (Object.keys(response_data._responses).length === 0)
-                throw new common_1.NotFoundException();
-            user_data = response_data.next()._settledValue;
-            if (!await this.authService.comparePassword(credentials.password, user_data.password))
-                throw new common_1.NotFoundException();
-            const jwt = await this.jwtService.signAsync({
-                id: user_data.id,
-                username: user_data.username,
-                email: user_data.email
-            });
-            response.cookie("jwt", jwt, { httpOnly: true });
-            formatted_response = (0, common_functions_1.formatResponse)([user_data], true, "Login Successful.");
-        }
-        catch (error) {
-            formatted_response = (0, common_functions_1.formatResponse)([error], false, "Login Failed.");
-        }
-        this
-            .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("loginUser", credentials, formatted_response));
-        return formatted_response;
-    }
     async getUser(request) {
         let user_data;
         let formatted_response;
@@ -209,14 +179,6 @@ __decorate([
     __metadata("design:paramtypes", [user_entity_1.User]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "registerUser", null);
-__decorate([
-    (0, common_1.Post)("login"),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Res)({ passthrough: true })),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
-    __metadata("design:returntype", Promise)
-], UserController.prototype, "loginUser", null);
 __decorate([
     (0, common_1.Get)("user"),
     __param(0, (0, common_1.Req)()),

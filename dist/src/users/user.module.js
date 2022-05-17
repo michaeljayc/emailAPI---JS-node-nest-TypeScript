@@ -19,11 +19,13 @@ const auth_module_1 = require("../auth/auth.module");
 const auth_service_1 = require("../auth/auth.service");
 const core_1 = require("@nestjs/core");
 const roles_guard_1 = require("../guards/roles.guard");
+const passport_1 = require("@nestjs/passport");
 let UserModule = class UserModule {
 };
 UserModule = __decorate([
     (0, common_1.Module)({
         imports: [rethink_module_1.RethinkModule,
+            passport_1.PassportModule,
             user_role_module_1.UserRoleModule,
             jwt_1.JwtModule.register({
                 secret: "secret",

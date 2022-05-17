@@ -5,12 +5,14 @@ import {
     Delete, 
     ForbiddenException, 
     Get, 
+    HttpException, 
     NotFoundException, 
     Param, 
     Post, 
     Put, 
     Query, 
-    Req, 
+    Req,
+    UseGuards, 
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { IResponseFormat } from "../common/common.interface";
@@ -25,6 +27,7 @@ import {
     Menu,
     isValidMenuTables
 } from "./message.common";
+import { AuthGuard } from "@nestjs/passport";
 
 @Controller("messages")
 export class MessageController {
@@ -59,7 +62,8 @@ export class MessageController {
                         else 
                             filtered = {"sender_id": user_data.id}
                     } else {
-                        filtered = {"menu_state": query.menu === "starred" ?
+                        filtered = {
+                            "menu_state": query.menu === "starred" ?
                             Menu.starred : Menu.important,
                             "recipient_id": user_data.id
                         }
@@ -77,8 +81,7 @@ export class MessageController {
                     formatted_response = formatResponse(
                         response,true,"Success"
                     );
-                            
-                           
+                                 
                 } else {
                     throw new 
                         BadRequestException(
@@ -87,10 +90,9 @@ export class MessageController {
                         ) 
                 }
 
-            } catch(error) {
-                formatted_response = formatResponse(
-                    [error], false, error.status
-                )
+            } catch (error) {
+                formatted_response = formatResponse
+                    ([error], false, error.status)
             }
 
             this
@@ -107,7 +109,8 @@ export class MessageController {
     // http://localhost:3000/api/messages/inbox/reply/:message_id
     @Get(":menu/:action/:message_id")
     async getMessageDetails(@Req() request: Request,
-        @Param() param): Promise<IResponseFormat> {
+        @Param() param)
+        : Promise<IResponseFormat> {
 
             let formatted_response: IResponseFormat;
 
@@ -118,14 +121,15 @@ export class MessageController {
                     .getMessageDetails(param.menu, param.message_id)
 
                 if (!response)
-                    throw new NotFoundException()
+                    throw new HttpException
+                        ("Invalid menu or table", 404)
 
-                response = await this.updateReadUnread(response.id)
-                formatted_response = formatResponse(
-                    response,
-                    true,
-                    "Success."
-                )
+                if (param.menu === "inbox")
+                    response = await this.updateReadUnread(response.id)
+
+                formatted_response = formatResponse
+                    (response, true, "Success.");
+            
             } catch (error) {
                 formatted_response = formatResponse(
                     [error],
@@ -145,7 +149,8 @@ export class MessageController {
     
     @Post("send")
     async sendMessage(@Req() request: Request,
-        @Body() message: Message): Promise<IResponseFormat> {
+        @Body() message: Message)
+        : Promise<IResponseFormat> {
             
             let formatted_response: any;
             const drafted_message = message?.drafted;
@@ -251,79 +256,89 @@ export class MessageController {
     async saveAsDraft(@Req() request: Request,
         @Body() message: Message): Promise<IResponseFormat> {
             
-            const cookie = request.cookies["jwt"];
-            if (!cookie)
-                throw new ForbiddenException();
+            let formatted_response: IResponseFormat;
 
-            // Retrieve sender data
-            let sender_data = await this.jwtService.verifyAsync(cookie);
+            try {
+                // Retrieve sender data
+                let sender_data = await 
+                    this
+                    .jwtService
+                    .verifyAsync(request.cookies["jwt"]);
 
-            // construct message data
-            message.created_date = String(Date.now());
-            message.updated_date = String(Date.now());
-            message.sender = sender_data.email;
-            message.sender_id = sender_data.id;
-            message.drafted = true;
-            
-            let response =  await this
-                .messageService
-                .sendMessage("drafts",message)
-                    .then( result => {
-                        return formatResponse(
-                            [message], true, "Saved as draft"
-                        );
-                    })
-                    .catch( error => {
-                        return formatResponse(
-                            [message], false, "Failed"
-                        );
-                    })
-            
+                // construct message data
+                message.created_date = String(Date.now());
+                message.updated_date = String(Date.now());
+                message.sender = sender_data.email;
+                message.sender_id = sender_data.id;
+                message.drafted = true;
+                message.read = false;
+                
+                let response =  await 
+                    this
+                    .messageService
+                    .sendMessage("drafts",message);
+
+                formatted_response = formatResponse(
+                    message,
+                    true,
+                    "Saved as draft."
+                )
+            } catch (error) {
+                formatted_response = formatResponse(
+                    [error],
+                    false,
+                    error.status
+                )
+            }
             
             this
             .loggerService
-            .insertLogs(formatLogs(
-                        "saveAsDraft", message, response
-                    )
-                )
+            .insertLogs(formatLogs
+                ("saveAsDraft", message, formatted_response)
+            )
 
-            return response;
+            return formatted_response;
     }
 
+    // http://localhost:3000/api/messages/drafts/update?id=123abc
     @Put("drafts/update")
     async updateDraftedMessage(@Req() request: Request,
         @Body() message:Message,    
-        @Query() query): Promise<IResponseFormat> {
+        @Query() query)
+        : Promise<IResponseFormat> {
             
-            const message_id = query.id;
-            let formatted_response: IResponseFormat;
+            // let formatted_response: IResponseFormat;
             const cookie = request.cookies["jwt"];
-            if (!cookie)
-                throw new ForbiddenException();
+            // // if (!cookie)
+            // //     throw new ForbiddenException();
+            // try {
+            //     const message_id = query.id;
+            //     message.updated_date = String(Date.now())    
 
-            message.updated_date = String(Date.now())    
-            
-            let response = await this
-                .messageService
-                .updateMessage("drafts",message_id,message);
+            //     let response = await this
+            //         .messageService
+            //         .updateMessage("drafts",message_id,message);
 
-            if (response.replaced === 1)
-                formatted_response = formatResponse(
-                    [response], true, "Message updated."
-                )
-            else 
-                formatted_response = formatResponse(
-                    [response], false, "Failed to update message."
-                )
+            //     if (response.replaced === 1)
+            //         formatted_response = formatResponse(
+            //             [response], true, "Message updated."
+            //         )
+            //     else 
+            //         formatted_response = formatResponse(
+            //             [response], false, "Failed to update message."
+            //         )
+            // } catch (error) {
+
+            // }
             
-            this
-            .loggerService
-            .insertLogs(formatLogs(
-                    "updateMessage",response,formatted_response
-                    )
-                )
+            // this
+            // .loggerService
+            // .insertLogs(formatLogs
+            //     ("updateMessage",response,formatted_response)
+            // )
                         
-            return formatted_response;
+            // return formatted_response;
+            return cookie;
     }
 
     @Delete(":menu/delete")
@@ -360,10 +375,9 @@ export class MessageController {
             
             this
             .loggerService
-            .insertLogs(formatLogs(
-                        "deleteMessage", {param,query}, response
-                    )
-                )
+            .insertLogs(formatLogs
+                ("deleteMessage", {param,query}, response)
+            )
 
             return response;
     }
@@ -432,9 +446,8 @@ export class MessageController {
             
             this
             .loggerService
-            .insertLogs(formatLogs(
-                "replyToMessage",message, formatted_response
-                )
+            .insertLogs(formatLogs
+                ("replyToMessage",message, formatted_response)
             );
 
             return formatted_response;

@@ -8,28 +8,41 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
-const rethink = require("rethinkdb");
+const user_service_1 = require("../users/user.service");
 const bcrypt = require('bcrypt');
 const TABLE = "users";
 const DB = "emailAPI";
 let AuthService = class AuthService {
-    constructor(connection) {
-        this.connection = connection;
+    constructor(userService) {
+        this.userService = userService;
     }
-    async getUserData(email) {
-        return await rethink
-            .db(DB)
-            .table(TABLE)
-            .filter({
-            'email': email
-        })
-            .run(this.connection);
+    async validateUser(credentials) {
+        console.log(credentials);
+        const user = await this.userService.getUserByEmail(credentials.email);
+        const valid_password = this
+            .comparePassword(credentials.email, credentials.password);
+        if (user && valid_password) {
+            const { password } = user, result = __rest(user, ["password"]);
+            return result;
+        }
+        return null;
+    }
+    async login(user) {
+        console.log(user);
     }
     async ecnryptPassword(password) {
         const salt = await bcrypt.genSalt();
@@ -42,8 +55,7 @@ let AuthService = class AuthService {
 };
 AuthService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, common_1.Inject)("RethinkProvider")),
-    __metadata("design:paramtypes", [Object])
+    __metadata("design:paramtypes", [user_service_1.UserService])
 ], AuthService);
 exports.AuthService = AuthService;
 exports.default = AuthService;

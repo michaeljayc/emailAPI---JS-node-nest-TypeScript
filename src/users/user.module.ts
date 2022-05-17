@@ -10,8 +10,10 @@ import { AuthModule } from "src/auth/auth.module";
 import { AuthService } from "src/auth/auth.service"
 import { APP_GUARD } from "@nestjs/core";
 import { RolesGuard } from "src/guards/roles.guard";
+import { PassportModule } from "@nestjs/passport";
 @Module({
-    imports: [RethinkModule, 
+    imports: [RethinkModule,
+        PassportModule, 
         UserRoleModule,
         JwtModule.register({
             secret: "secret",
