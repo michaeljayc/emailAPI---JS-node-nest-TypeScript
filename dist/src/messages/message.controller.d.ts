@@ -18,7 +18,7 @@ export declare class MessageController {
     updateDraftedMessage(request: Request, message: Message, query: any): Promise<IResponseFormat>;
     deleteMessage(request: Request, param: any, query: any): Promise<IResponseFormat>;
     replyToMessage(request: Request, query: any, message: Message): Promise<IResponseFormat>;
-    setMenuState(request: Request, param: any): Promise<IResponseFormat | any>;
+    setMenuState(request: Request, param: any, query: any): Promise<IResponseFormat | any>;
     updateReadUnread(message_id: string): Promise<Message>;
 }
 export default MessageController;

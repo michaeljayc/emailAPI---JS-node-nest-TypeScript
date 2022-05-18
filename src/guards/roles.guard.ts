@@ -46,7 +46,7 @@ export class RolesGuard implements CanActivate {
     
         if (Object.keys(user._responses).length !== 0) 
           user = user.next()._settledValue
-
+        
         if (requiredRole !== user.role_type_id)
           throw new UnauthorizedException()
         else 

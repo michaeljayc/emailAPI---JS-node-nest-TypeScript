@@ -31,7 +31,6 @@ let AuthService = class AuthService {
         this.userService = userService;
     }
     async validateUser(credentials) {
-        console.log(credentials);
         const user = await this.userService.getUserByEmail(credentials.email);
         const valid_password = this
             .comparePassword(credentials.email, credentials.password);

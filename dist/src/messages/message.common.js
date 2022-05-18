@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isValidMenu = exports.isValidMenuTables = exports.Menu = exports.menu_tables = void 0;
+exports.isValidMenu = exports.isValidMenuTables = exports.STATE = exports.Menu = exports.menu_tables = void 0;
 exports.menu_tables = ["inbox", "sent", "drafts"];
 exports.Menu = {
     "inbox": 1,
@@ -8,6 +8,10 @@ exports.Menu = {
     "drafts": 3,
     "starred": 4,
     "important": 5
+};
+exports.STATE = {
+    "starred": 1,
+    "important": 2
 };
 const isValidMenuTables = (menu) => exports.menu_tables.includes(menu);
 exports.isValidMenuTables = isValidMenuTables;

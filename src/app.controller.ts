@@ -10,16 +10,16 @@ import { LocalStrategy } from './auth/local.strategy';
 @Controller()
 export class AppController {
 
-  constructor(private readonly authService: AuthService) {}
+  //constructor(private readonly authService: AuthService) {}
 
-  //@UseGuards(LocalAuthGuard)
-  @Post("login")
-  async login(@Request() req,
-    @Body() credentials: TLoginCredentials): Promise<any> {
+  // @UseGuards(LocalAuthGuard)
+  // @Post("login")
+  // async login(@Request() req,
+  //   @Body() credentials: TLoginCredentials): Promise<any> {
       
-      let user = await this.authService.validateUser(credentials)
-      console.log(user._responses.next()._settledValue)
-      return
-  }
+  //     let user = await this.authService.validateUser(credentials)
+  //     //console.log(user._responses.next()._settledValue)
+  //     return
+  // }
 
 }

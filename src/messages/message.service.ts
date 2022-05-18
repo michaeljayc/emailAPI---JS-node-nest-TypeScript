@@ -14,26 +14,29 @@ export class MessageService {
         this.connection = connection;
     }
 
+    async getMessageById(id: string): Promise<Message> {
+
+        return rethink
+        .db(DB)
+        .table("inbox")
+        .get(id)
+        .run(this.connection)
+    }
+
     async getMessages(data: any)
         : Promise<rethink.WriteResult> {
-            
-            try {
-                return rethink
-                .db(DB)
-                .table(data.menu)
-                .filter(data.filtered)
-                .orderBy('updated_date')
-                .run(this.connection)
-            } catch (error) {
-                throw new Error(error)
-            }
+
+            return rethink
+            .db(DB)
+            .table(data.menu)
+            .filter(data.filtered)
+            .orderBy('updated_date')
+            .run(this.connection)
     }
 
     async getMessageDetails(table: string, 
         message_id: string)
         : Promise<any> {
-        //    console.log("Message ID:",message_id)
-        //    console.log("Table:",table)
             return rethink
                 .db(DB)
                 .table(table)
@@ -43,12 +46,12 @@ export class MessageService {
 
     async sendMessage(table: string, message: Message)
         : Promise<rethink.WriteResult> {
-            return rethink
 
-                .db(DB)
-                .table(table)
-                .insert(message)
-                .run(this.connection)
+            return rethink
+            .db(DB)
+            .table(table)
+            .insert(message)
+            .run(this.connection)
     }
 
     async updateReadUnread(message_id: string)
@@ -76,7 +79,7 @@ export class MessageService {
          message: Message)
         : Promise<rethink.WriteResult> {
 
-            return await rethink
+                return rethink
                 .db(DB)
                 .table(table)
                 .get(id)

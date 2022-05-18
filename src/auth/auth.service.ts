@@ -11,7 +11,7 @@ export class AuthService {
     constructor(private userService: UserService){}
 
     async validateUser(credentials): Promise<any> {
-        console.log(credentials)
+
         const user = await this.userService.getUserByEmail(credentials.email);
         const valid_password = this
             .comparePassword(credentials.email, credentials.password)
