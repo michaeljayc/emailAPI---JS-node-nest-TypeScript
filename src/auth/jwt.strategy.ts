@@ -13,11 +13,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             //jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             
             // get JWT from cookie
-            jwtFromRequest: ExtractJwt.fromExtractors([
-                (request: Request) => (
-                  request.cookies.jwt
-                )
-              ]),
+            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
             secretOrKey: jwtConstants.secret,
         })
@@ -25,9 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     async validate(payload: any) {
         return {
-            id: payload.id,
-            email: payload.email,
-            username: payload.username
+            'user': payload.user
         }
     }
 }

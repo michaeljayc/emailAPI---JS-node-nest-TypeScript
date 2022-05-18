@@ -12,7 +12,8 @@ import {
     Put, 
     Query, 
     Req, 
-    Res, 
+    Res,
+    UseGuards, 
 } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { LoggerService } from "src/services/logger.service";
@@ -29,6 +30,8 @@ import { JwtService } from "@nestjs/jwt";
 import { Response, Request } from "express";
 import { Role } from "src/user_roles/role.enum";
 import { RoleGuard } from "src/user_roles/role.decorator";
+import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
+import { AuthTokenGuard } from "src/guards/auth-token.guard";
 
 const DATE = new Date;
 
@@ -148,6 +151,7 @@ export class UserController {
     }
 
     // http://localhost:3000/api/user
+    //@UseGuards(JwtAuthGuard, AuthTokenGuard)
     @Get("user")
     async getUser(@Req() request: Request)
         : Promise<IResponseFormat> {
@@ -182,6 +186,7 @@ export class UserController {
     }
 
     // http://localhost:3000/api/users
+    @UseGuards(JwtAuthGuard, AuthTokenGuard)
     @Get("users")
     @RoleGuard(Role.Admin)
     async getAllUsers(@Req() request: Request)
@@ -209,10 +214,9 @@ export class UserController {
 
             this
             .loggerService
-            .insertLogs(formatLogs(
-                        "getAllUsers", response, formatted_response
-                    )
-                );
+            .insertLogs(formatLogs
+                ("getAllUsers", response, formatted_response)
+            );
 
             return formatted_response;
     }

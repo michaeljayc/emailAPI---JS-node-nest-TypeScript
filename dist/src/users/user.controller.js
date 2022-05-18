@@ -23,6 +23,8 @@ const common_functions_1 = require("../common/common.functions");
 const jwt_1 = require("@nestjs/jwt");
 const role_enum_1 = require("../user_roles/role.enum");
 const role_decorator_1 = require("../user_roles/role.decorator");
+const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
+const auth_token_guard_1 = require("../guards/auth-token.guard");
 const DATE = new Date;
 let UserController = UserController_1 = class UserController {
     constructor(userService, loggerService, authService, jwtService) {
@@ -225,6 +227,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "getUser", null);
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, auth_token_guard_1.AuthTokenGuard),
     (0, common_1.Get)("users"),
     (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
     __param(0, (0, common_1.Req)()),
