@@ -33,79 +33,6 @@ let UserController = UserController_1 = class UserController {
         this.jwtService = jwtService;
         this.logger = new common_1.Logger(UserController_1.name);
     }
-    async registerUser(user) {
-        let formatted_response;
-        if (!Object.keys(user))
-            throw new common_1.BadRequestException();
-        try {
-            user.created_date = (0, common_functions_1.setDateTime)();
-            user.updated_date = (0, common_functions_1.setDateTime)();
-            user.password = await this
-                .authService
-                .ecnryptPassword(user.password);
-            let response = await this.userService.registerUser(user);
-            if (response.inserted === 1) {
-                formatted_response = (0, common_functions_1.formatResponse)([user], true, "Registration Successful");
-            }
-        }
-        catch (error) {
-            formatted_response = (0, common_functions_1.formatResponse)([error], false, "Registration Failed");
-            throw new Error(error);
-        }
-        this
-            .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("registerUser", user, formatted_response));
-        return formatted_response;
-    }
-    async loginUser(credentials, response) {
-        let formatted_response;
-        if (Object.keys(credentials).length < 1)
-            throw new common_1.BadRequestException("Input email and password", response.statusMessage);
-        try {
-            let user_data;
-            let response_data = await this
-                .userService
-                .getUserByEmail(credentials.email);
-            if (Object.keys(response_data._responses).length === 0)
-                throw new common_1.NotFoundException("Email doesn't exist", response.statusMessage);
-            user_data = response_data.next()._settledValue;
-            if (!await this.authService.comparePassword(credentials.password, user_data.password))
-                throw new common_1.NotFoundException("Incorrect password", response.statusMessage);
-            const jwt = await this.jwtService.signAsync({
-                id: user_data.id,
-                username: user_data.username,
-                email: user_data.email
-            });
-            response.cookie("jwt", jwt, { httpOnly: true });
-            formatted_response = (0, common_functions_1.formatResponse)([user_data], true, "Login Successful.");
-        }
-        catch (error) {
-            formatted_response = (0, common_functions_1.formatResponse)([error], false, "Login Failed.");
-        }
-        this
-            .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("loginUser", credentials, formatted_response));
-        return formatted_response;
-    }
-    async getUser(request) {
-        let user_data;
-        let formatted_response;
-        try {
-            const data = await this
-                .jwtService
-                .verifyAsync(request.cookies['jwt']);
-            user_data = await this.userService.getUserById(data.id);
-            formatted_response = (0, common_functions_1.formatResponse)([user_data], true, "Success");
-        }
-        catch (error) {
-            formatted_response = (0, common_functions_1.formatResponse)([error], false, "Failed");
-            throw new common_1.HttpException(error, error.HttpCode);
-        }
-        this
-            .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("getUser", user_data, formatted_response));
-        return formatted_response;
-    }
     async getAllUsers(request) {
         let formatted_response;
         let response;
@@ -121,6 +48,23 @@ let UserController = UserController_1 = class UserController {
         this
             .loggerService
             .insertLogs((0, common_functions_1.formatLogs)("getAllUsers", response, formatted_response));
+        return formatted_response;
+    }
+    async getUser(request, param) {
+        let user;
+        let formatted_response;
+        try {
+            const data = await this.userService.getUserByUsername(param.username);
+            user = data.next()._settledValue;
+            formatted_response = (0, common_functions_1.formatResponse)([user], true, "Success");
+        }
+        catch (error) {
+            formatted_response = (0, common_functions_1.formatResponse)([error], false, "Failed");
+            throw new common_1.HttpException(error, error.HttpCode);
+        }
+        this
+            .loggerService
+            .insertLogs((0, common_functions_1.formatLogs)("getUser", user, formatted_response));
         return formatted_response;
     }
     async editUser(request, param) {
@@ -191,42 +135,7 @@ let UserController = UserController_1 = class UserController {
             .insertLogs((0, common_functions_1.formatLogs)("deleteUser", query, formatted_response));
         return formatted_response;
     }
-    async logoutUser(request, response) {
-        let formatted_response;
-        try {
-            response.clearCookie("jwt");
-            formatted_response = (0, common_functions_1.formatResponse)([], true, "Logout successful.");
-        }
-        catch (error) {
-            formatted_response = (0, common_functions_1.formatResponse)([error], false, "Failed.");
-        }
-        return formatted_response;
-    }
 };
-__decorate([
-    (0, common_1.Post)("register"),
-    __param(0, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.User]),
-    __metadata("design:returntype", Promise)
-], UserController.prototype, "registerUser", null);
-__decorate([
-    (0, common_1.Post)("login"),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Res)({ passthrough: true })),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
-    __metadata("design:returntype", Promise)
-], UserController.prototype, "loginUser", null);
-__decorate([
-    (0, common_1.Get)("user"),
-    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
-    (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
-    __param(0, (0, common_1.Req)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
-], UserController.prototype, "getUser", null);
 __decorate([
     (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
@@ -236,6 +145,15 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "getAllUsers", null);
+__decorate([
+    (0, common_1.Get)(":username"),
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "getUser", null);
 __decorate([
     (0, common_1.Get)("edit/:username"),
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
@@ -264,16 +182,8 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "deleteUser", null);
-__decorate([
-    (0, common_1.Post)("logout"),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Res)({ passthrough: true })),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
-    __metadata("design:returntype", Promise)
-], UserController.prototype, "logoutUser", null);
 UserController = UserController_1 = __decorate([
-    (0, common_1.Controller)(),
+    (0, common_1.Controller)("users"),
     __metadata("design:paramtypes", [user_service_1.UserService,
         logger_service_1.LoggerService,
         auth_service_1.AuthService,

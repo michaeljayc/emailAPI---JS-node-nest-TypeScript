@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { RethinkModule } from 'rethinkdb/rethink.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -9,6 +9,8 @@ import { AuthModule } from './auth/auth.module';
 import { MessageModule } from './messages/message.module';
 import { APP_FILTER } from '@nestjs/core';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
+import LoggerService from './services/logger.service';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -18,6 +20,10 @@ import { HttpExceptionFilter } from './filters/http-exception.filter';
     UserModule,
     AuthModule,
     MessageModule,
+    JwtModule.register({
+      secret: "secret",
+      signOptions: {expiresIn: '1d'}
+    }),
   ],
   controllers: [AppController],
   providers: [AppService,
@@ -25,6 +31,7 @@ import { HttpExceptionFilter } from './filters/http-exception.filter';
       provide: APP_FILTER,
       useClass: HttpExceptionFilter
     },
+    LoggerService,
   ],
   exports:[AppService]
 })
