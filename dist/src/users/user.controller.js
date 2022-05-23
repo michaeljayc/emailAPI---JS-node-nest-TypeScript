@@ -17,20 +17,16 @@ exports.UserController = void 0;
 const common_1 = require("@nestjs/common");
 const user_service_1 = require("./user.service");
 const logger_service_1 = require("../services/logger.service");
-const auth_service_1 = require("../auth/auth.service");
 const user_entity_1 = require("./user.entity");
 const common_functions_1 = require("../common/common.functions");
-const jwt_1 = require("@nestjs/jwt");
 const role_enum_1 = require("../user_roles/role.enum");
 const role_decorator_1 = require("../user_roles/role.decorator");
 const auth_token_guard_1 = require("../guards/auth-token/auth-token.guard");
 const DATE = new Date;
 let UserController = UserController_1 = class UserController {
-    constructor(userService, loggerService, authService, jwtService) {
+    constructor(userService, loggerService) {
         this.userService = userService;
         this.loggerService = loggerService;
-        this.authService = authService;
-        this.jwtService = jwtService;
         this.logger = new common_1.Logger(UserController_1.name);
     }
     async getAllUsers(request) {
@@ -121,7 +117,7 @@ let UserController = UserController_1 = class UserController {
                 .userService
                 .getUserById(id_to_delete);
             if (!user)
-                throw new common_1.NotFoundException(id_to_delete, "ID doesn't exist");
+                throw new common_1.BadRequestException(`ID: ${id_to_delete} doesn't exist`);
             let response = await this
                 .userService
                 .deleteUser(id_to_delete);
@@ -139,15 +135,15 @@ let UserController = UserController_1 = class UserController {
 __decorate([
     (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
-    (0, common_1.Get)("users"),
+    (0, common_1.Get)(""),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "getAllUsers", null);
 __decorate([
-    (0, common_1.Get)(":username"),
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
+    (0, common_1.Get)(":username"),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)()),
     __metadata("design:type", Function),
@@ -155,9 +151,9 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "getUser", null);
 __decorate([
-    (0, common_1.Get)("edit/:username"),
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
+    (0, common_1.Get)("edit/:username"),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)()),
     __metadata("design:type", Function),
@@ -165,9 +161,9 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "editUser", null);
 __decorate([
-    (0, common_1.Put)("update/:username"),
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
+    (0, common_1.Put)("update/:username"),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Param)()),
@@ -176,6 +172,8 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "updateUser", null);
 __decorate([
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
+    (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
     (0, common_1.Delete)("delete"),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
@@ -185,9 +183,7 @@ __decorate([
 UserController = UserController_1 = __decorate([
     (0, common_1.Controller)("users"),
     __metadata("design:paramtypes", [user_service_1.UserService,
-        logger_service_1.LoggerService,
-        auth_service_1.AuthService,
-        jwt_1.JwtService])
+        logger_service_1.LoggerService])
 ], UserController);
 exports.UserController = UserController;
 //# sourceMappingURL=user.controller.js.map

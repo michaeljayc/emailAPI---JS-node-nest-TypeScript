@@ -14,7 +14,7 @@ export class UserService {
     }
 
     async registerUser(user: User): Promise<rethink.WriteResult> {
-        return await rethink
+        return rethink
             .db(DB)
             .table(TABLE)
             .insert(user)
@@ -22,7 +22,7 @@ export class UserService {
     }
 
     async loginUser(id: string): Promise<User>{
-        return await rethink
+        return rethink
             .db(DB)
             .table(TABLE)
             .get(id)
@@ -30,7 +30,7 @@ export class UserService {
     }
 
     async getAllUsers(): Promise<User> {
-        return await rethink
+        return rethink
             .db(DB)
             .table(TABLE)
             .orderBy('updated_date')
@@ -38,7 +38,7 @@ export class UserService {
     }
 
     async getUserById(id: string): Promise<User> {
-        return await rethink
+        return rethink
             .db(DB)
             .table(TABLE)
             .get(id)
@@ -46,17 +46,17 @@ export class UserService {
     }
 
     async getUserByUsername(username:string): Promise<any> {
-        return await rethink
+        return rethink
             .db(DB)
             .table(TABLE)
             .filter(
-                { "username": username}
+                { "username": username }
             )
             .run(this.connection)
     }
 
     async getUserByEmail(email:string): Promise<any> {
-        return await rethink
+        return rethink
             .db(DB)
             .table(TABLE)
             .filter({
@@ -65,17 +65,18 @@ export class UserService {
             .run(this.connection)
     }
 
-    async updateUser(user: User, user_id:string): Promise<rethink.WriteResult> {
-        return await rethink
-            .db(DB)
-            .table(TABLE)
-            .get(user_id)
-            .update(user)
-            .run(this.connection)
+    async updateUser(user: User, user_id:string)
+        : Promise<rethink.WriteResult> {
+            return rethink
+                .db(DB)
+                .table(TABLE)
+                .get(user_id)
+                .update(user)
+                .run(this.connection)
     }
 
     async deleteUser(id: string): Promise<rethink.WriteResult> {
-        return await rethink
+        return rethink
             .db(DB)
             .table(TABLE)
             .get(id)

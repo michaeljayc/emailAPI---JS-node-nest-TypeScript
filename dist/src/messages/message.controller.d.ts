@@ -17,7 +17,7 @@ export declare class MessageController {
     saveAsDraft(request: Request, message: Message): Promise<IResponseFormat>;
     updateDraftedMessage(request: Request, message: Message, query: any): Promise<IResponseFormat>;
     deleteMessage(request: Request, param: any, query: any): Promise<IResponseFormat>;
-    replyToMessage(request: Request, query: any, message: Message): Promise<IResponseFormat>;
+    replyToMessage(query: any, message: Message): Promise<IResponseFormat>;
     setMenuState(request: Request, param: any, query: any): Promise<IResponseFormat | any>;
     updateReadUnread(message_id: string): Promise<Message>;
 }

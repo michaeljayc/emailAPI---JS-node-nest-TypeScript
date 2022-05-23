@@ -15,18 +15,15 @@ export class MessageService {
     }
 
     async getMessageById(id: string): Promise<Message> {
-
         return rethink
-        .db(DB)
-        .table("inbox")
-        .get(id)
-        .run(this.connection)
+            .db(DB)
+            .table("inbox")
+            .get(id)
+            .run(this.connection)
     }
 
-    async getMessages(data: any)
-        : Promise<rethink.WriteResult> {
-
-            return rethink
+    async getMessages(data: any): Promise<rethink.WriteResult> {
+        return rethink
             .db(DB)
             .table(data.menu)
             .filter(data.filtered)
@@ -46,12 +43,11 @@ export class MessageService {
 
     async sendMessage(table: string, message: Message)
         : Promise<rethink.WriteResult> {
-
             return rethink
-            .db(DB)
-            .table(table)
-            .insert(message)
-            .run(this.connection)
+                .db(DB)
+                .table(table)
+                .insert(message)
+                .run(this.connection)
     }
 
     async updateReadUnread(message_id: string)
@@ -76,10 +72,9 @@ export class MessageService {
 
     async updateMessage(table: string, 
         id:string,
-         message: Message)
+        message: Message)
         : Promise<rethink.WriteResult> {
-
-                return rethink
+            return rethink
                 .db(DB)
                 .table(table)
                 .get(id)
@@ -90,7 +85,6 @@ export class MessageService {
     async deleteMessage(table: string, 
         message_id: string)
         : Promise<rethink.WriteResult> {
-
             return await rethink
                 .db(DB)
                 .table(table)

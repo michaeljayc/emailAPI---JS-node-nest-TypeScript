@@ -199,7 +199,7 @@ let MessageController = class MessageController {
             .insertLogs((0, common_functions_1.formatLogs)("deleteMessage", param, formatted_response));
         return formatted_response;
     }
-    async replyToMessage(request, query, message) {
+    async replyToMessage(query, message) {
         let formatted_response;
         try {
             if (!await this.messageService.getMessageById(query.id))
@@ -337,11 +337,10 @@ __decorate([
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, common_1.Post)("inbox/reply"),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Query)()),
-    __param(2, (0, common_1.Body)()),
+    __param(0, (0, common_1.Query)()),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object, message_entity_1.default]),
+    __metadata("design:paramtypes", [Object, message_entity_1.default]),
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "replyToMessage", null);
 __decorate([

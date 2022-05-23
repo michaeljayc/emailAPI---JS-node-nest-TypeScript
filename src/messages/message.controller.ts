@@ -3,7 +3,6 @@ import {
     Body, 
     Controller, 
     Delete, 
-    ForbiddenException, 
     Get, 
     HttpException, 
     NotFoundException, 
@@ -346,9 +345,9 @@ export class MessageController {
     // http://localhost:3000/api/messages/inbox/reply?message_id=
     @UseGuards(AuthTokenGuard)
     @Post("inbox/reply")
-    async replyToMessage(@Req() request: Request,
-        @Query() query,
-        @Body() message: Message): Promise<IResponseFormat> {
+    async replyToMessage(@Query() query,
+        @Body() message: Message)
+        : Promise<IResponseFormat> {
 
             let formatted_response: IResponseFormat;
 

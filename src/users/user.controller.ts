@@ -17,16 +17,13 @@ import {
 } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { LoggerService } from "src/services/logger.service";
-import { AuthService } from "src/auth/auth.service";
 import { User } from "./user.entity";
 import { IResponseFormat } from "src/common/common.interface";
-import { TLoginCredentials } from "./user.types";
 import { 
     formatResponse, 
     formatLogs, 
     setDateTime, 
 } from "src/common/common.functions";
-import { JwtService } from "@nestjs/jwt";
 import { Response, Request } from "express";
 import { Role } from "src/user_roles/role.enum";
 import { RoleGuard } from "src/user_roles/role.decorator";
@@ -36,19 +33,16 @@ const DATE = new Date;
 
 @Controller("users")
 export class UserController {
+
     private readonly logger = new Logger(UserController.name);
 
     constructor(private userService: UserService,
-        private loggerService: LoggerService,
-        private authService: AuthService,
-        private jwtService: JwtService){}
+        private loggerService: LoggerService){}
 
-    
-    
     // http://localhost:3000/api/users
     @RoleGuard(Role.Admin)
     @UseGuards(AuthTokenGuard)
-    @Get("users")
+    @Get("")
     async getAllUsers(@Req() request: Request)
         : Promise<IResponseFormat> {
 
@@ -59,11 +53,11 @@ export class UserController {
 
                 response = await this.userService.getAllUsers()
                 let res_length = Object.keys(response).length;
-                formatted_response = formatResponse(
-                        res_length > 1 ? response : [response],
-                        true,
-                        "Success"
-                    )
+                formatted_response = formatResponse
+                (   res_length > 1 ? response : [response],
+                    true,
+                    "Success"
+                )
 
             } catch(error) {
                 formatted_response = formatResponse(
@@ -82,8 +76,8 @@ export class UserController {
     }
         
     // http://localhost:3000/api/users/username
-    @Get(":username")
     @UseGuards(AuthTokenGuard)
+    @Get(":username")
     async getUser(@Req() request: Request,
         @Param() param)
         : Promise<IResponseFormat> {
@@ -115,10 +109,9 @@ export class UserController {
     }
 
     // http://localhost:3000/api/users/edit/username
-    @Get("edit/:username")
     @UseGuards(AuthTokenGuard)
     @RoleGuard(Role.Admin)
-    //@UseGuards(RoleGuard(Role.Admin))
+    @Get("edit/:username")
     async editUser(@Req() request:Request,
         @Param() param): Promise<IResponseFormat> {
         
@@ -160,10 +153,9 @@ export class UserController {
     }
 
     //http://localhost:3000/api/users/update/kmarcus20
-    @Put("update/:username")
     @UseGuards(AuthTokenGuard)
     @RoleGuard(Role.Admin)
-    //@UseGuards(RoleGuard(Role.Admin))
+    @Put("update/:username")
     async updateUser(@Req() request: Request,
         @Body() user: User,
         @Param() param): Promise<IResponseFormat> {
@@ -211,10 +203,10 @@ export class UserController {
     }
 
     // http://localhost:3000/api/users/delete?id=123abc
+    @UseGuards(AuthTokenGuard)
+    @RoleGuard(Role.Admin)
     @Delete("delete")
-    //@UseGuards(RoleGuard(Role.Admin))
     async deleteUser(@Query() query): Promise<IResponseFormat> {
-            
         let formatted_response: IResponseFormat;
         const id_to_delete = query.id;
         
@@ -226,10 +218,8 @@ export class UserController {
             
             if (!user)
                 throw new 
-                    NotFoundException(
-                        id_to_delete,
-                        "ID doesn't exist"    
-                    )
+                    BadRequestException
+                    ( `ID: ${id_to_delete} doesn't exist`)
             
             let response = await 
                 this
