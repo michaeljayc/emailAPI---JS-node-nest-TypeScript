@@ -21,23 +21,30 @@ let MessageService = class MessageService {
     constructor(connection) {
         this.connection = connection;
     }
-    async getMessages(data) {
-        return await rethink
+    async getMessageById(id) {
+        return rethink
             .db(DB)
-            .table(data.table)
+            .table("inbox")
+            .get(id)
+            .run(this.connection);
+    }
+    async getMessages(data) {
+        return rethink
+            .db(DB)
+            .table(data.menu)
             .filter(data.filtered)
             .orderBy('updated_date')
             .run(this.connection);
     }
     async getMessageDetails(table, message_id) {
-        return await rethink
+        return rethink
             .db(DB)
             .table(table)
             .get(message_id)
             .run(this.connection);
     }
     async sendMessage(table, message) {
-        return await rethink
+        return rethink
             .db(DB)
             .table(table)
             .insert(message)
@@ -56,7 +63,7 @@ let MessageService = class MessageService {
         return await this.getMessageDetails("inbox", message_id);
     }
     async updateMessage(table, id, message) {
-        return await rethink
+        return rethink
             .db(DB)
             .table(table)
             .get(id)

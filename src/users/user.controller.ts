@@ -1,32 +1,36 @@
 import { 
+    BadRequestException,
     Body,
     Controller, 
     Delete, 
-    ForbiddenException, 
     Get, 
+    HttpException, 
     Logger, 
+    NotFoundException, 
     Param, 
     Post, 
     Put, 
     Query, 
     Req, 
-    Res 
+    Res,
+    UseGuards, 
 } from "@nestjs/common";
 import { UserService } from "./user.service";
-import { LoggerService } from "src/Services/logger.service";
+import { LoggerService } from "src/services/logger.service";
 import { AuthService } from "src/auth/auth.service";
 import { User } from "./user.entity";
 import { IResponseFormat } from "src/common/common.interface";
 import { TLoginCredentials } from "./user.types";
-import { formatResponse, formatLogs, setDateTime } from "src/common/common.functions";
 import { 
-    userEmailDoesNotExist, 
-    incorrectUserPassword 
-} from "./user.errors";
+    formatResponse, 
+    formatLogs, 
+    setDateTime, 
+} from "src/common/common.functions";
 import { JwtService } from "@nestjs/jwt";
 import { Response, Request } from "express";
 import { Role } from "src/user_roles/role.enum";
-import { Roles } from "src/user_roles/role.decorator";
+import { RoleGuard } from "src/user_roles/role.decorator";
+import { AuthTokenGuard } from "src/guards/auth-token/auth-token.guard";
 
 const DATE = new Date;
 
@@ -43,42 +47,45 @@ export class UserController {
     async registerUser(@Body() user:User)
         : Promise<IResponseFormat |  any> {
         
-        if (!user) 
-            return {
-                success: false,
-                message: "Fields are empty"
+        let formatted_response: IResponseFormat;
+
+        if (!Object.keys(user))
+            throw new BadRequestException()
+
+        try {
+             // Set create  and update datetime
+            user.created_date = setDateTime();
+            user.updated_date = setDateTime();
+            
+            // Encrypt Password
+            user.password = await 
+                this
+                .authService
+                .ecnryptPassword(user.password);
+            
+            let response = await this.userService.registerUser(user)
+            
+            if (response.inserted === 1) {
+                formatted_response = formatResponse(
+                        [user],true, "Registration Successful"
+                    );
             }
 
-        // Set create  and update datetime
-        user.created_date = setDateTime();
-        user.updated_date = setDateTime();
-        
-        // Encrypt Password
-        user.password = await 
-            this
-            .authService
-            .ecnryptPassword(user.password);
-        
-        let response = await this.userService.registerUser(user)
-            .then( result => {
-                return result;
-            })
-            .catch( error => { return error });
-        
-        if (response.inserted === 1) {
-            response = formatResponse(
-                    [user],true, "Registration Successful"
-                );
+        } catch (error) {
+            formatted_response = formatResponse(
+                [error],false, "Registration Failed"
+            )
+            throw new Error(error);
         }
 
         this
         .loggerService
         .insertLogs(formatLogs(
-                "registerUser", user, response
+                "registerUser", user , formatted_response
                 )
-        );
+            );
 
-        return response;
+        return formatted_response;
     }
 
     @Post("login")
@@ -86,163 +93,219 @@ export class UserController {
         @Body() credentials: TLoginCredentials,
         @Res({passthrough: true}) response: Response)
         : Promise<IResponseFormat | any> {
-        
-            if (!credentials)
-                return {
-                    success: false,
-                    message: "Fields are empty"
-                }
 
-            let user_data: any;
-            let response_data: any = await 
-                this
-                .userService
-                .getUserByEmail(credentials.email);
-            if (Object.keys(response_data._responses).length === 0) {
-                return response_data = 
-                    userEmailDoesNotExist(credentials.email);
-            }
+            let formatted_response: IResponseFormat;
 
-            user_data = response_data.next()._settledValue;
-            if (! await this.authService.comparePassword(
-                credentials.password, 
-                user_data.password)) {
+            if (Object.keys(credentials).length < 1)
+               throw new BadRequestException
+                ("Input email and password", response.statusMessage);
 
-                    return response_data = incorrectUserPassword();
-            }
+            try {
+                let user_data: any;
+                let response_data: any = await 
+                    this
+                    .userService
+                    .getUserByEmail(credentials.email);
+                
+                // If Username doesn't match any, throw NotFoundException
+                if (Object.keys(response_data._responses).length === 0)
+                    throw new NotFoundException
+                        ("Email doesn't exist", response.statusMessage)
+    
+                user_data = response_data.next()._settledValue;
+    
+                // If Password doesn't match, throw NotFoundException
+                if (! await this.authService.comparePassword(
+                    credentials.password, user_data.password)) 
+                        throw new NotFoundException
+                            ("Incorrect password", response.statusMessage)
+    
+                // Data store in the cookie
+                const jwt = await this.jwtService.signAsync(
+                    {
+                        id: user_data.id, 
+                        username: user_data.username,
+                        email: user_data.email
+                    }
+                )
 
-            // Data store in the cookie
-            const jwt = await this.jwtService.signAsync(
-                {
-                    id: user_data.id, 
-                    username: user_data.username,
-                    email: user_data.email
-                }
-            )
-
-            response_data = formatResponse(
+                response.cookie("jwt", jwt, {httpOnly: true});
+                formatted_response = formatResponse(
                     [user_data], true, "Login Successful."
                 );
-            this
-            .loggerService
-            .insertLogs(formatLogs(
-                    "loginUser", credentials, response_data
-                )
-            );
-
-            response.cookie("jwt", jwt, {httpOnly: true});
-            return response_data;
-    }
-
-    @Get("user")
-    async getUser(@Req() request: Request)
-        : Promise<IResponseFormat> {
-
-            let {password, ...param} = request.body;
-            let formatted_response: IResponseFormat;
-            const cookie = request.cookies['jwt'];
-            
-            if (!cookie) 
-                throw new ForbiddenException;
-
-            const data = await this.jwtService.verifyAsync(cookie);
-            const user_data = await 
-                this.userService.getUserById(data.id);
-            formatted_response = formatResponse([user_data],true, "Success");
+            } catch (error) {
+                formatted_response = formatResponse(
+                    [error], false, "Login Failed."
+                );
+            }
 
             this
             .loggerService
             .insertLogs(formatLogs(
-                    "getUser", param, formatted_response
+                    "loginUser", credentials, formatted_response
                 )
             );
 
             return formatted_response;
     }
 
-    @Get("users")
-    @Roles(Role.Admin)
-    async getAllUsers(): Promise<IResponseFormat> {
-        let response: any = await this.userService.getAllUsers()
-            .then( result => {
-                return result
-            })
-  
-        response = formatResponse(
-                response,true,"Success"
-            )
-        
-        this
-        .loggerService
-        .insertLogs(formatLogs(
-                "getAllUsers", {}, response
-            )
-        );
+    // http://localhost:3000/api/user
+    @Get("user")
+    @UseGuards(AuthTokenGuard)
+    @RoleGuard(Role.Admin)
+    async getUser(@Req() request: Request)
+        : Promise<IResponseFormat> {
 
-        return response;
+            let user_data: User;
+            let formatted_response: IResponseFormat;
+            
+            try {
+                const data = await 
+                    this
+                    .jwtService
+                    .verifyAsync(request.cookies['jwt'])
+                user_data = await this.userService.getUserById(data.id);
+                formatted_response = formatResponse(
+                    [user_data],true, "Success"
+                );
+            } catch (error) {
+                 formatted_response = formatResponse(
+                    [error],false, "Failed"
+                );
+                throw new HttpException(error, error.HttpCode)
+            }
+        
+            this
+            .loggerService
+            .insertLogs(formatLogs(
+                    "getUser", user_data, formatted_response
+                )
+            );
+
+            return formatted_response;
     }
 
+    // http://localhost:3000/api/users
+    @RoleGuard(Role.Admin)
+    @UseGuards(AuthTokenGuard)
+    @Get("users")
+    async getAllUsers(@Req() request: Request)
+        : Promise<IResponseFormat> {
+
+            let formatted_response: IResponseFormat;        
+            let response: User;
+
+            try {
+
+                response = await this.userService.getAllUsers()
+                let res_length = Object.keys(response).length;
+                formatted_response = formatResponse(
+                        res_length > 1 ? response : [response],
+                        true,
+                        "Success"
+                    )
+
+            } catch(error) {
+                formatted_response = formatResponse(
+                    [error], false, "Failed"
+                )
+                throw new HttpException(error, error.HttpCode)
+            }
+
+            this
+            .loggerService
+            .insertLogs(formatLogs
+                ("getAllUsers", response, formatted_response)
+            );
+
+            return formatted_response;
+    }
+
+    // http://localhost:3000/api/edit/username
     @Get("edit/:username")
-    @Roles(Role.Admin)
+    @UseGuards(AuthTokenGuard)
+    @RoleGuard(Role.Admin)
+    //@UseGuards(RoleGuard(Role.Admin))
     async editUser(@Req() request:Request,
         @Param() param): Promise<IResponseFormat> {
         
         const username = param.username;
-        let response: IResponseFormat;
-
-        //Get cookie - 'username' and compare with parameter
-        let data = await 
-            this
-            .jwtService
-            .verifyAsync(request.cookies['jwt'])
+        let formatted_response: IResponseFormat;
         
-        if (data.username === username) {
+        try {
             let user_data = await 
                 this
                 .userService
                 .getUserByUsername(username);
-        
+
             if (Object.keys(user_data._responses).length >  0) {
                 user_data = user_data.next()._settledValue;
-                response = formatResponse(
-                        [user_data], true, "Success"
+                formatted_response = formatResponse(
+                        [user_data], 
+                        true, 
+                        "Success."
                     );
-            } 
-            else {
-                response = formatResponse([]);
+            } else {
+                throw new NotFoundException(username, "User doesn't exist.")
             }
-        } else {
-            throw new ForbiddenException;
+        } catch (error) {
+            formatted_response = formatResponse(
+                [error],
+                false,
+                error.status
+            )
         }
-      
     
         this
         .loggerService
         .insertLogs(formatLogs(
-                "editUser", param, response
+                "editUser", param, formatted_response
             )
         );
 
-        return response;
+        return formatted_response;
     }
 
-    @Put("update")
-    @Roles(Role.Admin)
-    async updateUser(@Body() user: User,
-        @Req() request: Request): Promise<IResponseFormat> {
+    //http://localhost:3000/api/update/kmarcus20
+    @Put("update/:username")
+    @UseGuards(AuthTokenGuard)
+    @RoleGuard(Role.Admin)
+    //@UseGuards(RoleGuard(Role.Admin))
+    async updateUser(@Req() request: Request,
+        @Body() user: User,
+        @Param() param): Promise<IResponseFormat> {
 
             let formatted_response: IResponseFormat;
             user.updated_date = setDateTime();
 
-            let response = await this.userService.updateUser(user);
-            if (response.replaced !== 1)
-                formatted_response = formatResponse(
-                        [user], false, "Failed"
-                    );
-            else
-                formatted_response = formatResponse(
-                        [user], true, "Update Successful."
+            try {
+                let user_data = await 
+                    this
+                    .userService
+                    .getUserByUsername(param.username)
+                
+                if (user_data._responses.length < 1)
+                    throw new NotFoundException(
+                        param.username, 
+                        "User doesn't exist."
                     )
+                
+                user_data = user_data.next()._settledValue;
+                let response = await 
+                    this
+                    .userService
+                    .updateUser(user,user_data.id);
+                
+                formatted_response = formatResponse(
+                    [user], true, "Update Successful."
+                )
+            } catch (error) {
+                formatted_response = formatResponse(
+                    [error],
+                    false,
+                    error.status
+                )
+            }
 
             this
             .loggerService
@@ -254,37 +317,77 @@ export class UserController {
             return formatted_response;
     }
 
+    // http://localhost:3000/api/delete?id=123abc
     @Delete("delete")
-    @Roles(Role.Admin)
+    //@UseGuards(RoleGuard(Role.Admin))
     async deleteUser(@Query() query): Promise<IResponseFormat> {
             
-            let formatted_response: IResponseFormat;
-            let response = await this.userService.getUserById(query.id)
-                .then( result => {
-                    return formatResponse(
-                            [result], true, "Deleted successfully"
-                        )
-                })
-                .catch( error => {
-                    return formatResponse(
-                            [error], false, "User does not exist."
-                        );
-                })
+        let formatted_response: IResponseFormat;
+        const id_to_delete = query.id;
+        
+        try {
+            let user = await 
+                this
+                .userService
+                .getUserById(id_to_delete)
+            
+            if (!user)
+                throw new 
+                    NotFoundException(
+                        id_to_delete,
+                        "ID doesn't exist"    
+                    )
+            
+            let response = await 
+                this
+                .userService
+                .deleteUser(id_to_delete)
 
-            this
-            .loggerService
-            .insertLogs(formatLogs(
-                    "deleteUser", query, response
-                )
+            formatted_response = formatResponse(
+                [response],
+                true,
+                "Successfully deleted user."
             )
+        } catch (error) {
+            formatted_response = formatResponse(
+                [error],
+                false,
+                error.status
+            )
+        }
 
-            return response;
+        this
+        .loggerService
+        .insertLogs(formatLogs(
+                "deleteUser", query, formatted_response
+            )
+        )
+
+        return formatted_response;
     }
 
     @Post("logout")
-    async logoutUser(@Res({passthrough: true}) response: Response) {
-        response.clearCookie("jwt");
-        return formatResponse([],true, "Logout successful.");
+    async logoutUser(@Req() request:Request,
+        @Res({passthrough: true}) response: Response)
+        : Promise<IResponseFormat> {
+
+            let formatted_response: IResponseFormat;
+            try {
+                response.clearCookie("jwt");
+                formatted_response = formatResponse(
+                    [],
+                    true,
+                    "Logout successful."
+                );
+            } catch (error) {
+                formatted_response = formatResponse(
+                    [error],
+                    false,
+                    "Failed."
+                );
+            }
+
+            return formatted_response;
     }
 
 }

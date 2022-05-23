@@ -9,6 +9,6 @@ export declare class UserService {
     getUserById(id: string): Promise<User>;
     getUserByUsername(username: string): Promise<any>;
     getUserByEmail(email: string): Promise<any>;
-    updateUser(user: User): Promise<rethink.WriteResult>;
+    updateUser(user: User, user_id: string): Promise<rethink.WriteResult>;
     deleteUser(id: string): Promise<rethink.WriteResult>;
 }

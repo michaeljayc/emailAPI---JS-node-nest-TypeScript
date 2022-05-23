@@ -6,5 +6,9 @@ export declare const Menu: {
     starred: number;
     important: number;
 };
+export declare const STATE: {
+    starred: number;
+    important: number;
+};
 export declare const isValidMenuTables: (menu: string) => boolean;
 export declare const isValidMenu: (menu: string) => boolean;

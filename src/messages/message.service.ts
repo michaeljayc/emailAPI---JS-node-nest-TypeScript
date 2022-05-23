@@ -14,21 +14,30 @@ export class MessageService {
         this.connection = connection;
     }
 
-    async getMessages(data: any)
-        : Promise<rethink.WriteResult> {
-            
-            return await rethink
-                .db(DB)
-                .table(data.table)
-                .filter(data.filtered)
-                .orderBy('updated_date')
-                .run(this.connection)
+    async getMessageById(id: string): Promise<Message> {
+
+        return rethink
+        .db(DB)
+        .table("inbox")
+        .get(id)
+        .run(this.connection)
     }
 
-    async getMessageDetails(table: string, message_id: string)
-        : Promise<any> {
+    async getMessages(data: any)
+        : Promise<rethink.WriteResult> {
 
-            return await rethink
+            return rethink
+            .db(DB)
+            .table(data.menu)
+            .filter(data.filtered)
+            .orderBy('updated_date')
+            .run(this.connection)
+    }
+
+    async getMessageDetails(table: string, 
+        message_id: string)
+        : Promise<any> {
+            return rethink
                 .db(DB)
                 .table(table)
                 .get(message_id)
@@ -37,12 +46,12 @@ export class MessageService {
 
     async sendMessage(table: string, message: Message)
         : Promise<rethink.WriteResult> {
-            return await rethink
 
-                .db(DB)
-                .table(table)
-                .insert(message)
-                .run(this.connection)
+            return rethink
+            .db(DB)
+            .table(table)
+            .insert(message)
+            .run(this.connection)
     }
 
     async updateReadUnread(message_id: string)
@@ -70,7 +79,7 @@ export class MessageService {
          message: Message)
         : Promise<rethink.WriteResult> {
 
-            return await rethink
+                return rethink
                 .db(DB)
                 .table(table)
                 .get(id)
@@ -78,7 +87,8 @@ export class MessageService {
                 .run(this.connection)
     }
 
-    async deleteMessage(table: string, message_id: string)
+    async deleteMessage(table: string, 
+        message_id: string)
         : Promise<rethink.WriteResult> {
 
             return await rethink

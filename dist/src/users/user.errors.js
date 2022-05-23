@@ -5,14 +5,14 @@ const incorrectUserPassword = () => ({
     success: false,
     count: 0,
     message: "Incorrect Password.",
-    data: null
+    data: []
 });
 exports.incorrectUserPassword = incorrectUserPassword;
 const userEmailDoesNotExist = (email) => ({
     success: false,
     count: 0,
     message: `${email} does not exist.`,
-    data: null,
+    data: [],
 });
 exports.userEmailDoesNotExist = userEmailDoesNotExist;
 //# sourceMappingURL=user.errors.js.map

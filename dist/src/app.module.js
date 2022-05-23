@@ -16,6 +16,8 @@ const user_role_module_1 = require("./user_roles/user_role.module");
 const config_1 = require("@nestjs/config");
 const auth_module_1 = require("./auth/auth.module");
 const message_module_1 = require("./messages/message.module");
+const core_1 = require("@nestjs/core");
+const http_exception_filter_1 = require("./filters/http-exception.filter");
 let AppModule = class AppModule {
 };
 AppModule = __decorate([
@@ -29,7 +31,12 @@ AppModule = __decorate([
             message_module_1.MessageModule,
         ],
         controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService],
+        providers: [app_service_1.AppService,
+            {
+                provide: core_1.APP_FILTER,
+                useClass: http_exception_filter_1.HttpExceptionFilter
+            },
+        ],
         exports: [app_service_1.AppService]
     })
 ], AppModule);

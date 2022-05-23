@@ -65,11 +65,11 @@ export class UserService {
             .run(this.connection)
     }
 
-    async updateUser(user: User): Promise<rethink.WriteResult> {
+    async updateUser(user: User, user_id:string): Promise<rethink.WriteResult> {
         return await rethink
             .db(DB)
             .table(TABLE)
-            .get(user.id)
+            .get(user_id)
             .update(user)
             .run(this.connection)
     }
