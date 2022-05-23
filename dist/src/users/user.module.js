@@ -18,8 +18,10 @@ const jwt_1 = require("@nestjs/jwt");
 const auth_module_1 = require("../auth/auth.module");
 const auth_service_1 = require("../auth/auth.service");
 const core_1 = require("@nestjs/core");
-const roles_guard_1 = require("../guards/roles.guard");
+const roles_guard_1 = require("../guards/roles/roles.guard");
 const passport_1 = require("@nestjs/passport");
+const auth_token_module_1 = require("../guards/auth-token/auth-token.module");
+const roles_module_1 = require("../guards/roles/roles.module");
 let UserModule = class UserModule {
 };
 UserModule = __decorate([
@@ -31,7 +33,9 @@ UserModule = __decorate([
                 secret: "secret",
                 signOptions: { expiresIn: '1d' }
             }),
-            auth_module_1.AuthModule],
+            auth_module_1.AuthModule,
+            auth_token_module_1.AuthTokenModule,
+            roles_module_1.RolesModule],
         controllers: [user_controller_1.UserController],
         providers: [database_provider_1.default,
             user_service_1.UserService,
@@ -40,7 +44,7 @@ UserModule = __decorate([
             {
                 provide: core_1.APP_GUARD,
                 useClass: roles_guard_1.RolesGuard
-            },],
+            }],
         exports: [user_service_1.UserService]
     })
 ], UserModule);

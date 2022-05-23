@@ -12,6 +12,7 @@ import {
     Put, 
     Query, 
     Req,
+    UseGuards,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { IResponseFormat } from "../common/common.interface";
@@ -27,6 +28,7 @@ import {
     isValidMenuTables,
     STATE
 } from "./message.common";
+import { AuthTokenGuard } from "src/guards/auth-token/auth-token.guard";
 
 @Controller("messages")
 export class MessageController {
@@ -35,7 +37,8 @@ export class MessageController {
         private readonly jwtService:JwtService,
         private readonly loggerService: LoggerService,
         private readonly userService: UserService){}
-
+    
+    @UseGuards(AuthTokenGuard)
     @Get("")
     async getMessages(@Req() request: Request,
         @Query() query): Promise<IResponseFormat | any> {
@@ -102,6 +105,7 @@ export class MessageController {
     // http://localhost:3000/api/messages/inbox/details/:message_id
     // OR 
     // http://localhost:3000/api/messages/inbox/reply/:message_id
+    @UseGuards(AuthTokenGuard)
     @Get(":menu/:action/:message_id")
     async getMessageDetails(@Req() request: Request,
         @Param() param)
@@ -110,11 +114,6 @@ export class MessageController {
             let formatted_response: IResponseFormat;
 
             try {
-                //Retrieve cookie
-                const cookie = await this
-                    .jwtService
-                    .verifyAsync(request.cookies["jwt"])
-
                 // Check if message id exists
                 let response = await this
                     .messageService
@@ -148,6 +147,7 @@ export class MessageController {
     }
     
     // http://localhost:3000/api/messages/send
+    @UseGuards(AuthTokenGuard)
     @Post("send")
     async sendMessage(@Req() request: Request,
         @Body() message: Message)
@@ -217,6 +217,7 @@ export class MessageController {
             return formatted_response;
     }
 
+    @UseGuards(AuthTokenGuard)
     @Post("save-as-draft")
     async saveAsDraft(@Req() request: Request,
         @Body() message: Message): Promise<IResponseFormat> {
@@ -266,6 +267,7 @@ export class MessageController {
     }
 
     // http://localhost:3000/api/messages/drafts/update?id=123abc
+    @UseGuards(AuthTokenGuard)
     @Put("drafts/update")
     async updateDraftedMessage(@Req() request: Request,
         @Body() message:Message,    
@@ -275,11 +277,6 @@ export class MessageController {
             let formatted_response: IResponseFormat;
 
             try {
-                // get cookie
-                const cookie = await this
-                    .jwtService
-                    .verifyAsync(request.cookies["jwt"]);
-
                 const message_id = query.id;
                 message.updated_date = String(Date.now()) 
 
@@ -307,6 +304,7 @@ export class MessageController {
             return formatted_response;
     }
 
+    @UseGuards(AuthTokenGuard)
     @Delete(":menu/delete")
     async deleteMessage(@Req() request:Request,
         @Param() param,
@@ -317,11 +315,7 @@ export class MessageController {
             const message_id = query.id;
             let formatted_response: IResponseFormat;
 
-            try {   
-                const cookie = await this 
-                    .jwtService
-                    .verifyAsync(request.cookies["jwt"]);
-            
+            try {               
                 let response = await this
                     .messageService
                     .deleteMessage(table, message_id)
@@ -350,6 +344,7 @@ export class MessageController {
     }
 
     // http://localhost:3000/api/messages/inbox/reply?message_id=
+    @UseGuards(AuthTokenGuard)
     @Post("inbox/reply")
     async replyToMessage(@Req() request: Request,
         @Query() query,
@@ -358,15 +353,10 @@ export class MessageController {
             let formatted_response: IResponseFormat;
 
             try {
-                // get cookie
-                const cookie = await this
-                .jwtService
-                .verifyAsync(request.cookies["jwt"]);
-
                 // check if query.id is a valid id
                 if (!await this.messageService.getMessageById(query.id))
                     throw new HttpException
-                    (`Message ID ${query.id} doesn't exist`, 404)
+                        (`Message ID ${query.id} doesn't exist`, 404)
             
                 const reply_recipient = message.sender;
                 const reply_recipient_id = message.sender_id;
@@ -418,6 +408,7 @@ export class MessageController {
     }
 
     // http://localhost:3000/api/messages/inbox?id=123abc&state=starred
+    @UseGuards(AuthTokenGuard)
     @Put(":menu")
     async setMenuState(@Req() request: Request,
         @Param() param,
@@ -427,10 +418,6 @@ export class MessageController {
             let formatted_response: IResponseFormat;
 
             try {
-                // get cookie
-                const cookie = this.jwtService.verifyAsync
-                    (request.cookies["jwt"]);
-                
                 if (isValidMenuTables(param.menu)) {
 
                     let message = await 

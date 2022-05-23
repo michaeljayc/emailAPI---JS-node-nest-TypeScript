@@ -8,28 +8,22 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AuthTokenGuard = void 0;
+exports.AuthTokenService = void 0;
 const common_1 = require("@nestjs/common");
-const user_service_1 = require("../users/user.service");
-let AuthTokenGuard = class AuthTokenGuard {
-    constructor(userService) {
-        this.userService = userService;
+const jwt_1 = require("@nestjs/jwt");
+let AuthTokenService = class AuthTokenService {
+    constructor(jwtService) {
+        this.jwtService = jwtService;
     }
-    canActivate(context) {
-        const request = context.switchToHttp().getRequest();
-        const params = request.params;
-        console.log(params);
-        return true;
+    async getContextData(data) {
+        const cookie = await this.jwtService.verifyAsync(data);
+        return !!cookie;
     }
 };
-AuthTokenGuard = __decorate([
+AuthTokenService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, common_1.Inject)((0, common_1.forwardRef)(() => user_service_1.UserService))),
-    __metadata("design:paramtypes", [user_service_1.UserService])
-], AuthTokenGuard);
-exports.AuthTokenGuard = AuthTokenGuard;
-//# sourceMappingURL=auth-token.guard.js.map
+    __metadata("design:paramtypes", [jwt_1.JwtService])
+], AuthTokenService);
+exports.AuthTokenService = AuthTokenService;
+//# sourceMappingURL=auth-token.service.js.map

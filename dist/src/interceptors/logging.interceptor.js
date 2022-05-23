@@ -25,7 +25,7 @@ let LoggingInterceptor = class LoggingInterceptor {
             }
             console.log((0, common_functions_1.formatResponse)(obj_data, data.success, data.message));
         }), (0, operators_1.catchError)(err => {
-            console.log(`Error: ${err}`);
+            console.log((0, common_functions_1.formatResponse)(err, false, err.message));
             throw err;
         }));
     }

@@ -30,8 +30,7 @@ import { JwtService } from "@nestjs/jwt";
 import { Response, Request } from "express";
 import { Role } from "src/user_roles/role.enum";
 import { RoleGuard } from "src/user_roles/role.decorator";
-import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
-import { AuthTokenGuard } from "src/guards/auth-token.guard";
+import { AuthTokenGuard } from "src/guards/auth-token/auth-token.guard";
 
 const DATE = new Date;
 
@@ -151,8 +150,9 @@ export class UserController {
     }
 
     // http://localhost:3000/api/user
-    //@UseGuards(JwtAuthGuard, AuthTokenGuard)
     @Get("user")
+    @UseGuards(AuthTokenGuard)
+    @RoleGuard(Role.Admin)
     async getUser(@Req() request: Request)
         : Promise<IResponseFormat> {
 
@@ -186,9 +186,9 @@ export class UserController {
     }
 
     // http://localhost:3000/api/users
-    @UseGuards(JwtAuthGuard, AuthTokenGuard)
-    @Get("users")
     @RoleGuard(Role.Admin)
+    @UseGuards(AuthTokenGuard)
+    @Get("users")
     async getAllUsers(@Req() request: Request)
         : Promise<IResponseFormat> {
 
@@ -223,7 +223,9 @@ export class UserController {
 
     // http://localhost:3000/api/edit/username
     @Get("edit/:username")
+    @UseGuards(AuthTokenGuard)
     @RoleGuard(Role.Admin)
+    //@UseGuards(RoleGuard(Role.Admin))
     async editUser(@Req() request:Request,
         @Param() param): Promise<IResponseFormat> {
         
@@ -266,7 +268,9 @@ export class UserController {
 
     //http://localhost:3000/api/update/kmarcus20
     @Put("update/:username")
+    @UseGuards(AuthTokenGuard)
     @RoleGuard(Role.Admin)
+    //@UseGuards(RoleGuard(Role.Admin))
     async updateUser(@Req() request: Request,
         @Body() user: User,
         @Param() param): Promise<IResponseFormat> {
@@ -315,7 +319,7 @@ export class UserController {
 
     // http://localhost:3000/api/delete?id=123abc
     @Delete("delete")
-    @RoleGuard(Role.Admin)
+    //@UseGuards(RoleGuard(Role.Admin))
     async deleteUser(@Query() query): Promise<IResponseFormat> {
             
         let formatted_response: IResponseFormat;

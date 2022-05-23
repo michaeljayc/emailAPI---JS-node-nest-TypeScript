@@ -23,8 +23,7 @@ const common_functions_1 = require("../common/common.functions");
 const jwt_1 = require("@nestjs/jwt");
 const role_enum_1 = require("../user_roles/role.enum");
 const role_decorator_1 = require("../user_roles/role.decorator");
-const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
-const auth_token_guard_1 = require("../guards/auth-token.guard");
+const auth_token_guard_1 = require("../guards/auth-token/auth-token.guard");
 const DATE = new Date;
 let UserController = UserController_1 = class UserController {
     constructor(userService, loggerService, authService, jwtService) {
@@ -221,15 +220,17 @@ __decorate([
 ], UserController.prototype, "loginUser", null);
 __decorate([
     (0, common_1.Get)("user"),
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
+    (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "getUser", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, auth_token_guard_1.AuthTokenGuard),
-    (0, common_1.Get)("users"),
     (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
+    (0, common_1.Get)("users"),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -237,6 +238,7 @@ __decorate([
 ], UserController.prototype, "getAllUsers", null);
 __decorate([
     (0, common_1.Get)("edit/:username"),
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)()),
@@ -246,6 +248,7 @@ __decorate([
 ], UserController.prototype, "editUser", null);
 __decorate([
     (0, common_1.Put)("update/:username"),
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Body)()),
@@ -256,7 +259,6 @@ __decorate([
 ], UserController.prototype, "updateUser", null);
 __decorate([
     (0, common_1.Delete)("delete"),
-    (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),

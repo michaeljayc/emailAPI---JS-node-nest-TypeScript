@@ -15,6 +15,7 @@ const rethink_module_1 = require("../../rethinkdb/rethink.module");
 const auth_module_1 = require("../auth/auth.module");
 const auth_service_1 = require("../auth/auth.service");
 const constants_1 = require("../auth/constants");
+const auth_token_module_1 = require("../guards/auth-token/auth-token.module");
 const logger_service_1 = require("../services/logger.service");
 const user_service_1 = require("../users/user.service");
 const message_controller_1 = require("./message.controller");
@@ -29,7 +30,8 @@ MessageModule = __decorate([
                 secret: constants_1.jwtConstants.secret,
                 signOptions: { expiresIn: '1d' }
             }),
-            auth_module_1.AuthModule],
+            auth_module_1.AuthModule,
+            auth_token_module_1.AuthTokenModule],
         controllers: [message_controller_1.default],
         providers: [message_service_1.default,
             database_provider_1.default,

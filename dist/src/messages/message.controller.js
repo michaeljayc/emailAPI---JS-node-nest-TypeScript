@@ -21,6 +21,7 @@ const common_functions_1 = require("../common/common.functions");
 const logger_service_1 = require("../services/logger.service");
 const user_service_1 = require("../users/user.service");
 const message_common_1 = require("./message.common");
+const auth_token_guard_1 = require("../guards/auth-token/auth-token.guard");
 let MessageController = class MessageController {
     constructor(messageService, jwtService, loggerService, userService) {
         this.messageService = messageService;
@@ -75,9 +76,6 @@ let MessageController = class MessageController {
     async getMessageDetails(request, param) {
         let formatted_response;
         try {
-            const cookie = await this
-                .jwtService
-                .verifyAsync(request.cookies["jwt"]);
             let response = await this
                 .messageService
                 .getMessageDetails(param.menu, param.message_id);
@@ -162,9 +160,6 @@ let MessageController = class MessageController {
     async updateDraftedMessage(request, message, query) {
         let formatted_response;
         try {
-            const cookie = await this
-                .jwtService
-                .verifyAsync(request.cookies["jwt"]);
             const message_id = query.id;
             message.updated_date = String(Date.now());
             let response = await this
@@ -188,9 +183,6 @@ let MessageController = class MessageController {
         const message_id = query.id;
         let formatted_response;
         try {
-            const cookie = await this
-                .jwtService
-                .verifyAsync(request.cookies["jwt"]);
             let response = await this
                 .messageService
                 .deleteMessage(table, message_id);
@@ -210,9 +202,6 @@ let MessageController = class MessageController {
     async replyToMessage(request, query, message) {
         let formatted_response;
         try {
-            const cookie = await this
-                .jwtService
-                .verifyAsync(request.cookies["jwt"]);
             if (!await this.messageService.getMessageById(query.id))
                 throw new common_1.HttpException(`Message ID ${query.id} doesn't exist`, 404);
             const reply_recipient = message.sender;
@@ -252,7 +241,6 @@ let MessageController = class MessageController {
     async setMenuState(request, param, query) {
         let formatted_response;
         try {
-            const cookie = this.jwtService.verifyAsync(request.cookies["jwt"]);
             if ((0, message_common_1.isValidMenuTables)(param.menu)) {
                 let message = await this
                     .messageService
@@ -291,6 +279,7 @@ let MessageController = class MessageController {
     }
 };
 __decorate([
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, common_1.Get)(""),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Query)()),
@@ -299,6 +288,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "getMessages", null);
 __decorate([
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, common_1.Get)(":menu/:action/:message_id"),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)()),
@@ -307,6 +297,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "getMessageDetails", null);
 __decorate([
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, common_1.Post)("send"),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Body)()),
@@ -315,6 +306,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "sendMessage", null);
 __decorate([
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, common_1.Post)("save-as-draft"),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Body)()),
@@ -323,6 +315,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "saveAsDraft", null);
 __decorate([
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, common_1.Put)("drafts/update"),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Body)()),
@@ -332,6 +325,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "updateDraftedMessage", null);
 __decorate([
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, common_1.Delete)(":menu/delete"),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)()),
@@ -341,6 +335,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "deleteMessage", null);
 __decorate([
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, common_1.Post)("inbox/reply"),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Query)()),
@@ -350,6 +345,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "replyToMessage", null);
 __decorate([
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, common_1.Put)(":menu"),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)()),

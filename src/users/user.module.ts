@@ -9,8 +9,10 @@ import { JwtModule } from "@nestjs/jwt";
 import { AuthModule } from "src/auth/auth.module";
 import { AuthService } from "src/auth/auth.service"
 import { APP_GUARD } from "@nestjs/core";
-import { RolesGuard } from "src/guards/roles.guard";
+import { RolesGuard } from "src/guards/roles/roles.guard";
 import { PassportModule } from "@nestjs/passport";
+import { AuthTokenModule } from "src/guards/auth-token/auth-token.module";
+import { RolesModule } from "src/guards/roles/roles.module";
 @Module({
     imports: [RethinkModule,
         PassportModule, 
@@ -19,7 +21,9 @@ import { PassportModule } from "@nestjs/passport";
             secret: "secret",
             signOptions: {expiresIn: '1d'}
         }),
-    AuthModule],
+    AuthModule,
+    AuthTokenModule,
+    RolesModule],
     controllers: [UserController],
     providers: [RethinkProvider,
         UserService,
@@ -28,7 +32,7 @@ import { PassportModule } from "@nestjs/passport";
         {
             provide: APP_GUARD,
             useClass: RolesGuard
-        },],
+        }],
     exports: [UserService]
 })
 

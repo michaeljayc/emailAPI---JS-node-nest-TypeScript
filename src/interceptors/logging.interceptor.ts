@@ -17,7 +17,7 @@ export class LoggingInterceptor implements NestInterceptor {
             // Gets the app name used for sending req and res
             const test  = context
                 .switchToHttp().getRequest().headers['user-agent'];
-
+            
             return next
             .handle()
             .pipe(
@@ -33,7 +33,9 @@ export class LoggingInterceptor implements NestInterceptor {
                     )
                 }),
                 catchError( err => {
-                    console.log(`Error: ${err}`)
+                    console.log(formatResponse
+                        (err, false, err.message)
+                    )
                     throw err;
                 })
             );

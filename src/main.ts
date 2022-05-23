@@ -3,6 +3,7 @@ import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
+import { AuthTokenGuard } from './guards/auth-token/auth-token.guard';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
 
 async function bootstrap() {
@@ -11,6 +12,7 @@ async function bootstrap() {
   const { httpAdapter } = app.get(HttpAdapterHost);
   app.setGlobalPrefix("api");
   app.use(cookieParser());
+  //app.useGlobalGuards(new AuthTokenGuard)
   app.useGlobalInterceptors(new LoggingInterceptor)
   app.useGlobalFilters(new HttpExceptionFilter)
   

@@ -12,35 +12,29 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RolesGuard = void 0;
 const common_1 = require("@nestjs/common");
 const core_1 = require("@nestjs/core");
-const role_decorator_1 = require("../user_roles/role.decorator");
+const role_decorator_1 = require("../../user_roles/role.decorator");
 const jwt_1 = require("@nestjs/jwt");
-const user_service_1 = require("../users/user.service");
+const roles_services_1 = require("./roles.services");
 let RolesGuard = class RolesGuard {
-    constructor(reflector, userService, jwtService) {
+    constructor(reflector, rolesService, jwtService) {
         this.reflector = reflector;
-        this.userService = userService;
+        this.rolesService = rolesService;
         this.jwtService = jwtService;
     }
     async canActivate(context) {
-        const requiredRole = this
-            .reflector
-            .getAllAndOverride(role_decorator_1.ROLES_KEY, [
-            context.getHandler(),
-            context.getClass(),
-        ]);
-        if (!requiredRole) {
-            return true;
-        }
-        const data = context.switchToHttp().getRequest();
         try {
-            let user_data = await this
-                .jwtService
-                .verifyAsync(data.cookies.jwt);
-            let user = await this
-                .userService
-                .getUserByEmail(user_data.email);
-            if (Object.keys(user._responses).length !== 0)
-                user = user.next()._settledValue;
+            const requiredRole = this
+                .reflector
+                .getAllAndOverride(role_decorator_1.ROLES_KEY, [
+                context.getHandler(),
+                context.getClass(),
+            ]);
+            if (!requiredRole) {
+                return true;
+            }
+            const context_data = context.switchToHttp().getRequest();
+            const data = await this.jwtService.verifyAsync(context_data.cookies.jwt);
+            const user = await this.rolesService.getUserDataContext(data);
             if (requiredRole !== user.role_type_id)
                 throw new common_1.UnauthorizedException();
             else
@@ -54,7 +48,7 @@ let RolesGuard = class RolesGuard {
 RolesGuard = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [core_1.Reflector,
-        user_service_1.UserService,
+        roles_services_1.RolesService,
         jwt_1.JwtService])
 ], RolesGuard);
 exports.RolesGuard = RolesGuard;
