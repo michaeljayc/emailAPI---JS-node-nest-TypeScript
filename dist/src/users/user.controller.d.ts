@@ -6,7 +6,6 @@ import { Request } from "express";
 export declare class UserController {
     private userService;
     private loggerService;
-    private readonly logger;
     constructor(userService: UserService, loggerService: LoggerService);
     getAllUsers(request: Request): Promise<IResponseFormat>;
     getUser(request: Request, param: any): Promise<IResponseFormat>;

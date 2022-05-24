@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var UserController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserController = void 0;
 const common_1 = require("@nestjs/common");
@@ -23,11 +22,10 @@ const role_enum_1 = require("../user_roles/role.enum");
 const role_decorator_1 = require("../user_roles/role.decorator");
 const auth_token_guard_1 = require("../guards/auth-token/auth-token.guard");
 const DATE = new Date;
-let UserController = UserController_1 = class UserController {
+let UserController = class UserController {
     constructor(userService, loggerService) {
         this.userService = userService;
         this.loggerService = loggerService;
-        this.logger = new common_1.Logger(UserController_1.name);
     }
     async getAllUsers(request) {
         let formatted_response;
@@ -51,6 +49,8 @@ let UserController = UserController_1 = class UserController {
         let formatted_response;
         try {
             const data = await this.userService.getUserByUsername(param.username);
+            if (data._responses.length < 1)
+                throw new common_1.NotFoundException(`User '${param.username}' doesn't exist`);
             user = data.next()._settledValue;
             formatted_response = (0, common_functions_1.formatResponse)([user], true, "Success");
         }
@@ -180,7 +180,7 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "deleteUser", null);
-UserController = UserController_1 = __decorate([
+UserController = __decorate([
     (0, common_1.Controller)("users"),
     __metadata("design:paramtypes", [user_service_1.UserService,
         logger_service_1.LoggerService])

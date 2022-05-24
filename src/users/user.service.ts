@@ -1,6 +1,7 @@
 import { Injectable, Inject, forwardRef } from "@nestjs/common";
 import { User } from "./user.entity";
 import * as rethink from "rethinkdb";
+import { formatResponse } from "src/common/common.functions";
 
 const TABLE = "users";
 const DB = "emailAPI";

@@ -34,8 +34,6 @@ const DATE = new Date;
 @Controller("users")
 export class UserController {
 
-    private readonly logger = new Logger(UserController.name);
-
     constructor(private userService: UserService,
         private loggerService: LoggerService){}
 
@@ -81,12 +79,16 @@ export class UserController {
     async getUser(@Req() request: Request,
         @Param() param)
         : Promise<IResponseFormat> {
- 
+            
             let user: User;
             let formatted_response: IResponseFormat;
             
             try {
                 const data = await this.userService.getUserByUsername(param.username);
+                if (data._responses.length < 1)
+                    throw new NotFoundException
+                        (`User '${param.username}' doesn't exist`)
+
                 user = data.next()._settledValue;
                 formatted_response = formatResponse(
                     [user],true, "Success"

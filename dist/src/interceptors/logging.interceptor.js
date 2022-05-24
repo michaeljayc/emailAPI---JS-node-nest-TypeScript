@@ -9,24 +9,21 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.LoggingInterceptor = void 0;
 const common_1 = require("@nestjs/common");
 const operators_1 = require("rxjs/operators");
-const common_functions_1 = require("../common/common.functions");
 let LoggingInterceptor = class LoggingInterceptor {
     intercept(context, next) {
-        const test = context
-            .switchToHttp().getRequest().headers['user-agent'];
+        const request = {
+            "class": context.getClass().name,
+            "function": context.getHandler().name,
+            "params": context.getArgs()[0].params,
+            "query": context.getArgs()[0].query,
+        };
+        const log_path = context.getArgs()[0].path;
+        const logger = new common_1.Logger(log_path.toUpperCase());
+        logger.log(`[REQUEST]: ${JSON.stringify(request)}`);
         return next
             .handle()
-            .pipe((0, operators_1.tap)(data => {
-            let obj_data = data.datas;
-            if (obj_data && obj_data.length > 1) {
-                obj_data = obj_data.map(item => {
-                    return item;
-                });
-            }
-            console.log((0, common_functions_1.formatResponse)(obj_data, data.success, data.message));
-        }), (0, operators_1.catchError)(err => {
-            console.log((0, common_functions_1.formatResponse)(err, false, err.message));
-            throw err;
+            .pipe((0, operators_1.tap)((res) => logger.log(`[RESPONSE]: ${JSON.stringify(res)}`), (res) => {
+            logger.error(`[${log_path}]: ${JSON.stringify(res)}`);
         }));
     }
 };
