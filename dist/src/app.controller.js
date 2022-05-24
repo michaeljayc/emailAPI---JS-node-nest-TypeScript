@@ -18,8 +18,8 @@ const jwt_1 = require("@nestjs/jwt");
 const auth_service_1 = require("./auth/auth.service");
 const common_functions_1 = require("./common/common.functions");
 const logger_service_1 = require("./services/logger.service");
-const user_entity_1 = require("./users/user.entity");
 const user_service_1 = require("./users/user.service");
+const user_dto_1 = require("./users/user.dto");
 let AppController = class AppController {
     constructor(authService, userService, loggerService, jwtService) {
         this.authService = authService;
@@ -97,7 +97,7 @@ __decorate([
     (0, common_1.Post)("register"),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_entity_1.default]),
+    __metadata("design:paramtypes", [user_dto_1.UserRegisterDTO]),
     __metadata("design:returntype", Promise)
 ], AppController.prototype, "registerUser", null);
 __decorate([
@@ -105,7 +105,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [user_dto_1.UserLoginDTO, Object]),
     __metadata("design:returntype", Promise)
 ], AppController.prototype, "loginUser", null);
 __decorate([

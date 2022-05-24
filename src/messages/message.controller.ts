@@ -174,8 +174,8 @@ export class MessageController {
                 recipient_data = recipient_data.next()._settledValue;
 
                 // add data to construct message
-                message.created_date = String(Date.now());
-                message.updated_date = String(Date.now()); 
+                // message.created_date = String(Date.now());
+                // message.updated_date = String(Date.now()); 
                 message.recipient_id = recipient_data.id;
                 message.menu_state = 0;
                 message.sender = sender_data.email

@@ -104,8 +104,6 @@ let MessageController = class MessageController {
             if (Object.keys(recipient_data._responses).length < 1)
                 throw new common_1.NotFoundException(`${message.recipient}`, "Recipient doesn't exist");
             recipient_data = recipient_data.next()._settledValue;
-            message.created_date = String(Date.now());
-            message.updated_date = String(Date.now());
             message.recipient_id = recipient_data.id;
             message.menu_state = 0;
             message.sender = sender_data.email;

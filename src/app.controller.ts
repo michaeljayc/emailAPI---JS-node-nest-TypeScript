@@ -20,6 +20,7 @@ import User from './users/user.entity';
 import { UserService } from './users/user.service';
 import { TLoginCredentials } from './users/user.types';
 import { Response } from "express";
+import { UserLoginDTO, UserRegisterDTO } from './users/user.dto';
 
 @Controller()
 export class AppController {
@@ -31,7 +32,7 @@ export class AppController {
 
 
     @Post("register")
-    async registerUser(@Body() user:User)
+    async registerUser(@Body() user: UserRegisterDTO)
         : Promise<IResponseFormat |  any> {
         
         let formatted_response: IResponseFormat;
@@ -77,12 +78,11 @@ export class AppController {
 
     @Post("login")
     async loginUser(
-      @Body() credentials: TLoginCredentials,
+      @Body() credentials: UserLoginDTO,
       @Res({passthrough: true}) response: Response)
       : Promise<IResponseFormat | any> {
 
         let formatted_response: IResponseFormat;
-
         if (Object.keys(credentials).length < 1)
             throw new BadRequestException
             ("Input email and password", response.statusMessage);

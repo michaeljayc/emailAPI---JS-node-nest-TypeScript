@@ -5,11 +5,8 @@ import {
     NestInterceptor,
     Logger
 } from "@nestjs/common";
-import { Router } from "express";
 import { Observable } from "rxjs";
-import { tap, catchError } from "rxjs/operators";
-import { formatResponse } from "src/common/common.functions";
-import { isAsyncFunction } from "util/types";
+import { tap } from "rxjs/operators";
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {

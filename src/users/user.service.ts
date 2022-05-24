@@ -2,6 +2,7 @@ import { Injectable, Inject, forwardRef } from "@nestjs/common";
 import { User } from "./user.entity";
 import * as rethink from "rethinkdb";
 import { formatResponse } from "src/common/common.functions";
+import { UserRegisterDTO } from "./user.dto";
 
 const TABLE = "users";
 const DB = "emailAPI";
@@ -14,7 +15,7 @@ export class UserService {
         this.connection = connection;
     }
 
-    async registerUser(user: User): Promise<rethink.WriteResult> {
+    async registerUser(user: UserRegisterDTO): Promise<rethink.WriteResult> {
         return rethink
             .db(DB)
             .table(TABLE)

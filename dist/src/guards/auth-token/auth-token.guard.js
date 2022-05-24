@@ -18,6 +18,7 @@ let AuthTokenGuard = class AuthTokenGuard {
         this.authTokenService = authTokenService;
     }
     async canActivate(context) {
+        console.log(context.getArgs()[0].body);
         try {
             return await this.authTokenService.getContextData(context.getArgs()[1].req.cookies.jwt);
         }

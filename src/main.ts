@@ -1,4 +1,4 @@
-import { NestApplicationOptions } from '@nestjs/common';
+import { NestApplicationOptions, ValidationPipe } from '@nestjs/common';
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
@@ -11,8 +11,9 @@ async function bootstrap() {
   const { httpAdapter } = app.get(HttpAdapterHost);
   app.setGlobalPrefix("api");
   app.use(cookieParser());
-  app.useGlobalInterceptors(new LoggingInterceptor)
-  app.useGlobalFilters(new HttpExceptionFilter)
+  app.useGlobalInterceptors(new LoggingInterceptor())
+  app.useGlobalFilters(new HttpExceptionFilter())
+  app.useGlobalPipes(new ValidationPipe())
   
  // === For access ===
   app.enableCors({
