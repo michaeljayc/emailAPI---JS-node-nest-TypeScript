@@ -22,6 +22,7 @@ const logger_service_1 = require("../services/logger.service");
 const user_service_1 = require("../users/user.service");
 const message_common_1 = require("./message.common");
 const auth_token_guard_1 = require("../guards/auth-token/auth-token.guard");
+const message_dto_1 = require("./message.dto");
 let MessageController = class MessageController {
     constructor(messageService, jwtService, loggerService, userService) {
         this.messageService = messageService;
@@ -41,15 +42,15 @@ let MessageController = class MessageController {
                     .verifyAsync(cookie);
                 if ((0, message_common_1.isValidMenuTables)(menu)) {
                     if (menu === "inbox")
-                        filtered = { "recipient_id": user_data.id };
+                        filtered = { "recipient": user_data.email };
                     else
-                        filtered = { "sender_id": user_data.id };
+                        filtered = { "sender": user_data.email };
                 }
                 else {
                     filtered = {
                         "menu_state": query.menu === "starred" ?
                             message_common_1.Menu.starred : message_common_1.Menu.important,
-                        "recipient_id": user_data.id
+                        "recipient": user_data.email
                     };
                     menu = "inbox";
                 }
@@ -57,8 +58,7 @@ let MessageController = class MessageController {
                     .messageService
                     .getMessages({
                     filtered,
-                    menu,
-                    id: user_data.id
+                    menu
                 });
                 formatted_response = (0, common_functions_1.formatResponse)(response, true, "Success");
             }
@@ -96,29 +96,22 @@ let MessageController = class MessageController {
     async sendMessage(request, message) {
         let formatted_response;
         const drafted_message = message === null || message === void 0 ? void 0 : message.drafted;
+        const newMessageDTO = new message_dto_1.NewMessageDTO();
+        const default_message = (Object.assign(Object.assign({}, newMessageDTO), message));
         try {
-            const sender_data = await this.jwtService.verifyAsync(request.cookies["jwt"]);
             let recipient_data = await this
                 .userService
                 .getUserByEmail(message.recipient);
             if (Object.keys(recipient_data._responses).length < 1)
                 throw new common_1.NotFoundException(`${message.recipient}`, "Recipient doesn't exist");
-            recipient_data = recipient_data.next()._settledValue;
-            message.recipient_id = recipient_data.id;
-            message.menu_state = 0;
-            message.sender = sender_data.email;
-            message.sender_id = sender_data.id;
-            message.message_origin_id = "";
-            message.read = false;
-            message.drafted = false;
             formatted_response = await this
                 .messageService
-                .sendMessage("inbox", message)
+                .sendMessage("inbox", default_message)
                 .then(result => {
-                return (0, common_functions_1.formatResponse)([message], true, "Message Sent");
+                return (0, common_functions_1.formatResponse)([default_message], true, "Message Sent");
             });
             if (formatted_response.success)
-                await this.messageService.sendMessage("sent", message);
+                await this.messageService.sendMessage("sent", default_message);
             if (drafted_message)
                 await this.messageService.deleteMessage("drafts", message.id);
         }
@@ -127,32 +120,26 @@ let MessageController = class MessageController {
         }
         this
             .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("sendMessage", message, formatted_response));
+            .insertLogs((0, common_functions_1.formatLogs)("sendMessage", default_message, formatted_response));
         return formatted_response;
     }
     async saveAsDraft(request, message) {
         let formatted_response;
+        const newMessageDTO = new message_dto_1.NewMessageDTO();
+        const default_message = (Object.assign(Object.assign({}, newMessageDTO), message));
         try {
-            let sender_data = await this
-                .jwtService
-                .verifyAsync(request.cookies["jwt"]);
-            message.created_date = String(Date.now());
-            message.updated_date = String(Date.now());
-            message.sender = sender_data.email;
-            message.sender_id = sender_data.id;
-            message.drafted = true;
-            message.read = false;
-            let response = await this
+            default_message.drafted = true;
+            await this
                 .messageService
-                .sendMessage("drafts", message);
-            formatted_response = (0, common_functions_1.formatResponse)(message, true, "Saved as draft.");
+                .sendMessage("drafts", default_message);
+            formatted_response = (0, common_functions_1.formatResponse)(default_message, true, "Saved as draft.");
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
         }
         this
             .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("saveAsDraft", message, formatted_response));
+            .insertLogs((0, common_functions_1.formatLogs)("saveAsDraft", default_message, formatted_response));
         return formatted_response;
     }
     async updateDraftedMessage(request, message, query) {
@@ -199,41 +186,31 @@ let MessageController = class MessageController {
     }
     async replyToMessage(query, message) {
         let formatted_response;
+        const newMessageDTO = new message_dto_1.NewMessageDTO();
+        const default_message = (Object.assign(Object.assign({}, newMessageDTO), message));
         try {
-            if (!await this.messageService.getMessageById(query.id))
-                throw new common_1.HttpException(`Message ID ${query.id} doesn't exist`, 404);
-            const reply_recipient = message.sender;
-            const reply_recipient_id = message.sender_id;
-            if (!message.message_origin_id) {
-                message.message_origin_id = query.message_id;
-                message.subject = `RE: ${message.subject}`;
+            if (!await this.messageService.getMessageById(query.message_id))
+                throw new common_1.HttpException(`Message ID ${query.message_id} doesn't exist`, 404);
+            if (!default_message.message_origin_id) {
+                default_message.message_origin_id = query.message_id;
+                default_message.subject = `RE: ${default_message.subject}`;
             }
-            message.sender = message.recipient;
-            message.sender_id = message.recipient_id;
-            message.recipient = reply_recipient;
-            message.recipient_id = reply_recipient_id;
-            message.created_date = String(Date.now());
-            message.updated_date = String(Date.now());
-            message.read = false;
-            message.drafted = false;
-            message.menu_state = 0;
             let response = await this
                 .messageService
-                .sendMessage("inbox", message);
-            console.log(response);
+                .sendMessage("inbox", default_message);
             if (response.inserted === 1)
-                formatted_response = (0, common_functions_1.formatResponse)([message], true, "Reply sent.");
+                formatted_response = (0, common_functions_1.formatResponse)([default_message], true, "Reply sent.");
             else
                 formatted_response = (0, common_functions_1.formatResponse)([query], false, `Error in sending reply.`);
             if (formatted_response.success)
-                await this.messageService.sendMessage("sent", message);
+                await this.messageService.sendMessage("sent", default_message);
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
         }
         this
             .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("replyToMessage", message, formatted_response));
+            .insertLogs((0, common_functions_1.formatLogs)("replyToMessage", default_message, formatted_response));
         return formatted_response;
     }
     async setMenuState(request, param, query) {
@@ -251,7 +228,7 @@ let MessageController = class MessageController {
                         message.menu_state = 0;
                     }
                     else {
-                        message.menu_state = param.state === "starred" ?
+                        message.menu_state = (query.state === "starred") ?
                             message_common_1.Menu.starred :
                             message_common_1.Menu.important;
                     }

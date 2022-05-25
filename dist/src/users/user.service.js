@@ -21,20 +21,6 @@ let UserService = class UserService {
     constructor(connection) {
         this.connection = connection;
     }
-    async registerUser(user) {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .insert(user)
-            .run(this.connection);
-    }
-    async loginUser(id) {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .get(id)
-            .run(this.connection);
-    }
     async getAllUsers() {
         return rethink
             .db(DB)

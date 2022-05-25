@@ -15,6 +15,14 @@ const common_functions_1 = require("../common/common.functions");
 class NewMessageDTO {
     constructor() {
         this.id;
+        this.message_origin_id = "";
+        this.subject;
+        this.message;
+        this.recipient;
+        this.sender;
+        this.menu_state = 0;
+        this.read = false;
+        this.drafted = false;
         this.created_date = (0, common_functions_1.setDateTime)();
         this.updated_date = (0, common_functions_1.setDateTime)();
     }
@@ -24,6 +32,45 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], NewMessageDTO.prototype, "id", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], NewMessageDTO.prototype, "message_origin_id", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], NewMessageDTO.prototype, "subject", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], NewMessageDTO.prototype, "message", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], NewMessageDTO.prototype, "recipient", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], NewMessageDTO.prototype, "sender", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], NewMessageDTO.prototype, "read", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], NewMessageDTO.prototype, "drafted", void 0);
+__decorate([
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], NewMessageDTO.prototype, "menu_state", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),

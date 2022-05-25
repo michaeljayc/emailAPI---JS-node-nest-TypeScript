@@ -15,22 +15,6 @@ export class UserService {
         this.connection = connection;
     }
 
-    async registerUser(user: UserRegisterDTO): Promise<rethink.WriteResult> {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .insert(user)
-            .run(this.connection)
-    }
-
-    async loginUser(id: string): Promise<User>{
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .get(id)
-            .run(this.connection)
-    }
-
     async getAllUsers(): Promise<User> {
         return rethink
             .db(DB)

@@ -3,9 +3,7 @@ export class Message {
     id: string;
     message_origin_id: string;
     sender: string; //user email
-    sender_id: string;
     recipient: string;
-    recipient_id: string
     subject: string;
     message: string;
     menu_state: number;

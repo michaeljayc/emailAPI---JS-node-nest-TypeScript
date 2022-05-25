@@ -3,6 +3,7 @@ export declare class UserLoginDTO {
     password: string;
 }
 export declare class UserRegisterDTO {
+    constructor();
     id: string;
     username: string;
     first_name: string;

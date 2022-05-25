@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { setDateTime } from "src/common/common.functions";
 
 export class UserLoginDTO {
 
@@ -13,7 +14,22 @@ export class UserLoginDTO {
 
 export class UserRegisterDTO {
 
-    @IsOptional()
+    constructor() {
+        this.id;
+        this.username;
+        this.first_name;
+        this.last_name;
+        this.gender;
+        this.birthdate;
+        this.role_type_id;
+        this.email;
+        this.password;
+        this.created_date = setDateTime();
+        this.updated_date = setDateTime();
+    }
+
+    //@IsOptional()
+    @IsString()
     id: string
     
     @IsString()

@@ -16,8 +16,6 @@ const user_module_1 = require("../users/user.module");
 const user_service_1 = require("../users/user.service");
 const auth_service_1 = require("./auth.service");
 const constants_1 = require("./constants");
-const jwt_strategy_1 = require("./jwt.strategy");
-const local_strategy_1 = require("./local.strategy");
 let AuthModule = class AuthModule {
 };
 AuthModule = __decorate([
@@ -29,7 +27,7 @@ AuthModule = __decorate([
                 signOptions: { expiresIn: '1d' }
             }),
         ],
-        providers: [auth_service_1.AuthService, local_strategy_1.LocalStrategy, jwt_strategy_1.JwtStrategy, user_service_1.UserService, database_provider_1.default],
+        providers: [auth_service_1.AuthService, user_service_1.UserService, database_provider_1.default],
         controllers: [],
         exports: [auth_service_1.AuthService],
     })

@@ -1,10 +1,12 @@
 import User from "src/users/user.entity";
 import { UserService } from "src/users/user.service";
+import * as rethink from "rethinkdb";
 export declare class AuthService {
     private userService;
-    constructor(userService: UserService);
-    validateUser(credentials: any): Promise<any>;
-    login(user: User): Promise<any>;
+    private connection;
+    constructor(userService: UserService, connection: any);
+    register(user: User): Promise<rethink.WriteResult>;
+    login(login_email: string): Promise<User>;
     ecnryptPassword(password: string): Promise<string>;
     comparePassword(newPassword: string, passwordHash: string): Promise<any>;
 }

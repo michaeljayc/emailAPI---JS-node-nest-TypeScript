@@ -18,6 +18,7 @@ const jwt_1 = require("@nestjs/jwt");
 const auth_service_1 = require("./auth/auth.service");
 const common_functions_1 = require("./common/common.functions");
 const logger_service_1 = require("./services/logger.service");
+const user_entity_1 = require("./users/user.entity");
 const user_service_1 = require("./users/user.service");
 const user_dto_1 = require("./users/user.dto");
 let AppController = class AppController {
@@ -29,18 +30,18 @@ let AppController = class AppController {
     }
     async registerUser(user) {
         let formatted_response;
-        if (!Object.keys(user))
-            throw new common_1.BadRequestException();
+        let user_register_dto = new user_dto_1.UserRegisterDTO();
+        const default_value = (Object.assign(Object.assign({}, user_register_dto), user));
         try {
-            user.created_date = (0, common_functions_1.setDateTime)();
-            user.updated_date = (0, common_functions_1.setDateTime)();
-            user.password = await this
+            default_value.password = await this
                 .authService
-                .ecnryptPassword(user.password);
-            let response = await this.userService.registerUser(user);
-            if (response.inserted === 1) {
-                formatted_response = (0, common_functions_1.formatResponse)([user], true, "Registration Successful");
-            }
+                .ecnryptPassword(default_value.password);
+            await this
+                .authService
+                .register(default_value)
+                .then(result => {
+                formatted_response = (0, common_functions_1.formatResponse)([default_value], true, "Registration Successful");
+            });
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, "Registration Failed");
@@ -48,7 +49,7 @@ let AppController = class AppController {
         }
         this
             .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("registerUser", user, formatted_response));
+            .insertLogs((0, common_functions_1.formatLogs)("registerUser", default_value, formatted_response));
         return formatted_response;
     }
     async loginUser(credentials, response) {
@@ -58,8 +59,8 @@ let AppController = class AppController {
         try {
             let user_data;
             let response_data = await this
-                .userService
-                .getUserByEmail(credentials.email);
+                .authService
+                .login(credentials.email);
             if (Object.keys(response_data._responses).length === 0)
                 throw new common_1.NotFoundException("Email doesn't exist", response.statusMessage);
             user_data = response_data.next()._settledValue;
@@ -81,7 +82,7 @@ let AppController = class AppController {
             .insertLogs((0, common_functions_1.formatLogs)("loginUser", credentials, formatted_response));
         return formatted_response;
     }
-    async logoutUser(request, response) {
+    async logoutUser(response) {
         let formatted_response;
         try {
             response.clearCookie("jwt");
@@ -97,7 +98,7 @@ __decorate([
     (0, common_1.Post)("register"),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [user_dto_1.UserRegisterDTO]),
+    __metadata("design:paramtypes", [user_entity_1.default]),
     __metadata("design:returntype", Promise)
 ], AppController.prototype, "registerUser", null);
 __decorate([
@@ -110,10 +111,9 @@ __decorate([
 ], AppController.prototype, "loginUser", null);
 __decorate([
     (0, common_1.Post)("logout"),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Res)({ passthrough: true })),
+    __param(0, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AppController.prototype, "logoutUser", null);
 AppController = __decorate([

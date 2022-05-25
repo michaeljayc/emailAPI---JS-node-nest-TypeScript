@@ -28,6 +28,7 @@ import {
     STATE
 } from "./message.common";
 import { AuthTokenGuard } from "src/guards/auth-token/auth-token.guard";
+import { NewMessageDTO } from "./message.dto";
 
 @Controller("messages")
 export class MessageController {
@@ -59,14 +60,14 @@ export class MessageController {
                     if (isValidMenuTables(menu)) {
                         // assign id to filter
                         if (menu === "inbox")
-                            filtered = {"recipient_id": user_data.id}
+                            filtered = {"recipient": user_data.email}
                         else 
-                            filtered = {"sender_id": user_data.id}
+                            filtered = {"sender": user_data.email}
                     } else {
                         filtered = {
                             "menu_state": query.menu === "starred" ?
                             Menu.starred : Menu.important,
-                            "recipient_id": user_data.id
+                            "recipient": user_data.email
                         }
                         menu = "inbox";
                     }
@@ -75,8 +76,7 @@ export class MessageController {
                         .messageService
                         .getMessages({
                             filtered,
-                            menu,
-                            id: user_data.id
+                            menu
                         })
                     
                     formatted_response = formatResponse(
@@ -154,13 +154,14 @@ export class MessageController {
             
             let formatted_response: any;
             const drafted_message = message?.drafted;
+            const newMessageDTO = new NewMessageDTO();
+            const default_message = ({
+                ...newMessageDTO,
+                ...message
+            })
 
             try {
-                // Retrieve sender data
-                const sender_data = await this.jwtService.verifyAsync
-                    (request.cookies["jwt"])
-                
-                // Retrieve recipient data
+                // Check if recipient exist
                 let recipient_data = await 
                 this
                 .userService
@@ -169,39 +170,26 @@ export class MessageController {
                 if (Object.keys(recipient_data._responses).length < 1)
                     throw new NotFoundException
                         (`${message.recipient}`, "Recipient doesn't exist")   
-                
-                // get recipient data
-                recipient_data = recipient_data.next()._settledValue;
-
-                // add data to construct message
-                // message.created_date = String(Date.now());
-                // message.updated_date = String(Date.now()); 
-                message.recipient_id = recipient_data.id;
-                message.menu_state = 0;
-                message.sender = sender_data.email
-                message.sender_id = sender_data.id;
-                message.message_origin_id = "";
-                message.read = false;
-                message.drafted = false;
             
                 // Insert data to recipient's INBOX
                 formatted_response =  await this
                     .messageService
-                    .sendMessage("inbox",message)
+                    .sendMessage("inbox",default_message)
                         .then( result => {
                             return formatResponse(
-                                [message], true, "Message Sent"
+                                [default_message], true, "Message Sent"
                             )});
 
                 // Insert data to sender's SENT
                 if (formatted_response.success)
-                    await this.messageService.sendMessage("sent",message)
+                    await this.messageService.sendMessage("sent",default_message)
 
                 // Check if message already exists in DRAFTS
                 // If exists, delete in drafts after sending
                 if (drafted_message)
                     await this.messageService.deleteMessage
                         ("drafts",message.id)
+
             } catch (error) {
                 formatted_response = formatResponse
                     ([error], false, error.status)
@@ -210,7 +198,7 @@ export class MessageController {
             this
             .loggerService
             .insertLogs(formatLogs
-                ("sendMessage", message, formatted_response)
+                ("sendMessage", default_message, formatted_response)
             )
             
             return formatted_response;
@@ -222,29 +210,22 @@ export class MessageController {
         @Body() message: Message): Promise<IResponseFormat> {
             
             let formatted_response: IResponseFormat;
-
+            const newMessageDTO = new NewMessageDTO();
+            const default_message = ({
+                ...newMessageDTO,
+                ...message
+            })
             try {
-                // Retrieve sender data
-                let sender_data = await 
-                    this
-                    .jwtService
-                    .verifyAsync(request.cookies["jwt"]);
+                // set drafted to TRUE
+                default_message.drafted = true;
 
-                // construct message data
-                message.created_date = String(Date.now());
-                message.updated_date = String(Date.now());
-                message.sender = sender_data.email;
-                message.sender_id = sender_data.id;
-                message.drafted = true;
-                message.read = false;
-                
-                let response =  await 
+                await 
                     this
                     .messageService
-                    .sendMessage("drafts",message);
+                    .sendMessage("drafts",default_message);
 
                 formatted_response = formatResponse(
-                    message,
+                    default_message,
                     true,
                     "Saved as draft."
                 )
@@ -259,7 +240,7 @@ export class MessageController {
             this
             .loggerService
             .insertLogs(formatLogs
-                ("saveAsDraft", message, formatted_response)
+                ("saveAsDraft", default_message, formatted_response)
             )
 
             return formatted_response;
@@ -350,47 +331,39 @@ export class MessageController {
         : Promise<IResponseFormat> {
 
             let formatted_response: IResponseFormat;
+            const newMessageDTO = new NewMessageDTO();
+            const default_message = ({
+                ...newMessageDTO,
+                ...message
+            })
 
             try {
                 // check if query.id is a valid id
-                if (!await this.messageService.getMessageById(query.id))
+                if (!await this.messageService.getMessageById(query.message_id))
                     throw new HttpException
-                        (`Message ID ${query.id} doesn't exist`, 404)
-            
-                const reply_recipient = message.sender;
-                const reply_recipient_id = message.sender_id;
+                        (`Message ID ${query.message_id} doesn't exist`, 404)
 
                 // Set message details
-                if (!message.message_origin_id) {
-                    message.message_origin_id = query.message_id;
-                    message.subject = `RE: ${message.subject}`;
+                if (!default_message.message_origin_id) {
+                    default_message.message_origin_id = query.message_id;
+                    default_message.subject = `RE: ${default_message.subject}`;
                 }
-
-                message.sender = message.recipient;
-                message.sender_id = message.recipient_id;
-                message.recipient = reply_recipient;
-                message.recipient_id = reply_recipient_id;
-                message.created_date = String(Date.now());
-                message.updated_date = String(Date.now());
-                message.read = false;
-                message.drafted = false;
-                message.menu_state = 0;
 
                 // Send message to recipient's INBOX
                 let response = await this
                     .messageService
-                    .sendMessage("inbox", message)
-                    console.log(response)
+                    .sendMessage("inbox", default_message)
+ 
                 if (response.inserted === 1)
                     formatted_response = formatResponse
-                        ([message], true, "Reply sent.")
+                        ([default_message], true, "Reply sent.")
                 else
                     formatted_response = formatResponse
                         ([query], false, `Error in sending reply.`);
             
                 // Insert data to sender's SENT
                 if (formatted_response.success) 
-                    await this.messageService.sendMessage("sent",message)
+                    await this.messageService.sendMessage("sent",default_message)
                 
             } catch (error) {
                 formatted_response = formatResponse
@@ -400,7 +373,7 @@ export class MessageController {
             this
             .loggerService
             .insertLogs(formatLogs
-                ("replyToMessage",message, formatted_response)
+                ("replyToMessage",default_message, formatted_response)
             );
 
             return formatted_response;
@@ -436,7 +409,7 @@ export class MessageController {
                             message.menu_state === Menu.important ) {
                                 message.menu_state = 0;
                         }  else {
-                            message.menu_state = param.state === "starred" ?
+                            message.menu_state = (query.state === "starred") ?
                             Menu.starred :
                             Menu.important;
                         }

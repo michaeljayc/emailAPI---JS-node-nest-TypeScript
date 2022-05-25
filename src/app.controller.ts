@@ -1,8 +1,5 @@
 import { Controller, 
-  Get, 
   Post, 
-  UseGuards, 
-  Request, 
   Body, 
   BadRequestException, 
   Res, 
@@ -10,15 +7,12 @@ import { Controller,
   Req
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { AuthGuard } from '@nestjs/passport';
-import { AppService } from './app.service';
 import AuthService from './auth/auth.service';
-import { formatLogs, formatResponse, setDateTime } from './common/common.functions';
+import { formatLogs, formatResponse } from './common/common.functions';
 import { IResponseFormat } from './common/common.interface';
 import LoggerService from './services/logger.service';
 import User from './users/user.entity';
 import { UserService } from './users/user.service';
-import { TLoginCredentials } from './users/user.types';
 import { Response } from "express";
 import { UserLoginDTO, UserRegisterDTO } from './users/user.dto';
 
@@ -32,32 +26,31 @@ export class AppController {
 
 
     @Post("register")
-    async registerUser(@Body() user: UserRegisterDTO)
+    async registerUser(@Body() user: User)
         : Promise<IResponseFormat |  any> {
         
         let formatted_response: IResponseFormat;
-
-        if (!Object.keys(user))
-            throw new BadRequestException()
+        let user_register_dto = new UserRegisterDTO();
+        const default_value = ({
+            ...user_register_dto,
+            ...user
+        })
 
         try {
-             // Set create  and update datetime
-            user.created_date = setDateTime();
-            user.updated_date = setDateTime();
-            
             // Encrypt Password
-            user.password = await 
+            default_value.password = await 
               this
               .authService
-              .ecnryptPassword(user.password);
+              .ecnryptPassword(default_value.password);
             
-            let response = await this.userService.registerUser(user)
-            
-            if (response.inserted === 1) {
-                formatted_response = formatResponse(
-                        [user],true, "Registration Successful"
-                    );
-            }
+            await this
+                .authService
+                .register(default_value)
+                    .then( result => {
+                        formatted_response = formatResponse(
+                            [default_value],true, "Registration Successful"
+                        );
+                    })
 
         } catch (error) {
             formatted_response = formatResponse(
@@ -69,7 +62,7 @@ export class AppController {
         this
         .loggerService
         .insertLogs(formatLogs(
-                "registerUser", user , formatted_response
+                "registerUser", default_value , formatted_response
                 )
             );
 
@@ -91,8 +84,8 @@ export class AppController {
             let user_data: any;
             let response_data: any = await 
                 this
-                .userService
-                .getUserByEmail(credentials.email);
+                .authService
+                .login(credentials.email);
             
             // If Username doesn't match any, throw NotFoundException
             if (Object.keys(response_data._responses).length === 0)
@@ -137,8 +130,7 @@ export class AppController {
     }
 
     @Post("logout")
-    async logoutUser(@Req() request:Request,
-        @Res({passthrough: true}) response: Response)
+    async logoutUser(@Res({passthrough: true}) response: Response)
         : Promise<IResponseFormat> {
 
             let formatted_response: IResponseFormat;

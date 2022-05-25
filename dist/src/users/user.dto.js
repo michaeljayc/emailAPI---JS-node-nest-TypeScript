@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserRegisterDTO = exports.UserLoginDTO = void 0;
 const class_validator_1 = require("class-validator");
+const common_functions_1 = require("../common/common.functions");
 class UserLoginDTO {
 }
 __decorate([
@@ -25,9 +26,22 @@ __decorate([
 ], UserLoginDTO.prototype, "password", void 0);
 exports.UserLoginDTO = UserLoginDTO;
 class UserRegisterDTO {
+    constructor() {
+        this.id;
+        this.username;
+        this.first_name;
+        this.last_name;
+        this.gender;
+        this.birthdate;
+        this.role_type_id;
+        this.email;
+        this.password;
+        this.created_date = (0, common_functions_1.setDateTime)();
+        this.updated_date = (0, common_functions_1.setDateTime)();
+    }
 }
 __decorate([
-    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UserRegisterDTO.prototype, "id", void 0);
 __decorate([
