@@ -12,7 +12,6 @@ import { formatLogs, formatResponse } from './common/common.functions';
 import { IResponseFormat } from './common/common.interface';
 import LoggerService from './services/logger.service';
 import User from './users/user.entity';
-import { UserService } from './users/user.service';
 import { Response } from "express";
 import { UserLoginDTO, UserRegisterDTO } from './users/user.dto';
 
@@ -20,7 +19,6 @@ import { UserLoginDTO, UserRegisterDTO } from './users/user.dto';
 export class AppController {
 
   constructor(private authService: AuthService,
-    private userService: UserService,
     private loggerService: LoggerService,
     private jwtService: JwtService){}
 

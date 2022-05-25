@@ -19,12 +19,10 @@ const auth_service_1 = require("./auth/auth.service");
 const common_functions_1 = require("./common/common.functions");
 const logger_service_1 = require("./services/logger.service");
 const user_entity_1 = require("./users/user.entity");
-const user_service_1 = require("./users/user.service");
 const user_dto_1 = require("./users/user.dto");
 let AppController = class AppController {
-    constructor(authService, userService, loggerService, jwtService) {
+    constructor(authService, loggerService, jwtService) {
         this.authService = authService;
-        this.userService = userService;
         this.loggerService = loggerService;
         this.jwtService = jwtService;
     }
@@ -119,7 +117,6 @@ __decorate([
 AppController = __decorate([
     (0, common_1.Controller)(),
     __metadata("design:paramtypes", [auth_service_1.default,
-        user_service_1.UserService,
         logger_service_1.default,
         jwt_1.JwtService])
 ], AppController);
