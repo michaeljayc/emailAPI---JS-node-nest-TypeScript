@@ -11,16 +11,20 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthTokenGuard = void 0;
 const common_1 = require("@nestjs/common");
+const jwt_1 = require("@nestjs/jwt");
 const common_functions_1 = require("../../common/common.functions");
 const auth_token_service_1 = require("./auth-token.service");
 let AuthTokenGuard = class AuthTokenGuard {
-    constructor(authTokenService) {
+    constructor(authTokenService, jwtService) {
         this.authTokenService = authTokenService;
+        this.jwtService = jwtService;
     }
     async canActivate(context) {
-        console.log(context.getArgs()[0].body);
         try {
-            return await this.authTokenService.getContextData(context.getArgs()[1].req.cookies.jwt);
+            const req_data = context.getArgs()[1];
+            const hasCookie = await this.authTokenService.getContextData(req_data.req.cookies.jwt);
+            const cookie = await this.jwtService.verifyAsync(req_data.req.cookies.jwt);
+            return hasCookie;
         }
         catch (error) {
             console.log((0, common_functions_1.formatResponse)(error, false, error.status));
@@ -30,7 +34,8 @@ let AuthTokenGuard = class AuthTokenGuard {
 };
 AuthTokenGuard = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [auth_token_service_1.AuthTokenService])
+    __metadata("design:paramtypes", [auth_token_service_1.AuthTokenService,
+        jwt_1.JwtService])
 ], AuthTokenGuard);
 exports.AuthTokenGuard = AuthTokenGuard;
 //# sourceMappingURL=auth-token.guard.js.map

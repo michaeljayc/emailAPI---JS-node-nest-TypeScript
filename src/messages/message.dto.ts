@@ -1,5 +1,5 @@
 import { Optional } from "@nestjs/common";
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 import { setDateTime } from "src/common/common.functions";
 
 export class NewMessageDTO {
@@ -11,7 +11,7 @@ export class NewMessageDTO {
         this.message;
         this.recipient;
         this.sender;
-        this.menu_state = 0;
+        this.status = 0;
         this.read = false;
         this.drafted = false;
         this.created_date = setDateTime();
@@ -51,7 +51,7 @@ export class NewMessageDTO {
 
     @IsNotEmpty()
     @IsNumber()
-    menu_state: number;
+    status: number;
 
     @IsOptional()
     @IsString()

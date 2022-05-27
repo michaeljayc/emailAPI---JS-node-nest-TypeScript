@@ -28,7 +28,7 @@ let AppController = class AppController {
     }
     async registerUser(user) {
         let formatted_response;
-        let user_register_dto = new user_dto_1.UserRegisterDTO();
+        let user_register_dto = new user_dto_1.UserDTO();
         const default_value = (Object.assign(Object.assign({}, user_register_dto), user));
         try {
             default_value.password = await this

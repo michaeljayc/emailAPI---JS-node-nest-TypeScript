@@ -20,7 +20,7 @@ class NewMessageDTO {
         this.message;
         this.recipient;
         this.sender;
-        this.menu_state = 0;
+        this.status = 0;
         this.read = false;
         this.drafted = false;
         this.created_date = (0, common_functions_1.setDateTime)();
@@ -70,7 +70,7 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
-], NewMessageDTO.prototype, "menu_state", void 0);
+], NewMessageDTO.prototype, "status", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),

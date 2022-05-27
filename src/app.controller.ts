@@ -13,7 +13,7 @@ import { IResponseFormat } from './common/common.interface';
 import LoggerService from './services/logger.service';
 import User from './users/user.entity';
 import { Response } from "express";
-import { UserLoginDTO, UserRegisterDTO } from './users/user.dto';
+import { UserLoginDTO, UserDTO } from './users/user.dto';
 
 @Controller()
 export class AppController {
@@ -28,7 +28,7 @@ export class AppController {
         : Promise<IResponseFormat |  any> {
         
         let formatted_response: IResponseFormat;
-        let user_register_dto = new UserRegisterDTO();
+        let user_register_dto = new UserDTO();
         const default_value = ({
             ...user_register_dto,
             ...user

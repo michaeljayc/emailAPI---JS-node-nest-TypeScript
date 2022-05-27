@@ -21,6 +21,13 @@ let UserService = class UserService {
     constructor(connection) {
         this.connection = connection;
     }
+    async createNewUser(user) {
+        return rethink
+            .db(DB)
+            .table(TABLE)
+            .insert(user)
+            .run(this.connection);
+    }
     async getAllUsers() {
         return rethink
             .db(DB)
@@ -28,18 +35,11 @@ let UserService = class UserService {
             .orderBy('updated_date')
             .run(this.connection);
     }
-    async getUserById(id) {
+    async getUserById(uuid) {
         return rethink
             .db(DB)
             .table(TABLE)
-            .get(id)
-            .run(this.connection);
-    }
-    async getUserByUsername(username) {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .filter({ "username": username })
+            .get(uuid)
             .run(this.connection);
     }
     async getUserByEmail(email) {
@@ -52,12 +52,13 @@ let UserService = class UserService {
             .run(this.connection);
     }
     async updateUser(user, user_id) {
-        return rethink
+        await rethink
             .db(DB)
             .table(TABLE)
             .get(user_id)
             .update(user)
             .run(this.connection);
+        return await this.getUserById(user_id);
     }
     async deleteUser(id) {
         return rethink

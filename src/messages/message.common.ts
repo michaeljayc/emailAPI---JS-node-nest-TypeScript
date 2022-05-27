@@ -10,7 +10,8 @@ export const Menu =  {
 
 export const STATE = {
     "starred": 1,
-    "important": 2
+    "important": 2,
+    "deleted": 3
 }
 
 export const isValidMenuTables = (menu: string): boolean => menu_tables.includes(menu)

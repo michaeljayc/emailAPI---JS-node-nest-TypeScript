@@ -71,7 +71,7 @@ let MessageService = class MessageService {
             .run(this.connection);
     }
     async deleteMessage(table, message_id) {
-        return await rethink
+        return rethink
             .db(DB)
             .table(table)
             .get(message_id)

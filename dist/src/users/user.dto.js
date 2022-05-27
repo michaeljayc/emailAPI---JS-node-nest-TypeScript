@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserRegisterDTO = exports.UserLoginDTO = void 0;
+exports.UserDTO = exports.UserLoginDTO = void 0;
 const class_validator_1 = require("class-validator");
 const common_functions_1 = require("../common/common.functions");
 class UserLoginDTO {
@@ -25,7 +25,7 @@ __decorate([
     __metadata("design:type", String)
 ], UserLoginDTO.prototype, "password", void 0);
 exports.UserLoginDTO = UserLoginDTO;
-class UserRegisterDTO {
+class UserDTO {
     constructor() {
         this.id;
         this.username;
@@ -43,56 +43,56 @@ class UserRegisterDTO {
 __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], UserRegisterDTO.prototype, "id", void 0);
+], UserDTO.prototype, "id", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], UserRegisterDTO.prototype, "username", void 0);
+], UserDTO.prototype, "username", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], UserRegisterDTO.prototype, "first_name", void 0);
+], UserDTO.prototype, "first_name", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], UserRegisterDTO.prototype, "last_name", void 0);
+], UserDTO.prototype, "last_name", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], UserRegisterDTO.prototype, "gender", void 0);
+], UserDTO.prototype, "gender", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], UserRegisterDTO.prototype, "birthdate", void 0);
+], UserDTO.prototype, "birthdate", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", Number)
-], UserRegisterDTO.prototype, "role_type_id", void 0);
+], UserDTO.prototype, "role_type_id", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], UserRegisterDTO.prototype, "email", void 0);
+], UserDTO.prototype, "email", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], UserRegisterDTO.prototype, "password", void 0);
+], UserDTO.prototype, "password", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], UserRegisterDTO.prototype, "created_date", void 0);
+], UserDTO.prototype, "created_date", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], UserRegisterDTO.prototype, "updated_date", void 0);
-exports.UserRegisterDTO = UserRegisterDTO;
+], UserDTO.prototype, "updated_date", void 0);
+exports.UserDTO = UserDTO;
 //# sourceMappingURL=user.dto.js.map

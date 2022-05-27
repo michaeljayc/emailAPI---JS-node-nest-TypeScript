@@ -2,7 +2,7 @@ export declare class UserLoginDTO {
     email: string;
     password: string;
 }
-export declare class UserRegisterDTO {
+export declare class UserDTO {
     constructor();
     id: string;
     username: string;

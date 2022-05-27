@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { WriteVResult } from "fs";
 import * as rethink from "rethinkdb";
 import Message from "./message.entity";
 
@@ -10,7 +9,7 @@ export class MessageService {
 
     private connection: rethink.Connection;
 
-    constructor(@Inject("RethinkProvider") connection) {
+    constructor(@Inject("RethinkProvider") connection,) {
         this.connection = connection;
     }
 
@@ -85,14 +84,13 @@ export class MessageService {
     async deleteMessage(table: string, 
         message_id: string)
         : Promise<rethink.WriteResult> {
-            return await rethink
+            return rethink
                 .db(DB)
                 .table(table)
                 .get(message_id)
                 .delete()
                 .run(this.connection)
     }
-    
     
 }
 

@@ -29,6 +29,9 @@ import {
 } from "./message.common";
 import { AuthTokenGuard } from "src/guards/auth-token/auth-token.guard";
 import { NewMessageDTO } from "./message.dto";
+import { SearchService } from "src/common/search/search.service";
+import { PaginationService } from "src/common/pagination/pagination.service";
+import User from "src/users/user.entity";
 
 @Controller("messages")
 export class MessageController {
@@ -36,26 +39,34 @@ export class MessageController {
     constructor(private readonly messageService: MessageService,
         private readonly jwtService:JwtService,
         private readonly loggerService: LoggerService,
-        private readonly userService: UserService){}
+        private readonly userService: UserService,
+        private readonly searchService: SearchService,
+        private readonly paginationService: PaginationService){}
     
+    // http://localhost:3000/api/messages
+    // OR 
+    // http://localhost:3000/api/messages?menu=
     @UseGuards(AuthTokenGuard)
     @Get("")
     async getMessages(@Req() request: Request,
         @Query() query): Promise<IResponseFormat | any> {
 
             let filtered: {};
+            let response: any;
             let menu = query.menu ? query.menu : "inbox";
             let formatted_response: IResponseFormat;
+            let page_number = (query.page !== undefined) ? 
+                Number(query.page) : 1;
 
             try {
-                const cookie = request.cookies["jwt"];
+                //const cookie = request.cookies["jwt"];
 
                 if (isValidMenu(menu)) {
                     // Get cookie data
                     const user_data = await 
                         this
                         .jwtService
-                        .verifyAsync(cookie);
+                        .verifyAsync(request.cookies["jwt"]);
     
                     if (isValidMenuTables(menu)) {
                         // assign id to filter
@@ -65,20 +76,24 @@ export class MessageController {
                             filtered = {"sender": user_data.email}
                     } else {
                         filtered = {
-                            "menu_state": query.menu === "starred" ?
+                            "status": query.menu === "starred" ?
                             Menu.starred : Menu.important,
                             "recipient": user_data.email
                         }
                         menu = "inbox";
                     }
-                    
-                    let response = await this
+                    // Retrieve and paginate data
+                    response = await this
                         .messageService
                         .getMessages({
                             filtered,
                             menu
+                        }).then(result => {
+                            return this
+                            .paginationService
+                            .pagination(result, page_number);
                         })
-                    
+
                     formatted_response = formatResponse(
                         response,true,"Success"
                     );
@@ -153,7 +168,7 @@ export class MessageController {
         : Promise<IResponseFormat> {
             
             let formatted_response: any;
-            const drafted_message = message?.drafted;
+            const drafted_message = message?.drafted; 
             const newMessageDTO = new NewMessageDTO();
             const default_message = ({
                 ...newMessageDTO,
@@ -163,9 +178,9 @@ export class MessageController {
             try {
                 // Check if recipient exist
                 let recipient_data = await 
-                this
-                .userService
-                .getUserByEmail(message.recipient);
+                    this
+                    .userService
+                    .getUserByEmail(message.recipient);
                 
                 if (Object.keys(recipient_data._responses).length < 1)
                     throw new NotFoundException
@@ -178,17 +193,19 @@ export class MessageController {
                         .then( result => {
                             return formatResponse(
                                 [default_message], true, "Message Sent"
-                            )});
+                        )});
 
                 // Insert data to sender's SENT
                 if (formatted_response.success)
-                    await this.messageService.sendMessage("sent",default_message)
+                    await this
+                        .messageService
+                        .sendMessage("sent",default_message)
 
                 // Check if message already exists in DRAFTS
                 // If exists, delete in drafts after sending
                 if (drafted_message)
                     await this.messageService.deleteMessage
-                        ("drafts",message.id)
+                        ("drafts",message.uuid)
 
             } catch (error) {
                 formatted_response = formatResponse
@@ -219,8 +236,7 @@ export class MessageController {
                 // set drafted to TRUE
                 default_message.drafted = true;
 
-                await 
-                    this
+                await this
                     .messageService
                     .sendMessage("drafts",default_message);
 
@@ -230,11 +246,8 @@ export class MessageController {
                     "Saved as draft."
                 )
             } catch (error) {
-                formatted_response = formatResponse(
-                    [error],
-                    false,
-                    error.status
-                )
+                formatted_response = formatResponse
+                    ([error], false, error.status)
             }
             
             this
@@ -266,10 +279,10 @@ export class MessageController {
 
                 if (response.replaced === 1)
                     formatted_response = formatResponse
-                    ([message], true, "Message updated.")
+                        ([message], true, "Message updated.")
                 else 
                     formatted_response = formatResponse
-                    ([query], false, "Message ID doesn't exist.")
+                        ([query], false, "Message ID doesn't exist.")
             } catch (error) {
                 formatted_response = formatResponse
                     ([error], false, error.statusMessage)
@@ -383,8 +396,7 @@ export class MessageController {
     @UseGuards(AuthTokenGuard)
     @Put(":menu")
     async setMenuState(@Req() request: Request,
-        @Param() param,
-        @Query() query)
+        @Param() param, @Query() query)
         : Promise<IResponseFormat | any> {
             
             let formatted_response: IResponseFormat;
@@ -397,22 +409,13 @@ export class MessageController {
                         .messageService
                         .getMessageDetails(param.menu, query.id)
 
-                    if (message) {
-
-                        //check if state is valid
-                        if (!Object.keys(STATE).includes(query.state))
-                            throw new BadRequestException
-                                (`Invalid menu '${query.state}'`)
-
+                    if (message && Object.keys(STATE).includes(query.state)) {
                         // check if message is already starred or important
-                        if (message.menu_state === Menu.starred || 
-                            message.menu_state === Menu.important ) {
-                                message.menu_state = 0;
-                        }  else {
-                            message.menu_state = (query.state === "starred") ?
-                            Menu.starred :
-                            Menu.important;
-                        }
+                        if (message.status === Menu.starred || 
+                                message.status === Menu.important) {
+                                    message.status = 0;
+                        } else
+                            message.status = query.state;
 
                         await this.messageService.updateMessage
                             (param.menu, query.id, message)
@@ -421,7 +424,7 @@ export class MessageController {
                             ([message], true, `Message set to ${query.state}`)
                     } else
                         throw new BadRequestException
-                            (`${query.id} doesn't exist`)
+                            (`Either ID or State provided doesn't exist`)
                 } else
                     throw new BadRequestException
                         (`Invalid menu ${param.menu}`)
@@ -438,6 +441,51 @@ export class MessageController {
             )
 
             return formatted_response
+    }
+
+    //http://localhost:3000/api/messages/search?keyword=abc123
+    @UseGuards(AuthTokenGuard)
+    @Get("search")
+    async search(@Req() request: Request,
+        @Query() query): Promise<IResponseFormat> {
+            
+            let formatted_response: IResponseFormat;
+            let response_data: any;
+
+            try {
+                const cookie = await this.jwtService.verifyAsync(request.cookies["jwt"]);
+            
+                response_data = await 
+                    this
+                    .searchService
+                    .search(query.keyword, cookie.email,"inbox");
+
+                let response_data_length: number = 
+                    response_data._responses.length;
+                
+            
+                if (response_data_length > 0) {
+                    response_data = response_data._responses[0].r;
+                }
+                       
+                formatted_response = formatResponse
+                    (   
+                        (response_data_length > 0) ? response_data : null, 
+                        true, 
+                        "Success"
+                    )
+            } catch (error) {
+                formatted_response = formatResponse
+                    ([error], false, error.statusMessage)
+            }
+
+            this
+            .loggerService
+            .insertLogs(formatLogs
+                ("search", query, formatted_response)
+            )
+            
+            return formatted_response;
     }
 
     async updateReadUnread(message_id: string): Promise<Message> {

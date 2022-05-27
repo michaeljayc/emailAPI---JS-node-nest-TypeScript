@@ -23,23 +23,29 @@ const user_service_1 = require("../users/user.service");
 const message_common_1 = require("./message.common");
 const auth_token_guard_1 = require("../guards/auth-token/auth-token.guard");
 const message_dto_1 = require("./message.dto");
+const search_service_1 = require("../common/search/search.service");
+const pagination_service_1 = require("../common/pagination/pagination.service");
 let MessageController = class MessageController {
-    constructor(messageService, jwtService, loggerService, userService) {
+    constructor(messageService, jwtService, loggerService, userService, searchService, paginationService) {
         this.messageService = messageService;
         this.jwtService = jwtService;
         this.loggerService = loggerService;
         this.userService = userService;
+        this.searchService = searchService;
+        this.paginationService = paginationService;
     }
     async getMessages(request, query) {
         let filtered;
+        let response;
         let menu = query.menu ? query.menu : "inbox";
         let formatted_response;
+        let page_number = (query.page !== undefined) ?
+            Number(query.page) : 1;
         try {
-            const cookie = request.cookies["jwt"];
             if ((0, message_common_1.isValidMenu)(menu)) {
                 const user_data = await this
                     .jwtService
-                    .verifyAsync(cookie);
+                    .verifyAsync(request.cookies["jwt"]);
                 if ((0, message_common_1.isValidMenuTables)(menu)) {
                     if (menu === "inbox")
                         filtered = { "recipient": user_data.email };
@@ -48,17 +54,21 @@ let MessageController = class MessageController {
                 }
                 else {
                     filtered = {
-                        "menu_state": query.menu === "starred" ?
+                        "status": query.menu === "starred" ?
                             message_common_1.Menu.starred : message_common_1.Menu.important,
                         "recipient": user_data.email
                     };
                     menu = "inbox";
                 }
-                let response = await this
+                response = await this
                     .messageService
                     .getMessages({
                     filtered,
                     menu
+                }).then(result => {
+                    return this
+                        .paginationService
+                        .pagination(result, page_number);
                 });
                 formatted_response = (0, common_functions_1.formatResponse)(response, true, "Success");
             }
@@ -111,9 +121,11 @@ let MessageController = class MessageController {
                 return (0, common_functions_1.formatResponse)([default_message], true, "Message Sent");
             });
             if (formatted_response.success)
-                await this.messageService.sendMessage("sent", default_message);
+                await this
+                    .messageService
+                    .sendMessage("sent", default_message);
             if (drafted_message)
-                await this.messageService.deleteMessage("drafts", message.id);
+                await this.messageService.deleteMessage("drafts", message.uuid);
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
@@ -220,23 +232,18 @@ let MessageController = class MessageController {
                 let message = await this
                     .messageService
                     .getMessageDetails(param.menu, query.id);
-                if (message) {
-                    if (!Object.keys(message_common_1.STATE).includes(query.state))
-                        throw new common_1.BadRequestException(`Invalid menu '${query.state}'`);
-                    if (message.menu_state === message_common_1.Menu.starred ||
-                        message.menu_state === message_common_1.Menu.important) {
-                        message.menu_state = 0;
+                if (message && Object.keys(message_common_1.STATE).includes(query.state)) {
+                    if (message.status === message_common_1.Menu.starred ||
+                        message.status === message_common_1.Menu.important) {
+                        message.status = 0;
                     }
-                    else {
-                        message.menu_state = (query.state === "starred") ?
-                            message_common_1.Menu.starred :
-                            message_common_1.Menu.important;
-                    }
+                    else
+                        message.status = query.state;
                     await this.messageService.updateMessage(param.menu, query.id, message);
                     formatted_response = (0, common_functions_1.formatResponse)([message], true, `Message set to ${query.state}`);
                 }
                 else
-                    throw new common_1.BadRequestException(`${query.id} doesn't exist`);
+                    throw new common_1.BadRequestException(`Either ID or State provided doesn't exist`);
             }
             else
                 throw new common_1.BadRequestException(`Invalid menu ${param.menu}`);
@@ -247,6 +254,28 @@ let MessageController = class MessageController {
         this
             .loggerService
             .insertLogs((0, common_functions_1.formatLogs)("setMenuState", { param, query }, formatted_response));
+        return formatted_response;
+    }
+    async search(request, query) {
+        let formatted_response;
+        let response_data;
+        try {
+            const cookie = await this.jwtService.verifyAsync(request.cookies["jwt"]);
+            response_data = await this
+                .searchService
+                .search(query.keyword, cookie.email, "inbox");
+            let response_data_length = response_data._responses.length;
+            if (response_data_length > 0) {
+                response_data = response_data._responses[0].r;
+            }
+            formatted_response = (0, common_functions_1.formatResponse)((response_data_length > 0) ? response_data : null, true, "Success");
+        }
+        catch (error) {
+            formatted_response = (0, common_functions_1.formatResponse)([error], false, error.statusMessage);
+        }
+        this
+            .loggerService
+            .insertLogs((0, common_functions_1.formatLogs)("search", query, formatted_response));
         return formatted_response;
     }
     async updateReadUnread(message_id) {
@@ -328,12 +357,23 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object, Object]),
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "setMenuState", null);
+__decorate([
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
+    (0, common_1.Get)("search"),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], MessageController.prototype, "search", null);
 MessageController = __decorate([
     (0, common_1.Controller)("messages"),
     __metadata("design:paramtypes", [message_service_1.default,
         jwt_1.JwtService,
         logger_service_1.default,
-        user_service_1.UserService])
+        user_service_1.UserService,
+        search_service_1.SearchService,
+        pagination_service_1.PaginationService])
 ], MessageController);
 exports.MessageController = MessageController;
 exports.default = MessageController;

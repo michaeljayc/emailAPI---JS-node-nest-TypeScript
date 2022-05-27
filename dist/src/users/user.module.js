@@ -22,6 +22,7 @@ const roles_guard_1 = require("../guards/roles/roles.guard");
 const passport_1 = require("@nestjs/passport");
 const auth_token_module_1 = require("../guards/auth-token/auth-token.module");
 const roles_module_1 = require("../guards/roles/roles.module");
+const pagination_module_1 = require("../common/pagination/pagination.module");
 let UserModule = class UserModule {
 };
 UserModule = __decorate([
@@ -35,7 +36,8 @@ UserModule = __decorate([
             }),
             auth_module_1.AuthModule,
             auth_token_module_1.AuthTokenModule,
-            roles_module_1.RolesModule],
+            roles_module_1.RolesModule,
+            pagination_module_1.PaginationModule],
         controllers: [user_controller_1.UserController],
         providers: [database_provider_1.default,
             user_service_1.UserService,

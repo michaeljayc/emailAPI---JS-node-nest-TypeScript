@@ -11,7 +11,8 @@ exports.Menu = {
 };
 exports.STATE = {
     "starred": 1,
-    "important": 2
+    "important": 2,
+    "deleted": 3
 };
 const isValidMenuTables = (menu) => exports.menu_tables.includes(menu);
 exports.isValidMenuTables = isValidMenuTables;

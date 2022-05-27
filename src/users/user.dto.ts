@@ -12,7 +12,7 @@ export class UserLoginDTO {
     password: string
 }
 
-export class UserRegisterDTO {
+export class UserDTO {
 
     constructor() {
         this.id;

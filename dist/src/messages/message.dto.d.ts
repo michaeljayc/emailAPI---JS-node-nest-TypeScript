@@ -8,7 +8,7 @@ export declare class NewMessageDTO {
     sender: string;
     read: boolean;
     drafted: boolean;
-    menu_state: number;
+    status: number;
     created_date: string;
     updated_date: string;
 }
