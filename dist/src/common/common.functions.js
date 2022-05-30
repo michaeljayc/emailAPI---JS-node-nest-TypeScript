@@ -8,7 +8,7 @@ const formatResponse = (data, isSuccessful, status) => {
     var _a;
     let truncated_data = data !== null && data !== void 0 ? data : [];
     if (!truncated_data) {
-        truncated_data.forEach(value => {
+        truncated_data.map(value => {
             return value;
         });
     }

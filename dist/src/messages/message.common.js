@@ -1,23 +1,25 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isValidMenu = exports.isValidMenuTables = exports.STATE = exports.Menu = exports.menu_tables = void 0;
-exports.menu_tables = ["inbox", "sent", "drafts"];
-exports.Menu = {
+exports.isValidMenu = exports.isValidMenuTables = exports.STATE = exports.MENU = exports.menu = void 0;
+exports.menu = ["inbox", "sent", "draft", "starred", "important"];
+exports.MENU = {
     "inbox": 1,
-    "sent": 2,
-    "drafts": 3,
-    "starred": 4,
-    "important": 5
+    "starred": 2,
+    "important": 3,
+    "sent": 4,
+    "drafts": 5
 };
 exports.STATE = {
-    "starred": 1,
-    "important": 2,
-    "deleted": 3
+    "important": 1,
+    "starred": 2,
+    "read": 3,
+    "draft": 4,
+    "deleted": 5
 };
-const isValidMenuTables = (menu) => exports.menu_tables.includes(menu);
+const isValidMenuTables = (chosen_menu) => exports.menu.includes(chosen_menu);
 exports.isValidMenuTables = isValidMenuTables;
 const isValidMenu = (menu) => {
-    const menu_keys = Object.keys(exports.Menu);
+    const menu_keys = Object.keys(exports.MENU);
     return menu_keys.includes(menu);
 };
 exports.isValidMenu = isValidMenu;

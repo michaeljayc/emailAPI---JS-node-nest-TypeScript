@@ -5,10 +5,10 @@ export declare class MessageService {
     constructor(connection: any);
     getMessageById(id: string): Promise<Message>;
     getMessages(data: any): Promise<rethink.WriteResult>;
-    getMessageDetails(table: string, message_id: string): Promise<any>;
-    sendMessage(table: string, message: Message): Promise<rethink.WriteResult>;
+    getMessageDetails(message_id: string): Promise<any>;
+    sendMessage(message: Message): Promise<rethink.WriteResult>;
     updateReadUnread(message_id: string): Promise<any>;
-    updateMessage(table: string, id: string, message: Message): Promise<rethink.WriteResult>;
-    deleteMessage(table: string, message_id: string): Promise<rethink.WriteResult>;
+    updateMessage(id: string, message?: Message): Promise<rethink.WriteResult>;
+    deleteMessage(message_id: string): Promise<rethink.WriteResult>;
 }
 export default MessageService;

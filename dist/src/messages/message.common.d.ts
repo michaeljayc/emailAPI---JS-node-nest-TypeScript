@@ -1,15 +1,17 @@
-export declare const menu_tables: string[];
-export declare const Menu: {
+export declare const menu: string[];
+export declare const MENU: {
     inbox: number;
+    starred: number;
+    important: number;
     sent: number;
     drafts: number;
-    starred: number;
-    important: number;
 };
 export declare const STATE: {
-    starred: number;
     important: number;
+    starred: number;
+    read: number;
+    draft: number;
     deleted: number;
 };
-export declare const isValidMenuTables: (menu: string) => boolean;
+export declare const isValidMenuTables: (chosen_menu: string) => boolean;
 export declare const isValidMenu: (menu: string) => boolean;

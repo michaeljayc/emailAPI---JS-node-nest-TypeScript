@@ -1,13 +1,15 @@
+export declare class EmailReference {
+    email: String;
+    menu: Number;
+}
 export declare class NewMessageDTO {
     constructor();
-    id: string;
+    sender: EmailReference;
+    recipient: EmailReference;
+    uuid: string;
     message_origin_id: string;
     subject: string;
     message: string;
-    recipient: string;
-    sender: string;
-    read: boolean;
-    drafted: boolean;
     status: number;
     created_date: string;
     updated_date: string;

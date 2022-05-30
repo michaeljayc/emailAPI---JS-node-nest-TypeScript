@@ -25,6 +25,7 @@ const auth_token_guard_1 = require("../guards/auth-token/auth-token.guard");
 const message_dto_1 = require("./message.dto");
 const search_service_1 = require("../common/search/search.service");
 const pagination_service_1 = require("../common/pagination/pagination.service");
+const message_validator_pipe_1 = require("../pipes/message-validator.pipe");
 let MessageController = class MessageController {
     constructor(messageService, jwtService, loggerService, userService, searchService, paginationService) {
         this.messageService = messageService;
@@ -46,26 +47,25 @@ let MessageController = class MessageController {
                 const user_data = await this
                     .jwtService
                     .verifyAsync(request.cookies["jwt"]);
-                if ((0, message_common_1.isValidMenuTables)(menu)) {
-                    if (menu === "inbox")
-                        filtered = { "recipient": user_data.email };
-                    else
-                        filtered = { "sender": user_data.email };
+                let email = user_data.email;
+                if (menu === "sent" || menu === "drafts") {
+                    filtered = { "sender": { "email": email,
+                            "menu": message_common_1.MENU.sent
+                        } };
+                    if (menu === "drafts")
+                        filtered.sender.menu = message_common_1.MENU.drafts;
                 }
                 else {
-                    filtered = {
-                        "status": query.menu === "starred" ?
-                            message_common_1.Menu.starred : message_common_1.Menu.important,
-                        "recipient": user_data.email
-                    };
-                    menu = "inbox";
+                    filtered = { "recipient": { "email": email } };
+                    if (menu !== "inbox")
+                        filtered.recipient.menu = (menu === "starred") ?
+                            message_common_1.MENU.starred :
+                            message_common_1.MENU.important;
                 }
                 response = await this
                     .messageService
-                    .getMessages({
-                    filtered,
-                    menu
-                }).then(result => {
+                    .getMessages(filtered)
+                    .then(result => {
                     return this
                         .paginationService
                         .pagination(result, page_number);
@@ -83,12 +83,12 @@ let MessageController = class MessageController {
             .insertLogs((0, common_functions_1.formatLogs)("getMessages", query, formatted_response));
         return formatted_response;
     }
-    async getMessageDetails(request, param) {
+    async getMessageDetails(param) {
         let formatted_response;
         try {
             let response = await this
                 .messageService
-                .getMessageDetails(param.menu, param.message_id);
+                .getMessageDetails(param.message_id);
             if (!response)
                 throw new common_1.HttpException("Invalid menu or table", 404);
             if (param.menu === "inbox")
@@ -105,27 +105,22 @@ let MessageController = class MessageController {
     }
     async sendMessage(request, message) {
         let formatted_response;
-        const drafted_message = message === null || message === void 0 ? void 0 : message.drafted;
         const newMessageDTO = new message_dto_1.NewMessageDTO();
         const default_message = (Object.assign(Object.assign({}, newMessageDTO), message));
         try {
             let recipient_data = await this
                 .userService
-                .getUserByEmail(message.recipient);
+                .getUserByEmail(message.recipient.email);
             if (Object.keys(recipient_data._responses).length < 1)
-                throw new common_1.NotFoundException(`${message.recipient}`, "Recipient doesn't exist");
+                throw new common_1.NotFoundException(`${message.recipient.email}`, "Recipient doesn't exist");
+            default_message.sender.menu = message_common_1.MENU.sent;
+            default_message.recipient.menu = message_common_1.MENU.inbox;
             formatted_response = await this
                 .messageService
-                .sendMessage("inbox", default_message)
+                .sendMessage(default_message)
                 .then(result => {
-                return (0, common_functions_1.formatResponse)([default_message], true, "Message Sent");
+                return (0, common_functions_1.formatResponse)(default_message, true, "Message Sent");
             });
-            if (formatted_response.success)
-                await this
-                    .messageService
-                    .sendMessage("sent", default_message);
-            if (drafted_message)
-                await this.messageService.deleteMessage("drafts", message.uuid);
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
@@ -140,10 +135,11 @@ let MessageController = class MessageController {
         const newMessageDTO = new message_dto_1.NewMessageDTO();
         const default_message = (Object.assign(Object.assign({}, newMessageDTO), message));
         try {
-            default_message.drafted = true;
+            default_message.status = message_common_1.STATE.draft;
+            default_message.sender.menu = message_common_1.MENU.drafts;
             await this
                 .messageService
-                .sendMessage("drafts", default_message);
+                .sendMessage(default_message);
             formatted_response = (0, common_functions_1.formatResponse)(default_message, true, "Saved as draft.");
         }
         catch (error) {
@@ -158,10 +154,10 @@ let MessageController = class MessageController {
         let formatted_response;
         try {
             const message_id = query.id;
-            message.updated_date = String(Date.now());
+            message.updated_date = (0, common_functions_1.setDateTime)();
             let response = await this
                 .messageService
-                .updateMessage("drafts", message_id, message);
+                .updateMessage(message_id, message);
             if (response.replaced === 1)
                 formatted_response = (0, common_functions_1.formatResponse)([message], true, "Message updated.");
             else
@@ -175,25 +171,51 @@ let MessageController = class MessageController {
             .insertLogs((0, common_functions_1.formatLogs)("updateMessage", message, formatted_response));
         return formatted_response;
     }
+    async sendDraftMessage(message, query) {
+        let formatted_response;
+        const newMessageDTO = new message_dto_1.NewMessageDTO();
+        const default_message = (Object.assign(Object.assign({}, newMessageDTO), message));
+        try {
+            const response = await this
+                .messageService
+                .getMessageById(query.id);
+            if (!response)
+                throw new common_1.NotFoundException(`ID: ${query.id} doesn't exist`);
+            const def_message = (Object.assign(Object.assign({}, default_message), { recipient: Object.assign(Object.assign({}, default_message.recipient), { menu: message_common_1.MENU.inbox }), sender: Object.assign(Object.assign({}, default_message.sender), { menu: message_common_1.MENU.sent }), status: 0, updated_date: (0, common_functions_1.setDateTime)() }));
+            formatted_response = await this
+                .messageService
+                .updateMessage(query.id, def_message)
+                .then(result => {
+                return (0, common_functions_1.formatResponse)(def_message, true, "Message Sent.");
+            });
+        }
+        catch (error) {
+            formatted_response = (0, common_functions_1.formatResponse)([error], false, error.statusMessage);
+        }
+        this
+            .loggerService
+            .insertLogs((0, common_functions_1.formatLogs)("sendDraftMessage", query, formatted_response));
+        return formatted_response;
+    }
     async deleteMessage(request, param, query) {
-        const table = param.menu;
         const message_id = query.id;
         let formatted_response;
         try {
-            let response = await this
+            if (!message_common_1.menu.includes(param.menu))
+                throw new common_1.BadRequestException(`Menu ${param.menu} doesn't exist.`);
+            formatted_response = await this
                 .messageService
-                .deleteMessage(table, message_id);
-            if (response.deleted === 1)
-                return (0, common_functions_1.formatResponse)([query], true, "Message deleted.");
-            else
-                return (0, common_functions_1.formatResponse)([query], false, `Message ID does not exist in ${table}`);
+                .deleteMessage(message_id)
+                .then(result => {
+                return (0, common_functions_1.formatResponse)({ query }, true, "Message Deleted");
+            });
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
         }
         this
             .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("deleteMessage", param, formatted_response));
+            .insertLogs((0, common_functions_1.formatLogs)("deleteMessage", { param, query }, formatted_response));
         return formatted_response;
     }
     async replyToMessage(query, message) {
@@ -201,21 +223,19 @@ let MessageController = class MessageController {
         const newMessageDTO = new message_dto_1.NewMessageDTO();
         const default_message = (Object.assign(Object.assign({}, newMessageDTO), message));
         try {
-            if (!await this.messageService.getMessageById(query.message_id))
-                throw new common_1.HttpException(`Message ID ${query.message_id} doesn't exist`, 404);
-            if (!default_message.message_origin_id) {
-                default_message.message_origin_id = query.message_id;
-                default_message.subject = `RE: ${default_message.subject}`;
-            }
-            let response = await this
+            if (!await this.messageService.getMessageById(query.id))
+                throw new common_1.HttpException(`Message ID ${query.id} doesn't exist`, 404);
+            const def_message = (Object.assign(Object.assign({}, default_message), { message_origin_id: (!default_message.message_origin_id) ?
+                    query.id :
+                    default_message.message_origin_id, subject: (!default_message.message_origin_id) ?
+                    `RE: ${default_message.subject}` :
+                    default_message.subject, recipient: Object.assign(Object.assign({}, default_message.recipient), { menu: message_common_1.MENU.inbox }), sender: Object.assign(Object.assign({}, default_message.sender), { menu: message_common_1.MENU.sent }) }));
+            formatted_response = await this
                 .messageService
-                .sendMessage("inbox", default_message);
-            if (response.inserted === 1)
-                formatted_response = (0, common_functions_1.formatResponse)([default_message], true, "Reply sent.");
-            else
-                formatted_response = (0, common_functions_1.formatResponse)([query], false, `Error in sending reply.`);
-            if (formatted_response.success)
-                await this.messageService.sendMessage("sent", default_message);
+                .sendMessage(def_message)
+                .then(result => {
+                return (0, common_functions_1.formatResponse)(def_message, true, "Reply sent.");
+            });
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
@@ -225,35 +245,29 @@ let MessageController = class MessageController {
             .insertLogs((0, common_functions_1.formatLogs)("replyToMessage", default_message, formatted_response));
         return formatted_response;
     }
-    async setMenuState(request, param, query) {
+    async updateMessageStatus(request, message, query) {
+        const { id, state } = query;
         let formatted_response;
+        const newMessageDTO = new message_dto_1.NewMessageDTO();
+        const default_message = (Object.assign(Object.assign({}, newMessageDTO), message));
         try {
-            if ((0, message_common_1.isValidMenuTables)(param.menu)) {
-                let message = await this
-                    .messageService
-                    .getMessageDetails(param.menu, query.id);
-                if (message && Object.keys(message_common_1.STATE).includes(query.state)) {
-                    if (message.status === message_common_1.Menu.starred ||
-                        message.status === message_common_1.Menu.important) {
-                        message.status = 0;
-                    }
-                    else
-                        message.status = query.state;
-                    await this.messageService.updateMessage(param.menu, query.id, message);
-                    formatted_response = (0, common_functions_1.formatResponse)([message], true, `Message set to ${query.state}`);
-                }
-                else
-                    throw new common_1.BadRequestException(`Either ID or State provided doesn't exist`);
-            }
-            else
-                throw new common_1.BadRequestException(`Invalid menu ${param.menu}`);
+            let response = await this
+                .messageService
+                .getMessageById(id);
+            if (!response)
+                throw new common_1.NotFoundException(`ID ${id} doesn't exist.`);
+            const def_message = Object.assign(Object.assign({}, default_message), { recipient: Object.assign(Object.assign({}, default_message.recipient), { menu: state === "starred" ?
+                        message_common_1.MENU.starred :
+                        message_common_1.MENU.important }) });
+            await this.messageService.updateMessage(id, def_message);
+            formatted_response = (0, common_functions_1.formatResponse)(def_message, true, `Message set to ${state}`);
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
         }
         this
             .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("setMenuState", { param, query }, formatted_response));
+            .insertLogs((0, common_functions_1.formatLogs)("setMenuState", query, formatted_response));
         return formatted_response;
     }
     async search(request, query) {
@@ -293,11 +307,10 @@ __decorate([
 ], MessageController.prototype, "getMessages", null);
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
-    (0, common_1.Get)(":menu/:action/:message_id"),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Param)()),
+    (0, common_1.Get)(":menu/details/:message_id"),
+    __param(0, (0, common_1.Param)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "getMessageDetails", null);
 __decorate([
@@ -330,6 +343,15 @@ __decorate([
 ], MessageController.prototype, "updateDraftedMessage", null);
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
+    (0, common_1.Put)("drafts/send"),
+    __param(0, (0, common_1.Body)(message_validator_pipe_1.MessageValidationPipe)),
+    __param(1, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [message_entity_1.default, Object]),
+    __metadata("design:returntype", Promise)
+], MessageController.prototype, "sendDraftMessage", null);
+__decorate([
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, common_1.Delete)(":menu/delete"),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)()),
@@ -349,14 +371,14 @@ __decorate([
 ], MessageController.prototype, "replyToMessage", null);
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
-    (0, common_1.Put)(":menu"),
+    (0, common_1.Put)("inbox"),
     __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Param)()),
+    __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object, Object]),
+    __metadata("design:paramtypes", [Object, message_entity_1.default, Object]),
     __metadata("design:returntype", Promise)
-], MessageController.prototype, "setMenuState", null);
+], MessageController.prototype, "updateMessageStatus", null);
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, common_1.Get)("search"),

@@ -16,13 +16,14 @@ export declare class MessageController {
     private readonly paginationService;
     constructor(messageService: MessageService, jwtService: JwtService, loggerService: LoggerService, userService: UserService, searchService: SearchService, paginationService: PaginationService);
     getMessages(request: Request, query: any): Promise<IResponseFormat | any>;
-    getMessageDetails(request: Request, param: any): Promise<IResponseFormat>;
+    getMessageDetails(param: any): Promise<IResponseFormat>;
     sendMessage(request: Request, message: Message): Promise<IResponseFormat>;
     saveAsDraft(request: Request, message: Message): Promise<IResponseFormat>;
     updateDraftedMessage(request: Request, message: Message, query: any): Promise<IResponseFormat>;
+    sendDraftMessage(message: Message, query: any): Promise<IResponseFormat>;
     deleteMessage(request: Request, param: any, query: any): Promise<IResponseFormat>;
     replyToMessage(query: any, message: Message): Promise<IResponseFormat>;
-    setMenuState(request: Request, param: any, query: any): Promise<IResponseFormat | any>;
+    updateMessageStatus(request: Request, message: Message, query: any): Promise<IResponseFormat | any>;
     search(request: Request, query: any): Promise<IResponseFormat>;
     updateReadUnread(message_id: string): Promise<Message>;
 }

@@ -1,26 +1,49 @@
 import { Optional } from "@nestjs/common";
-import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { Type } from "class-transformer";
+import { IsDefined, IsNotEmpty, IsNotEmptyObject, IsNumber, IsObject, IsOptional, IsString, Validate, validate, ValidateNested, ValidationTypes } from "class-validator";
 import { setDateTime } from "src/common/common.functions";
 
+export class EmailReference {
+
+    @IsNotEmpty()
+    @IsString()
+    email: String;
+
+    @IsNotEmpty()
+    @IsString()
+    menu: Number;
+}
 export class NewMessageDTO {
 
     constructor() {
-        this.id;
+        this.uuid;
         this.message_origin_id = "";
         this.subject;
         this.message;
-        this.recipient;
         this.sender;
+        this.recipient;
         this.status = 0;
-        this.read = false;
-        this.drafted = false;
         this.created_date = setDateTime();
         this.updated_date = setDateTime();
     }
+
+    @IsDefined()
+    @IsNotEmptyObject()
+    @IsObject()
+    @ValidateNested()
+    @Type(()=> EmailReference)
+    sender: EmailReference;
+
+    @IsDefined()
+    @IsNotEmptyObject()
+    @IsObject()
+    @ValidateNested()
+    @Type(()=> EmailReference)
+    recipient: EmailReference;
     
     @IsOptional()
     @IsString()
-    id: string;
+    uuid: string;
 
     @IsOptional()
     @IsString()
@@ -32,22 +55,6 @@ export class NewMessageDTO {
 
     @IsString()
     message: string;
-
-    @IsNotEmpty()
-    @IsString()
-    recipient: string;
-
-    @IsNotEmpty()
-    @IsString()
-    sender: string;
-    
-    @IsNotEmpty()
-    @IsBoolean()
-    read: boolean;
-
-    @IsNotEmpty()
-    @IsBoolean()
-    drafted: boolean;
 
     @IsNotEmpty()
     @IsNumber()

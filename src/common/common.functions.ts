@@ -14,7 +14,7 @@ export const formatResponse = (data?: any,
         let truncated_data = data ?? [];
 
         if (!truncated_data) {
-            truncated_data.forEach( value => {
+            truncated_data.map( value => {
                 return value
             })
         }

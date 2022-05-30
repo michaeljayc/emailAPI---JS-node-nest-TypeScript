@@ -12,27 +12,28 @@ import {
     Query, 
     Req,
     UseGuards,
+    UsePipes,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { IResponseFormat } from "../common/common.interface";
 import Message from "./message.entity";
-import { Request, response } from "express";
+import { Request } from "express";
 import MessageService from "./message.service";
-import { formatResponse, formatLogs } from "src/common/common.functions";
+import { formatResponse, formatLogs, setDateTime } from "src/common/common.functions";
 import LoggerService from "src/services/logger.service";
 import { UserService } from "src/users/user.service";
 import { 
-    isValidMenu, 
-    Menu,
-    isValidMenuTables,
-    STATE
+    isValidMenu,
+    STATE,
+    MENU,
+    menu
 } from "./message.common";
 import { AuthTokenGuard } from "src/guards/auth-token/auth-token.guard";
 import { NewMessageDTO } from "./message.dto";
 import { SearchService } from "src/common/search/search.service";
 import { PaginationService } from "src/common/pagination/pagination.service";
-import User from "src/users/user.entity";
-
+import { ValidateNested } from "class-validator";
+import { MessageValidationPipe } from "src/pipes/message-validator.pipe";
 @Controller("messages")
 export class MessageController {
 
@@ -51,7 +52,7 @@ export class MessageController {
     async getMessages(@Req() request: Request,
         @Query() query): Promise<IResponseFormat | any> {
 
-            let filtered: {};
+            let filtered: any;
             let response: any;
             let menu = query.menu ? query.menu : "inbox";
             let formatted_response: IResponseFormat;
@@ -59,49 +60,45 @@ export class MessageController {
                 Number(query.page) : 1;
 
             try {
-                //const cookie = request.cookies["jwt"];
-
                 if (isValidMenu(menu)) {
                     // Get cookie data
                     const user_data = await 
                         this
                         .jwtService
                         .verifyAsync(request.cookies["jwt"]);
-    
-                    if (isValidMenuTables(menu)) {
-                        // assign id to filter
-                        if (menu === "inbox")
-                            filtered = {"recipient": user_data.email}
-                        else 
-                            filtered = {"sender": user_data.email}
-                    } else {
-                        filtered = {
-                            "status": query.menu === "starred" ?
-                            Menu.starred : Menu.important,
-                            "recipient": user_data.email
-                        }
-                        menu = "inbox";
+                    
+                    let email: string = user_data.email;
+                    
+                    if (menu === "sent" || menu === "drafts") {
+                        filtered = {"sender": {"email": email,
+                            "menu": MENU.sent
+                        }}
+                        
+                        if (menu === "drafts")
+                            filtered.sender.menu = MENU.drafts
+                    }
+                    else {
+                        filtered = {"recipient": {"email": email} }
+                        if (menu !== "inbox")
+                            filtered.recipient.menu = (menu === "starred") ?
+                                MENU.starred : 
+                                MENU.important;
                     }
                     // Retrieve and paginate data
                     response = await this
                         .messageService
-                        .getMessages({
-                            filtered,
-                            menu
-                        }).then(result => {
+                        .getMessages(filtered)
+                        .then(result => {
                             return this
                             .paginationService
                             .pagination(result, page_number);
                         })
 
-                    formatted_response = formatResponse(
-                        response,true,"Success"
-                    );
-                                 
+                    formatted_response = formatResponse
+                        (response,true,"Success");
                 } else
                     throw new BadRequestException
-                        (`Invalid Menu '${menu}'`) 
-
+                        (`Invalid Menu '${menu}'`)
             } catch (error) {
                 formatted_response = formatResponse
                     ([error], false, error.status)
@@ -110,19 +107,16 @@ export class MessageController {
             this
             .loggerService
             .insertLogs(formatLogs
-                    ("getMessages", query, formatted_response)
-                )
+                ("getMessages", query, formatted_response)
+            )
             
             return formatted_response;
     }
 
     // http://localhost:3000/api/messages/inbox/details/:message_id
-    // OR 
-    // http://localhost:3000/api/messages/inbox/reply/:message_id
     @UseGuards(AuthTokenGuard)
-    @Get(":menu/:action/:message_id")
-    async getMessageDetails(@Req() request: Request,
-        @Param() param)
+    @Get(":menu/details/:message_id")
+    async getMessageDetails(@Param() param)
         : Promise<IResponseFormat> {
 
             let formatted_response: IResponseFormat;
@@ -131,7 +125,7 @@ export class MessageController {
                 // Check if message id exists
                 let response = await this
                     .messageService
-                    .getMessageDetails(param.menu, param.message_id)
+                    .getMessageDetails(param.message_id)
 
                 if (!response)
                     throw new HttpException
@@ -168,45 +162,38 @@ export class MessageController {
         : Promise<IResponseFormat> {
             
             let formatted_response: any;
-            const drafted_message = message?.drafted; 
             const newMessageDTO = new NewMessageDTO();
             const default_message = ({
                 ...newMessageDTO,
                 ...message
             })
-
+            
             try {
                 // Check if recipient exist
                 let recipient_data = await 
                     this
                     .userService
-                    .getUserByEmail(message.recipient);
+                    .getUserByEmail(message.recipient.email);
                 
                 if (Object.keys(recipient_data._responses).length < 1)
                     throw new NotFoundException
-                        (`${message.recipient}`, "Recipient doesn't exist")   
-            
-                // Insert data to recipient's INBOX
+                        (`${message.recipient.email}`, "Recipient doesn't exist")   
+                
+                // set sender attributes
+                default_message.sender.menu = MENU.sent;
+
+                // set recipient attributes
+                default_message.recipient.menu = MENU.inbox;
+
+                // insert to messages
                 formatted_response =  await this
-                    .messageService
-                    .sendMessage("inbox",default_message)
-                        .then( result => {
-                            return formatResponse(
-                                [default_message], true, "Message Sent"
-                        )});
-
-                // Insert data to sender's SENT
-                if (formatted_response.success)
-                    await this
-                        .messageService
-                        .sendMessage("sent",default_message)
-
-                // Check if message already exists in DRAFTS
-                // If exists, delete in drafts after sending
-                if (drafted_message)
-                    await this.messageService.deleteMessage
-                        ("drafts",message.uuid)
-
+                .messageService
+                .sendMessage(default_message)
+                    .then( result => {
+                        return formatResponse(
+                            default_message, true, "Message Sent"
+                    )});
+                
             } catch (error) {
                 formatted_response = formatResponse
                     ([error], false, error.status)
@@ -221,6 +208,7 @@ export class MessageController {
             return formatted_response;
     }
 
+    // http://localhost:3000/api/messages/save-as-draft
     @UseGuards(AuthTokenGuard)
     @Post("save-as-draft")
     async saveAsDraft(@Req() request: Request,
@@ -233,12 +221,13 @@ export class MessageController {
                 ...message
             })
             try {
-                // set drafted to TRUE
-                default_message.drafted = true;
-
+                // set status to draft
+                default_message.status = STATE.draft;
+                default_message.sender.menu = MENU.drafts;
+                
                 await this
                     .messageService
-                    .sendMessage("drafts",default_message);
+                    .sendMessage(default_message);
 
                 formatted_response = formatResponse(
                     default_message,
@@ -271,11 +260,11 @@ export class MessageController {
 
             try {
                 const message_id = query.id;
-                message.updated_date = String(Date.now()) 
+                message.updated_date = setDateTime();
 
                 let response = await this
                     .messageService
-                    .updateMessage("drafts",message_id,message);
+                    .updateMessage(message_id,message);
 
                 if (response.replaced === 1)
                     formatted_response = formatResponse
@@ -297,31 +286,88 @@ export class MessageController {
             return formatted_response;
     }
 
+    // http://localhost:3000/api/messages/drafts/send?id=123abc
     @UseGuards(AuthTokenGuard)
-    @Delete(":menu/delete")
-    async deleteMessage(@Req() request:Request,
-        @Param() param,
+    @Put("drafts/send")
+    async sendDraftMessage(@Body(MessageValidationPipe) message: Message,
         @Query() query)
         : Promise<IResponseFormat> {
             
-            const table = param.menu;
+            let formatted_response: IResponseFormat;
+            const newMessageDTO = new NewMessageDTO();
+            const default_message = ({
+                ...newMessageDTO,
+                ...message
+            });
+
+            try {
+                // check if id exists
+                const response = await this
+                    .messageService
+                    .getMessageById(query.id)
+                
+                if (!response)
+                    throw new NotFoundException
+                        (`ID: ${query.id} doesn't exist`)
+                
+                const def_message = ({
+                    ...default_message,
+                    recipient: {
+                        ...default_message.recipient,
+                        menu: MENU.inbox
+                    },
+                    sender: {
+                        ...default_message.sender,
+                        menu: MENU.sent
+                    },
+                    status: 0,
+                    updated_date: setDateTime()
+                })
+
+                formatted_response = await this
+                    .messageService
+                    .updateMessage(query.id, def_message)
+                    .then( result => {
+                        return formatResponse
+                            (def_message, true, "Message Sent.")
+                    })
+            } catch (error) {
+                formatted_response = formatResponse
+                    ([error], false, error.statusMessage)
+            }
+
+            this
+            .loggerService
+            .insertLogs(formatLogs
+                ("sendDraftMessage", query, formatted_response)
+            )
+
+            return formatted_response; 
+    }
+
+    // http://localhost:3000/api/messages/menu/delete?id=9f415197-22f9-4f93-88b2-77e381ff4079
+    @UseGuards(AuthTokenGuard)
+    @Delete(":menu/delete")
+    async deleteMessage(@Req() request:Request,
+        @Param() param, @Query() query)
+        : Promise<IResponseFormat> {
+            
             const message_id = query.id;
             let formatted_response: IResponseFormat;
 
-            try {               
-                let response = await this
+            try {           
+                // check if menu is valid
+                if (!menu.includes(param.menu))
+                    throw new BadRequestException
+                        (`Menu ${param.menu} doesn't exist.`)
+
+                formatted_response = await this
                     .messageService
-                    .deleteMessage(table, message_id)
-                        
-                    if (response.deleted === 1)
+                    .deleteMessage(message_id)
+                    .then(result => {
                         return formatResponse
-                        ([query], true, "Message deleted.")   
-                    else
-                        return formatResponse
-                        (   [query], 
-                            false, 
-                            `Message ID does not exist in ${table}`
-                        ) 
+                            ({query}, true, "Message Deleted")
+                    });
             } catch (error) {
                 formatted_response = formatResponse
                     ([error], false, error.status);
@@ -330,13 +376,13 @@ export class MessageController {
             this
             .loggerService
             .insertLogs(formatLogs
-                ("deleteMessage", param, formatted_response)
+                ("deleteMessage", {param,query}, formatted_response)
             )
 
             return formatted_response;
     }
 
-    // http://localhost:3000/api/messages/inbox/reply?message_id=
+    // http://localhost:3000/api/messages/inbox/reply?id=
     @UseGuards(AuthTokenGuard)
     @Post("inbox/reply")
     async replyToMessage(@Query() query,
@@ -352,31 +398,38 @@ export class MessageController {
 
             try {
                 // check if query.id is a valid id
-                if (!await this.messageService.getMessageById(query.message_id))
+                if (!await this.messageService.getMessageById(query.id))
                     throw new HttpException
-                        (`Message ID ${query.message_id} doesn't exist`, 404)
+                        (`Message ID ${query.id} doesn't exist`, 404)
 
                 // Set message details
-                if (!default_message.message_origin_id) {
-                    default_message.message_origin_id = query.message_id;
-                    default_message.subject = `RE: ${default_message.subject}`;
-                }
-
+                const def_message = ({
+                    ...default_message,
+                    message_origin_id: (!default_message.message_origin_id) ?
+                        query.id : 
+                        default_message.message_origin_id,
+                    subject: (!default_message.message_origin_id) ? 
+                        `RE: ${default_message.subject}` :
+                        default_message.subject,
+                    recipient: {
+                        ...default_message.recipient,
+                        menu: MENU.inbox,
+                    },
+                    sender: {
+                        ...default_message.sender,
+                        menu: MENU.sent,
+                    }
+                })
+                
                 // Send message to recipient's INBOX
-                let response = await this
+                formatted_response = await this
                     .messageService
-                    .sendMessage("inbox", default_message)
+                    .sendMessage(def_message)
+                    .then( result => {
+                        return formatResponse
+                            (def_message, true, "Reply sent.")
+                    })
  
-                if (response.inserted === 1)
-                    formatted_response = formatResponse
-                        ([default_message], true, "Reply sent.")
-                else
-                    formatted_response = formatResponse
-                        ([query], false, `Error in sending reply.`);
-            
-                // Insert data to sender's SENT
-                if (formatted_response.success) 
-                    await this.messageService.sendMessage("sent",default_message)
                 
             } catch (error) {
                 formatted_response = formatResponse
@@ -394,40 +447,44 @@ export class MessageController {
 
     // http://localhost:3000/api/messages/inbox?id=123abc&state=starred
     @UseGuards(AuthTokenGuard)
-    @Put(":menu")
-    async setMenuState(@Req() request: Request,
-        @Param() param, @Query() query)
+    @Put("inbox")
+    async updateMessageStatus(@Req() request: Request,
+        @Body() message:Message, 
+        @Query() query)
         : Promise<IResponseFormat | any> {
-            
+            const {id,state} = query
             let formatted_response: IResponseFormat;
+            const newMessageDTO = new NewMessageDTO();
+            const default_message = ({
+                ...newMessageDTO,
+                ...message
+            })
 
             try {
-                if (isValidMenuTables(param.menu)) {
+                let response = await 
+                    this
+                    .messageService
+                    .getMessageById(id)
+                
+                    // check if message_id is valid
+                    if (!response)
+                    throw new NotFoundException
+                        (`ID ${id} doesn't exist.`)
 
-                    let message = await 
-                        this
-                        .messageService
-                        .getMessageDetails(param.menu, query.id)
+                const def_message = {
+                    ...default_message,
+                    recipient: {
+                        ...default_message.recipient,
+                        menu : state === "starred" ? 
+                            MENU.starred : 
+                            MENU.important
+                    }
+                }
 
-                    if (message && Object.keys(STATE).includes(query.state)) {
-                        // check if message is already starred or important
-                        if (message.status === Menu.starred || 
-                                message.status === Menu.important) {
-                                    message.status = 0;
-                        } else
-                            message.status = query.state;
+                await this.messageService.updateMessage(id, def_message)
 
-                        await this.messageService.updateMessage
-                            (param.menu, query.id, message)
-
-                        formatted_response = formatResponse
-                            ([message], true, `Message set to ${query.state}`)
-                    } else
-                        throw new BadRequestException
-                            (`Either ID or State provided doesn't exist`)
-                } else
-                    throw new BadRequestException
-                        (`Invalid menu ${param.menu}`)
+                formatted_response = formatResponse
+                    (def_message, true, `Message set to ${state}`)
 
             } catch (error) {
                 formatted_response = formatResponse
@@ -437,7 +494,7 @@ export class MessageController {
             this
             .loggerService
             .insertLogs(formatLogs
-                ("setMenuState", {param, query}, formatted_response)
+                ("setMenuState", query, formatted_response)
             )
 
             return formatted_response
@@ -469,7 +526,7 @@ export class MessageController {
                 }
                        
                 formatted_response = formatResponse
-                    (   
+                    (  
                         (response_data_length > 0) ? response_data : null, 
                         true, 
                         "Success"
