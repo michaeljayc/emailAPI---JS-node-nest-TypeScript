@@ -1,36 +1,33 @@
 import { Injectable, Inject, forwardRef } from "@nestjs/common";
 import { User } from "./user.entity";
 import * as rethink from "rethinkdb";
-import { formatResponse } from "src/common/common.functions";
+import { PaginationService } from "src/common/pagination/pagination.service";
 
+require('dotenv').config()
+const {DB} = process.env;
 const TABLE = "users";
-const DB = "emailAPI";
 
 @Injectable()
 export class UserService {
+    
     private connection: rethink.Connection;
 
     constructor(@Inject("RethinkProvider") connection){
         this.connection = connection;
     }
 
-    async registerUser(user: User): Promise<rethink.WriteResult> {
+    async createNewUser(user: User): Promise<rethink.WriteResult> {
         return rethink
             .db(DB)
             .table(TABLE)
-            .insert(user)
+            .insert(
+                user,
+                {returnChanges: "always"}
+            )
             .run(this.connection)
     }
 
-    async loginUser(id: string): Promise<User>{
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .get(id)
-            .run(this.connection)
-    }
-
-    async getAllUsers(): Promise<User> {
+    async getAllUsers(): Promise<User>{
         return rethink
             .db(DB)
             .table(TABLE)
@@ -43,16 +40,6 @@ export class UserService {
             .db(DB)
             .table(TABLE)
             .get(id)
-            .run(this.connection)
-    }
-
-    async getUserByUsername(username:string): Promise<any> {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .filter(
-                { "username": username }
-            )
             .run(this.connection)
     }
 
@@ -72,7 +59,10 @@ export class UserService {
                 .db(DB)
                 .table(TABLE)
                 .get(user_id)
-                .update(user)
+                .update(
+                    user,
+                    {returnChanges: "always"}
+                )
                 .run(this.connection)
     }
 
@@ -81,7 +71,7 @@ export class UserService {
             .db(DB)
             .table(TABLE)
             .get(id)
-            .delete()
+            .delete({returnChanges: "always"})
             .run(this.connection)
     }
 

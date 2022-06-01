@@ -11,54 +11,75 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageController = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
-const message_entity_1 = require("./message.entity");
 const message_service_1 = require("./message.service");
 const common_functions_1 = require("../common/common.functions");
 const logger_service_1 = require("../services/logger.service");
 const user_service_1 = require("../users/user.service");
 const message_common_1 = require("./message.common");
 const auth_token_guard_1 = require("../guards/auth-token/auth-token.guard");
+const message_dto_1 = require("./message.dto");
+const search_service_1 = require("../common/search/search.service");
+const pagination_service_1 = require("../common/pagination/pagination.service");
+const lodash_1 = require("lodash");
 let MessageController = class MessageController {
-    constructor(messageService, jwtService, loggerService, userService) {
+    constructor(messageService, jwtService, loggerService, userService, searchService, paginationService) {
         this.messageService = messageService;
         this.jwtService = jwtService;
         this.loggerService = loggerService;
         this.userService = userService;
+        this.searchService = searchService;
+        this.paginationService = paginationService;
     }
     async getMessages(request, query) {
         let filtered;
+        let response;
         let menu = query.menu ? query.menu : "inbox";
         let formatted_response;
+        let page_number = (query.page !== undefined) ?
+            Number(query.page) : 1;
         try {
-            const cookie = request.cookies["jwt"];
             if ((0, message_common_1.isValidMenu)(menu)) {
                 const user_data = await this
                     .jwtService
-                    .verifyAsync(cookie);
-                if ((0, message_common_1.isValidMenuTables)(menu)) {
-                    if (menu === "inbox")
-                        filtered = { "recipient_id": user_data.id };
-                    else
-                        filtered = { "sender_id": user_data.id };
+                    .verifyAsync(request.cookies["jwt"]);
+                let email = user_data.email;
+                if (menu === "sent" || menu === "drafts") {
+                    filtered = { "sender": { "email": email,
+                            "menu": menu === "sent" ?
+                                message_common_1.MENU.sent :
+                                message_common_1.MENU.drafts
+                        }
+                    };
                 }
                 else {
-                    filtered = {
-                        "menu_state": query.menu === "starred" ?
-                            message_common_1.Menu.starred : message_common_1.Menu.important,
-                        "recipient_id": user_data.id
-                    };
-                    menu = "inbox";
+                    filtered = { "recipient": { "email": email } };
+                    if (menu !== "inbox")
+                        filtered.recipient.menu = (menu === "starred") ?
+                            message_common_1.MENU.starred :
+                            message_common_1.MENU.important;
                 }
-                let response = await this
+                response = await this
                     .messageService
-                    .getMessages({
-                    filtered,
-                    menu,
-                    id: user_data.id
+                    .getMessages(filtered)
+                    .then(result => {
+                    return this
+                        .paginationService
+                        .pagination(result, page_number);
                 });
                 formatted_response = (0, common_functions_1.formatResponse)(response, true, "Success");
             }
@@ -76,14 +97,31 @@ let MessageController = class MessageController {
     async getMessageDetails(request, param) {
         let formatted_response;
         try {
+            const { menu, id } = param;
+            const cookie = await this.jwtService.verifyAsync(request.cookies["jwt"]);
+            let filtered;
+            if (menu === "sent" || menu === "drafts")
+                filtered = { id,
+                    sender: { email: cookie.email }
+                };
+            else
+                filtered = { id,
+                    recipient: { email: cookie.email }
+                };
             let response = await this
                 .messageService
-                .getMessageDetails(param.menu, param.message_id);
-            if (!response)
-                throw new common_1.HttpException("Invalid menu or table", 404);
-            if (param.menu === "inbox")
-                response = await this.updateReadUnread(response.id);
-            formatted_response = (0, common_functions_1.formatResponse)(response, true, "Success.");
+                .getMessageDetails(id, filtered);
+            if (Object.keys(response._responses).length === 0)
+                formatted_response = (0, common_functions_1.formatResponse)(null, true, "Success.");
+            else {
+                response = response.next()._settledValue;
+                formatted_response = await this
+                    .messageService
+                    .updateReadUnread(response.id)
+                    .then(result => {
+                    return (0, common_functions_1.formatResponse)(result.changes[0].new_val, true, "Success.");
+                });
+            }
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
@@ -95,187 +133,208 @@ let MessageController = class MessageController {
     }
     async sendMessage(request, message) {
         let formatted_response;
-        const drafted_message = message === null || message === void 0 ? void 0 : message.drafted;
+        const newMessageDTO = new message_dto_1.NewMessageDTO();
+        let default_message = (Object.assign(Object.assign({}, newMessageDTO), message));
         try {
-            const sender_data = await this.jwtService.verifyAsync(request.cookies["jwt"]);
+            const cookie = await this.jwtService.verifyAsync(request.cookies["jwt"]);
             let recipient_data = await this
                 .userService
-                .getUserByEmail(message.recipient);
+                .getUserByEmail(message.recipient.email);
             if (Object.keys(recipient_data._responses).length < 1)
-                throw new common_1.NotFoundException(`${message.recipient}`, "Recipient doesn't exist");
-            recipient_data = recipient_data.next()._settledValue;
-            message.created_date = String(Date.now());
-            message.updated_date = String(Date.now());
-            message.recipient_id = recipient_data.id;
-            message.menu_state = 0;
-            message.sender = sender_data.email;
-            message.sender_id = sender_data.id;
-            message.message_origin_id = "";
-            message.read = false;
-            message.drafted = false;
+                throw new common_1.NotFoundException(`${message.recipient.email}`, "Recipient doesn't exist");
+            default_message = (Object.assign(Object.assign({}, default_message), { sender: Object.assign(Object.assign({}, default_message.sender), { email: cookie.email, menu: message_common_1.MENU.sent }), recipient: Object.assign(Object.assign({}, default_message.recipient), { menu: message_common_1.MENU.inbox }) }));
             formatted_response = await this
                 .messageService
-                .sendMessage("inbox", message)
+                .sendMessage(default_message)
                 .then(result => {
-                return (0, common_functions_1.formatResponse)([message], true, "Message Sent");
+                return (0, common_functions_1.formatResponse)(result.changes[0].new_val, true, "Message Sent");
             });
-            if (formatted_response.success)
-                await this.messageService.sendMessage("sent", message);
-            if (drafted_message)
-                await this.messageService.deleteMessage("drafts", message.id);
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
         }
         this
             .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("sendMessage", message, formatted_response));
+            .insertLogs((0, common_functions_1.formatLogs)("sendMessage", default_message, formatted_response));
         return formatted_response;
     }
-    async saveAsDraft(request, message) {
+    async saveAsDraft(message) {
         let formatted_response;
+        const newMessageDTO = new message_dto_1.NewMessageDTO();
+        let default_message = (Object.assign(Object.assign({}, newMessageDTO), message));
         try {
-            let sender_data = await this
-                .jwtService
-                .verifyAsync(request.cookies["jwt"]);
-            message.created_date = String(Date.now());
-            message.updated_date = String(Date.now());
-            message.sender = sender_data.email;
-            message.sender_id = sender_data.id;
-            message.drafted = true;
-            message.read = false;
-            let response = await this
+            default_message = (Object.assign(Object.assign({}, default_message), { status: message_common_1.STATE.draft, sender: Object.assign(Object.assign({}, default_message.sender), { menu: message_common_1.MENU.drafts }) }));
+            await this
                 .messageService
-                .sendMessage("drafts", message);
-            formatted_response = (0, common_functions_1.formatResponse)(message, true, "Saved as draft.");
+                .sendMessage(default_message);
+            formatted_response = (0, common_functions_1.formatResponse)(default_message, true, "Saved as draft.");
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
         }
         this
             .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("saveAsDraft", message, formatted_response));
+            .insertLogs((0, common_functions_1.formatLogs)("saveAsDraft", default_message, formatted_response));
         return formatted_response;
     }
-    async updateDraftedMessage(request, message, query) {
+    async updateDraftedMessage(message, query) {
         let formatted_response;
+        let default_message = __rest(message, []);
         try {
-            const message_id = query.id;
-            message.updated_date = String(Date.now());
-            let response = await this
+            const { id } = query;
+            const response = await this
                 .messageService
-                .updateMessage("drafts", message_id, message);
-            if (response.replaced === 1)
-                formatted_response = (0, common_functions_1.formatResponse)([message], true, "Message updated.");
-            else
-                formatted_response = (0, common_functions_1.formatResponse)([query], false, "Message ID doesn't exist.");
+                .getMessageById(id);
+            if (!response)
+                throw new common_1.NotFoundException(`Message with ID ${id} doesn't exist`);
+            default_message.updated_date = (0, common_functions_1.setDateTime)();
+            formatted_response = await this
+                .messageService
+                .updateMessage(id, default_message)
+                .then(result => {
+                return (0, common_functions_1.formatResponse)(result.changes, true, "Message updated.");
+            });
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, error.statusMessage);
         }
         this
             .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("updateMessage", message, formatted_response));
+            .insertLogs((0, common_functions_1.formatLogs)("updateMessage", default_message, formatted_response));
         return formatted_response;
     }
-    async deleteMessage(request, param, query) {
-        const table = param.menu;
-        const message_id = query.id;
+    async sendDraftMessage(message, query) {
+        let formatted_response;
+        const newMessageDTO = new message_dto_1.NewMessageDTO();
+        let default_message = (Object.assign(Object.assign({}, newMessageDTO), message));
+        try {
+            const { id } = query;
+            const response = await this
+                .messageService
+                .getMessageById(id);
+            if (!response)
+                throw new common_1.NotFoundException(`Message with ID: ${id} doesn't exist`);
+            default_message = (Object.assign(Object.assign({}, default_message), { recipient: Object.assign(Object.assign({}, default_message.recipient), { menu: message_common_1.MENU.inbox }), sender: Object.assign(Object.assign({}, default_message.sender), { menu: message_common_1.MENU.sent }), status: 0, created_date: (0, common_functions_1.setDateTime)(), updated_date: (0, common_functions_1.setDateTime)() }));
+            formatted_response = await this
+                .messageService
+                .updateMessage(id, default_message)
+                .then(result => {
+                return (0, common_functions_1.formatResponse)(result.changes[0].new_val, true, "Message Sent.");
+            });
+        }
+        catch (error) {
+            formatted_response = (0, common_functions_1.formatResponse)([error], false, error.statusMessage);
+        }
+        this
+            .loggerService
+            .insertLogs((0, common_functions_1.formatLogs)("sendDraftMessage", query, formatted_response));
+        return formatted_response;
+    }
+    async deleteMessage(param, query) {
         let formatted_response;
         try {
-            let response = await this
+            if (!message_common_1.MENU_ARRAY.includes(param.menu))
+                throw new common_1.BadRequestException(`Menu ${param.menu} doesn't exist.`);
+            if (!await this.messageService.getMessageById(query.id))
+                throw new common_1.NotFoundException(`Message with ID ${query.id} doesn't exist.`);
+            formatted_response = await this
                 .messageService
-                .deleteMessage(table, message_id);
-            if (response.deleted === 1)
-                return (0, common_functions_1.formatResponse)([query], true, "Message deleted.");
-            else
-                return (0, common_functions_1.formatResponse)([query], false, `Message ID does not exist in ${table}`);
+                .deleteMessage(query.id)
+                .then(result => {
+                return (0, common_functions_1.formatResponse)({ query }, true, "Message Deleted");
+            });
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
         }
         this
             .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("deleteMessage", param, formatted_response));
+            .insertLogs((0, common_functions_1.formatLogs)("deleteMessage", { param, query }, formatted_response));
         return formatted_response;
     }
-    async replyToMessage(query, message) {
+    async replyToMessage(request, query, message) {
+        let omitted_message;
         let formatted_response;
+        const newMessageDTO = new message_dto_1.NewMessageDTO();
+        let default_message = (0, lodash_1.omit)(message, ['id']);
+        default_message = (Object.assign(Object.assign({}, newMessageDTO), message));
         try {
+            const cookie = await this.jwtService.verifyAsync(request.cookies["jwt"]);
             if (!await this.messageService.getMessageById(query.id))
                 throw new common_1.HttpException(`Message ID ${query.id} doesn't exist`, 404);
-            const reply_recipient = message.sender;
-            const reply_recipient_id = message.sender_id;
-            if (!message.message_origin_id) {
-                message.message_origin_id = query.message_id;
-                message.subject = `RE: ${message.subject}`;
-            }
-            message.sender = message.recipient;
-            message.sender_id = message.recipient_id;
-            message.recipient = reply_recipient;
-            message.recipient_id = reply_recipient_id;
-            message.created_date = String(Date.now());
-            message.updated_date = String(Date.now());
-            message.read = false;
-            message.drafted = false;
-            message.menu_state = 0;
+            default_message = (Object.assign(Object.assign({}, default_message), { message_origin_id: (!default_message.message_origin_id) ?
+                    query.id :
+                    default_message.message_origin_id, subject: (!default_message.message_origin_id) ?
+                    `RE: ${default_message.subject}` :
+                    default_message.subject, recipient: Object.assign(Object.assign({}, default_message.recipient), { email: default_message.sender.email, menu: message_common_1.MENU.inbox }), sender: Object.assign(Object.assign({}, default_message.sender), { email: cookie.email, menu: message_common_1.MENU.sent }), status: 0, updated_date: (0, common_functions_1.setDateTime)() }));
+            omitted_message = (0, lodash_1.omit)(default_message, ['id']);
+            formatted_response = await this
+                .messageService
+                .sendMessage(omitted_message)
+                .then(result => {
+                return (0, common_functions_1.formatResponse)(omitted_message, true, "Reply sent.");
+            });
+        }
+        catch (error) {
+            formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
+        }
+        this
+            .loggerService
+            .insertLogs((0, common_functions_1.formatLogs)("replyToMessage", omitted_message, formatted_response));
+        return formatted_response;
+    }
+    async updateMessageStatus(query) {
+        let formatted_response;
+        let default_message;
+        try {
+            const { id, status } = query;
             let response = await this
                 .messageService
-                .sendMessage("inbox", message);
-            console.log(response);
-            if (response.inserted === 1)
-                formatted_response = (0, common_functions_1.formatResponse)([message], true, "Reply sent.");
-            else
-                formatted_response = (0, common_functions_1.formatResponse)([query], false, `Error in sending reply.`);
-            if (formatted_response.success)
-                await this.messageService.sendMessage("sent", message);
+                .getMessageById(id);
+            if (!response || !(0, message_common_1.isValidStatus)(status))
+                throw new common_1.NotFoundException(`ID [${id}] or Status [${status}] is invalid.`);
+            default_message = response;
+            default_message = Object.assign(Object.assign({}, default_message), { recipient: Object.assign(Object.assign({}, default_message.recipient), { menu: status === "starred" ?
+                        message_common_1.MENU.starred :
+                        message_common_1.MENU.important }), updated_date: (0, common_functions_1.setDateTime)() });
+            formatted_response = await this
+                .messageService
+                .updateMessage(id, default_message)
+                .then(result => {
+                return (0, common_functions_1.formatResponse)(result.changes[0].new_val, true, `Message set to ${status}`);
+            });
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
         }
         this
             .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("replyToMessage", message, formatted_response));
+            .insertLogs((0, common_functions_1.formatLogs)("setMenuState", query, formatted_response));
         return formatted_response;
     }
-    async setMenuState(request, param, query) {
+    async search(request, query) {
         let formatted_response;
+        let response_data;
         try {
-            if ((0, message_common_1.isValidMenuTables)(param.menu)) {
-                let message = await this
-                    .messageService
-                    .getMessageDetails(param.menu, query.id);
-                if (message) {
-                    if (!Object.keys(message_common_1.STATE).includes(query.state))
-                        throw new common_1.BadRequestException(`Invalid menu '${query.state}'`);
-                    if (message.menu_state === message_common_1.Menu.starred ||
-                        message.menu_state === message_common_1.Menu.important) {
-                        message.menu_state = 0;
-                    }
-                    else {
-                        message.menu_state = param.state === "starred" ?
-                            message_common_1.Menu.starred :
-                            message_common_1.Menu.important;
-                    }
-                    await this.messageService.updateMessage(param.menu, query.id, message);
-                    formatted_response = (0, common_functions_1.formatResponse)([message], true, `Message set to ${query.state}`);
-                }
-                else
-                    throw new common_1.BadRequestException(`${query.id} doesn't exist`);
+            const cookie = await this
+                .jwtService
+                .verifyAsync(request.cookies["jwt"]);
+            response_data = await this
+                .searchService
+                .search(query.keyword, cookie.email);
+            let response_data_length = response_data._responses.length;
+            if (response_data_length > 0) {
+                response_data = response_data._responses[0].r;
             }
-            else
-                throw new common_1.BadRequestException(`Invalid menu ${param.menu}`);
+            formatted_response = (0, common_functions_1.formatResponse)((response_data_length > 0) ? response_data : null, true, "Success");
         }
         catch (error) {
-            formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
+            formatted_response = (0, common_functions_1.formatResponse)([error], false, error.statusMessage);
         }
         this
             .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("setMenuState", { param, query }, formatted_response));
+            .insertLogs((0, common_functions_1.formatLogs)("search", query, formatted_response));
         return formatted_response;
-    }
-    async updateReadUnread(message_id) {
-        return await this.messageService.updateReadUnread(message_id);
     }
 };
 __decorate([
@@ -289,7 +348,7 @@ __decorate([
 ], MessageController.prototype, "getMessages", null);
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
-    (0, common_1.Get)(":menu/:action/:message_id"),
+    (0, common_1.Get)(":menu/details/:id"),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)()),
     __metadata("design:type", Function),
@@ -302,63 +361,79 @@ __decorate([
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, message_entity_1.default]),
+    __metadata("design:paramtypes", [Object, message_dto_1.NewMessageDTO]),
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "sendMessage", null);
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, common_1.Post)("save-as-draft"),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Body)()),
+    __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, message_entity_1.default]),
+    __metadata("design:paramtypes", [message_dto_1.NewMessageDTO]),
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "saveAsDraft", null);
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, common_1.Put)("drafts/update"),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Body)()),
-    __param(2, (0, common_1.Query)()),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, message_entity_1.default, Object]),
+    __metadata("design:paramtypes", [message_dto_1.NewMessageDTO, Object]),
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "updateDraftedMessage", null);
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
-    (0, common_1.Delete)(":menu/delete"),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Param)()),
-    __param(2, (0, common_1.Query)()),
+    (0, common_1.Put)("drafts/send"),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object, Object]),
+    __metadata("design:paramtypes", [message_dto_1.NewMessageDTO, Object]),
+    __metadata("design:returntype", Promise)
+], MessageController.prototype, "sendDraftMessage", null);
+__decorate([
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
+    (0, common_1.Delete)(":menu/delete"),
+    __param(0, (0, common_1.Param)()),
+    __param(1, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "deleteMessage", null);
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, common_1.Post)("inbox/reply"),
-    __param(0, (0, common_1.Query)()),
-    __param(1, (0, common_1.Body)()),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)()),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, message_entity_1.default]),
+    __metadata("design:paramtypes", [Object, Object, message_dto_1.NewMessageDTO]),
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "replyToMessage", null);
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
-    (0, common_1.Put)(":menu"),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Param)()),
-    __param(2, (0, common_1.Query)()),
+    (0, common_1.Put)("inbox"),
+    __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object, Object]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], MessageController.prototype, "setMenuState", null);
+], MessageController.prototype, "updateMessageStatus", null);
+__decorate([
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
+    (0, common_1.Get)("search"),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], MessageController.prototype, "search", null);
 MessageController = __decorate([
     (0, common_1.Controller)("messages"),
     __metadata("design:paramtypes", [message_service_1.default,
         jwt_1.JwtService,
         logger_service_1.default,
-        user_service_1.UserService])
+        user_service_1.UserService,
+        search_service_1.SearchService,
+        pagination_service_1.PaginationService])
 ], MessageController);
 exports.MessageController = MessageController;
 exports.default = MessageController;

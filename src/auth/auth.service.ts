@@ -1,42 +1,40 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import User from "src/users/user.entity";
 import { UserService } from "src/users/user.service";
 const bcrypt = require('bcrypt');
+import * as rethink from "rethinkdb";
 
 const TABLE = "users";
 const DB: string = "emailAPI";
 @Injectable()
 export class AuthService {
 
-    constructor(private userService: UserService){}
-
-    async validateUser(credentials): Promise<any> {
-
-        const user = await this.userService.getUserByEmail(credentials.email);
-        const valid_password = this
-            .comparePassword(credentials.email, credentials.password)
-        if (user && valid_password) {
-            const {password, ...result} = user;
-            return result;
+    private connection: rethink.Connection;
+    
+    constructor(private userService: UserService,
+        @Inject("RethinkProvider") connection) {
+            this.connection = connection;
         }
-        return null;
+
+    async register(user: User): Promise<rethink.WriteResult> {
+        return rethink
+            .db(DB)
+            .table(TABLE)
+            .insert(user)
+            .run(this.connection)
     }
 
-    async login(user:User): Promise<any> {
-        console.log(user)
-        // const jwt = {
-        //     id: user.id,
-        //     username: user.username,
-        //     email: user.email
-        // };
-
-        // return {
-        //     access_token: this.jwtService.signAsync(jwt),
-        // };
+    async login(login_email: string): Promise<User>{
+        return rethink
+            .db(DB)
+            .table(TABLE)
+            .filter({
+                email: login_email
+            })
+            .run(this.connection)
     }
 
     async ecnryptPassword(password: string): Promise<string> {
-        // Encrypt Password
         const salt = await bcrypt.genSalt();
         const hashed_password = await bcrypt.hash(password, salt);
         return hashed_password;

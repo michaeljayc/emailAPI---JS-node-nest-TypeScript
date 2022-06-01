@@ -15,6 +15,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageService = void 0;
 const common_1 = require("@nestjs/common");
 const rethink = require("rethinkdb");
+const common_functions_1 = require("../common/common.functions");
+const message_common_1 = require("./message.common");
 const DB = "emailAPI";
 const TABLE = "messages";
 let MessageService = class MessageService {
@@ -24,58 +26,58 @@ let MessageService = class MessageService {
     async getMessageById(id) {
         return rethink
             .db(DB)
-            .table("inbox")
+            .table(TABLE)
             .get(id)
             .run(this.connection);
     }
     async getMessages(data) {
+        console.log(data);
         return rethink
             .db(DB)
-            .table(data.menu)
-            .filter(data.filtered)
+            .table(TABLE)
+            .filter(data)
             .orderBy('updated_date')
             .run(this.connection);
     }
-    async getMessageDetails(table, message_id) {
+    async getMessageDetails(message_id, filtered) {
         return rethink
             .db(DB)
-            .table(table)
-            .get(message_id)
+            .table(TABLE)
+            .filter(filtered)
             .run(this.connection);
     }
-    async sendMessage(table, message) {
+    async sendMessage(message) {
         return rethink
             .db(DB)
-            .table(table)
-            .insert(message)
+            .table(TABLE)
+            .insert(message, { returnChanges: true })
             .run(this.connection);
     }
     async updateReadUnread(message_id) {
-        let res = await rethink
-            .db(DB)
-            .table("inbox")
-            .get(message_id)
-            .update({
-            "read": true,
-            "updated_date": String(Date.now())
-        })
-            .run(this.connection);
-        return await this.getMessageDetails("inbox", message_id);
-    }
-    async updateMessage(table, id, message) {
-        return rethink
-            .db(DB)
-            .table(table)
-            .get(id)
-            .update(message)
-            .run(this.connection);
-    }
-    async deleteMessage(table, message_id) {
         return await rethink
             .db(DB)
-            .table(table)
+            .table(TABLE)
             .get(message_id)
-            .delete()
+            .update({
+            "status": message_common_1.STATE.read,
+            "updated_date": (0, common_functions_1.setDateTime)()
+        }, { returnChanges: "always" })
+            .run(this.connection);
+    }
+    async updateMessage(id, message) {
+        return rethink
+            .db(DB)
+            .table(TABLE)
+            .get(id)
+            .update(message, { returnChanges: "always" })
+            .run(this.connection);
+    }
+    async deleteMessage(message_id) {
+        await rethink
+            .db(DB)
+            .table(TABLE)
+            .get(message_id)
+            .delete({ returnChanges: "always" })
             .run(this.connection);
     }
 };

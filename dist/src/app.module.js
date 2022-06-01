@@ -10,7 +10,6 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const rethink_module_1 = require("../rethinkdb/rethink.module");
 const app_controller_1 = require("./app.controller");
-const app_service_1 = require("./app.service");
 const user_module_1 = require("./users/user.module");
 const user_role_module_1 = require("./user_roles/user_role.module");
 const config_1 = require("@nestjs/config");
@@ -37,14 +36,14 @@ AppModule = __decorate([
             }),
         ],
         controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService,
+        providers: [
             {
                 provide: core_1.APP_FILTER,
                 useClass: http_exception_filter_1.HttpExceptionFilter
             },
             logger_service_1.default,
         ],
-        exports: [app_service_1.AppService]
+        exports: []
     })
 ], AppModule);
 exports.AppModule = AppModule;

@@ -6,6 +6,8 @@ import { RethinkModule } from "rethinkdb/rethink.module";
 import { AuthModule } from "src/auth/auth.module";
 import AuthService from "src/auth/auth.service";
 import { jwtConstants } from "src/auth/constants";
+import { PaginationModule } from "src/common/pagination/pagination.module";
+import { SearchModule } from "src/common/search/search.module";
 import { AuthTokenGuard } from "src/guards/auth-token/auth-token.guard";
 import { AuthTokenModule } from "src/guards/auth-token/auth-token.module";
 import { RolesGuard } from "src/guards/roles/roles.guard";
@@ -23,7 +25,9 @@ import MessageService from "./message.service";
             signOptions: {expiresIn: '1d'}
         }),
         AuthModule,
-        AuthTokenModule],
+        AuthTokenModule,
+        SearchModule,
+        PaginationModule],
     controllers: [MessageController],
     providers: [MessageService,
         RethinkProvider,

@@ -1,7 +1,7 @@
 import { RethinkModule } from "rethinkdb/rethink.module";
 import { UserController } from "./user.controller";
 import { UserService } from "./user.service";
-import { Logger, Module } from "@nestjs/common";
+import { Module } from "@nestjs/common";
 import RethinkProvider from "rethinkdb/database.provider";
 import { UserRoleModule } from "src/user_roles/user_role.module";
 import LoggerService from "src/services/logger.service";
@@ -13,6 +13,7 @@ import { RolesGuard } from "src/guards/roles/roles.guard";
 import { PassportModule } from "@nestjs/passport";
 import { AuthTokenModule } from "src/guards/auth-token/auth-token.module";
 import { RolesModule } from "src/guards/roles/roles.module";
+import { PaginationModule } from "src/common/pagination/pagination.module";
 @Module({
     imports: [RethinkModule,
         PassportModule, 
@@ -21,9 +22,10 @@ import { RolesModule } from "src/guards/roles/roles.module";
             secret: "secret",
             signOptions: {expiresIn: '1d'}
         }),
-    AuthModule,
-    AuthTokenModule,
-    RolesModule],
+        AuthModule,
+        AuthTokenModule,
+        RolesModule,
+        PaginationModule],
     controllers: [UserController],
     providers: [RethinkProvider,
         UserService,

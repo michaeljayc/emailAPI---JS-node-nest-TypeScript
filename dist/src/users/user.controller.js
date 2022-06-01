@@ -16,43 +16,74 @@ exports.UserController = void 0;
 const common_1 = require("@nestjs/common");
 const user_service_1 = require("./user.service");
 const logger_service_1 = require("../services/logger.service");
-const user_entity_1 = require("./user.entity");
 const common_functions_1 = require("../common/common.functions");
 const role_enum_1 = require("../user_roles/role.enum");
 const role_decorator_1 = require("../user_roles/role.decorator");
 const auth_token_guard_1 = require("../guards/auth-token/auth-token.guard");
+const user_dto_1 = require("./user.dto");
+const auth_service_1 = require("../auth/auth.service");
+const pagination_service_1 = require("../common/pagination/pagination.service");
 const DATE = new Date;
 let UserController = class UserController {
-    constructor(userService, loggerService) {
+    constructor(userService, loggerService, authService, paginationService) {
         this.userService = userService;
         this.loggerService = loggerService;
+        this.authService = authService;
+        this.paginationService = paginationService;
     }
-    async getAllUsers(request) {
+    async getAllUsers(request, query) {
         let formatted_response;
         let response;
+        let page_number = (query.page !== undefined) ?
+            Number(query.page) : 1;
         try {
-            response = await this.userService.getAllUsers();
-            let res_length = Object.keys(response).length;
-            formatted_response = (0, common_functions_1.formatResponse)(res_length > 1 ? response : [response], true, "Success");
+            response = await this
+                .userService
+                .getAllUsers()
+                .then(result => {
+                return this
+                    .paginationService
+                    .pagination(result, page_number);
+            });
+            formatted_response = (0, common_functions_1.formatResponse)(response.total_results > 1 ? response : [response], true, "Success");
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, "Failed");
-            throw new common_1.HttpException(error, error.HttpCode);
         }
         this
             .loggerService
             .insertLogs((0, common_functions_1.formatLogs)("getAllUsers", response, formatted_response));
         return formatted_response;
     }
-    async getUser(request, param) {
-        let user;
+    async getUserDetails(request, param) {
         let formatted_response;
         try {
-            const data = await this.userService.getUserByUsername(param.username);
-            if (data._responses.length < 1)
-                throw new common_1.NotFoundException(`User '${param.username}' doesn't exist`);
-            user = data.next()._settledValue;
-            formatted_response = (0, common_functions_1.formatResponse)([user], true, "Success");
+            const response_data = await this
+                .userService
+                .getUserById(param.id);
+            if (!response_data)
+                throw new common_1.NotFoundException(`ID: [${param.id}] doesn't exist`);
+            formatted_response = (0, common_functions_1.formatResponse)(response_data, true, "Success");
+        }
+        catch (error) {
+            formatted_response = (0, common_functions_1.formatResponse)([error], false, "Failed");
+        }
+        this
+            .loggerService
+            .insertLogs((0, common_functions_1.formatLogs)("getUserDetails", param, formatted_response));
+        return formatted_response;
+    }
+    async create(user) {
+        let formatted_response;
+        const user_dto = new user_dto_1.UserDTO();
+        const default_user = (Object.assign(Object.assign({}, user_dto), user));
+        try {
+            default_user.password = await this
+                .authService.ecnryptPassword(default_user.password);
+            await this.userService.createNewUser(default_user)
+                .then(result => {
+                formatted_response = (0, common_functions_1.formatResponse)(result.changes[0].new_val, true, "User creation successful.");
+            });
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, "Failed");
@@ -60,23 +91,18 @@ let UserController = class UserController {
         }
         this
             .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("getUser", user, formatted_response));
+            .insertLogs((0, common_functions_1.formatLogs)("create", default_user, formatted_response));
         return formatted_response;
     }
-    async editUser(request, param) {
-        const username = param.username;
+    async editUser(param) {
         let formatted_response;
         try {
-            let user_data = await this
+            let response_data = await this
                 .userService
-                .getUserByUsername(username);
-            if (Object.keys(user_data._responses).length > 0) {
-                user_data = user_data.next()._settledValue;
-                formatted_response = (0, common_functions_1.formatResponse)([user_data], true, "Success.");
-            }
-            else {
-                throw new common_1.NotFoundException(username, "User doesn't exist.");
-            }
+                .getUserById(param.id);
+            if (!response_data)
+                throw new common_1.NotFoundException(param.uuid, `ID: [${param.id}] doesn't exist.`);
+            formatted_response = (0, common_functions_1.formatResponse)([response_data], true, "Success.");
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
@@ -86,20 +112,22 @@ let UserController = class UserController {
             .insertLogs((0, common_functions_1.formatLogs)("editUser", param, formatted_response));
         return formatted_response;
     }
-    async updateUser(request, user, param) {
+    async updateUser(user, query) {
         let formatted_response;
-        user.updated_date = (0, common_functions_1.setDateTime)();
+        let default_user = user;
         try {
-            let user_data = await this
-                .userService
-                .getUserByUsername(param.username);
-            if (user_data._responses.length < 1)
-                throw new common_1.NotFoundException(param.username, "User doesn't exist.");
-            user_data = user_data.next()._settledValue;
             let response = await this
                 .userService
-                .updateUser(user, user_data.id);
-            formatted_response = (0, common_functions_1.formatResponse)([user], true, "Update Successful.");
+                .getUserById(query.id);
+            if (!response)
+                throw new common_1.NotFoundException(`ID: [${query.id}] doesn't exist.`);
+            default_user.updated_date = (0, common_functions_1.setDateTime)();
+            formatted_response = await this
+                .userService
+                .updateUser(user, response.id)
+                .then(result => {
+                return (0, common_functions_1.formatResponse)(result.changes[0].new_val, true, "Success.");
+            });
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
@@ -111,17 +139,18 @@ let UserController = class UserController {
     }
     async deleteUser(query) {
         let formatted_response;
-        const id_to_delete = query.id;
         try {
             let user = await this
                 .userService
-                .getUserById(id_to_delete);
+                .getUserById(query.id);
             if (!user)
-                throw new common_1.BadRequestException(`ID: ${id_to_delete} doesn't exist`);
-            let response = await this
+                throw new common_1.NotFoundException(`ID [${query.id}] doesn't exist`);
+            formatted_response = await this
                 .userService
-                .deleteUser(id_to_delete);
-            formatted_response = (0, common_functions_1.formatResponse)([response], true, "Successfully deleted user.");
+                .deleteUser(query.id)
+                .then(result => {
+                return (0, common_functions_1.formatResponse)(result, true, "Successfully deleted user.");
+            });
         }
         catch (error) {
             formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
@@ -137,38 +166,46 @@ __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, common_1.Get)(""),
     __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "getAllUsers", null);
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
-    (0, common_1.Get)(":username"),
+    (0, common_1.Get)(":id"),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
-], UserController.prototype, "getUser", null);
+], UserController.prototype, "getUserDetails", null);
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
-    (0, common_1.Get)("edit/:username"),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Param)()),
+    (0, common_1.Post)("create"),
+    __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [user_dto_1.UserDTO]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "create", null);
+__decorate([
+    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
+    (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
+    (0, common_1.Get)("edit/:id"),
+    __param(0, (0, common_1.Param)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "editUser", null);
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
-    (0, common_1.Put)("update/:username"),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Body)()),
-    __param(2, (0, common_1.Param)()),
+    (0, common_1.Put)("update"),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, user_entity_1.User, Object]),
+    __metadata("design:paramtypes", [user_dto_1.UserDTO, Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "updateUser", null);
 __decorate([
@@ -183,7 +220,9 @@ __decorate([
 UserController = __decorate([
     (0, common_1.Controller)("users"),
     __metadata("design:paramtypes", [user_service_1.UserService,
-        logger_service_1.LoggerService])
+        logger_service_1.LoggerService,
+        auth_service_1.default,
+        pagination_service_1.PaginationService])
 ], UserController);
 exports.UserController = UserController;
 //# sourceMappingURL=user.controller.js.map

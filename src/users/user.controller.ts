@@ -5,14 +5,12 @@ import {
     Delete, 
     Get, 
     HttpException, 
-    Logger, 
     NotFoundException, 
     Param, 
     Post, 
     Put, 
     Query, 
-    Req, 
-    Res,
+    Req,
     UseGuards, 
 } from "@nestjs/common";
 import { UserService } from "./user.service";
@@ -24,10 +22,13 @@ import {
     formatLogs, 
     setDateTime, 
 } from "src/common/common.functions";
-import { Response, Request } from "express";
+import { Request } from "express";
 import { Role } from "src/user_roles/role.enum";
 import { RoleGuard } from "src/user_roles/role.decorator";
 import { AuthTokenGuard } from "src/guards/auth-token/auth-token.guard";
+import { UserDTO } from "./user.dto";
+import AuthService from "src/auth/auth.service";
+import { PaginationService } from "src/common/pagination/pagination.service";
 
 const DATE = new Date;
 
@@ -35,33 +36,44 @@ const DATE = new Date;
 export class UserController {
 
     constructor(private userService: UserService,
-        private loggerService: LoggerService){}
+        private loggerService: LoggerService,
+        private authService: AuthService,
+        private paginationService: PaginationService){}
 
     // http://localhost:3000/api/users
     @RoleGuard(Role.Admin)
     @UseGuards(AuthTokenGuard)
     @Get("")
-    async getAllUsers(@Req() request: Request)
+    async getAllUsers(@Req() request: Request,
+        @Query() query)
         : Promise<IResponseFormat> {
 
             let formatted_response: IResponseFormat;        
-            let response: User;
-
+            let response: any;
+            let page_number = (query.page !== undefined) ? 
+                Number(query.page) : 1;
+            
             try {
-
-                response = await this.userService.getAllUsers()
-                let res_length = Object.keys(response).length;
+                // Retrieve and paginate data
+                response = await this
+                    .userService
+                    .getAllUsers()
+                        .then(result => {
+                            return this
+                                .paginationService
+                                .pagination(result,page_number)
+                        })
+                
                 formatted_response = formatResponse
-                (   res_length > 1 ? response : [response],
+                (   
+                    response.total_results > 1 ? response : [response],
                     true,
                     "Success"
                 )
-
-            } catch(error) {
+            } catch (error) {
                 formatted_response = formatResponse(
                     [error], false, "Failed"
                 )
-                throw new HttpException(error, error.HttpCode)
             }
 
             this
@@ -73,132 +85,159 @@ export class UserController {
             return formatted_response;
     }
         
-    // http://localhost:3000/api/users/username
+    // http://localhost:3000/api/users/id
     @UseGuards(AuthTokenGuard)
-    @Get(":username")
-    async getUser(@Req() request: Request,
+    @Get(":id")
+    async getUserDetails(@Req() request: Request,
         @Param() param)
         : Promise<IResponseFormat> {
             
-            let user: User;
             let formatted_response: IResponseFormat;
             
             try {
-                const data = await this.userService.getUserByUsername(param.username);
-                if (data._responses.length < 1)
-                    throw new NotFoundException
-                        (`User '${param.username}' doesn't exist`)
+                const response_data = await this
+                    .userService
+                    .getUserById(param.id);
 
-                user = data.next()._settledValue;
-                formatted_response = formatResponse(
-                    [user],true, "Success"
-                );
+                // check if id exists
+                if (!response_data)
+                    throw new NotFoundException
+                        (`ID: [${param.id}] doesn't exist`)
+
+                formatted_response = formatResponse
+                    (response_data,true, "Success")
             } catch (error) {
-                 formatted_response = formatResponse(
-                    [error],false, "Failed"
-                );
-                throw new HttpException(error, error.HttpCode)
+                formatted_response = formatResponse
+                    ([error],false, "Failed")
             }
         
             this
             .loggerService
-            .insertLogs(formatLogs(
-                    "getUser", user, formatted_response
-                )
+            .insertLogs(formatLogs
+                ("getUserDetails", param, formatted_response)
             );
 
             return formatted_response;
     }
 
-    // http://localhost:3000/api/users/edit/username
+    // http://localhost:3000/api/users/create
     @UseGuards(AuthTokenGuard)
     @RoleGuard(Role.Admin)
-    @Get("edit/:username")
-    async editUser(@Req() request:Request,
-        @Param() param): Promise<IResponseFormat> {
+    @Post("create")
+    async create(@Body() user: UserDTO): Promise<IResponseFormat> {
+
+        let formatted_response: IResponseFormat;
+        const user_dto = new UserDTO();
+        const default_user = ({
+            ...user_dto,
+            ...user
+        })
         
-        const username = param.username;
+        try {
+            default_user.password = await this
+                .authService.ecnryptPassword(default_user.password)
+
+            await this.userService.createNewUser(default_user)
+                .then( result => {
+                    formatted_response = formatResponse
+                        (   
+                            result.changes[0].new_val, 
+                            true, 
+                            "User creation successful."
+                        )
+                })
+        } catch (error) {
+            formatted_response = formatResponse
+                    ([error],false, "Failed")
+            throw new HttpException(error, error.HttpCode)
+        }
+
+        this
+        .loggerService
+        .insertLogs(formatLogs("create", default_user, formatted_response))
+
+        return formatted_response;
+    }
+
+    // http://localhost:3000/api/users/edit/id
+    @UseGuards(AuthTokenGuard)
+    @RoleGuard(Role.Admin)
+    @Get("edit/:id")
+    async editUser(@Param() param): Promise<IResponseFormat> {
+        
         let formatted_response: IResponseFormat;
         
         try {
-            let user_data = await 
+            let response_data = await 
                 this
                 .userService
-                .getUserByUsername(username);
+                .getUserById(param.id);
+            
+            if (!response_data)
+                throw new NotFoundException
+                    (param.uuid, `ID: [${param.id}] doesn't exist.`)
+           
+            formatted_response = formatResponse
+                ([response_data], true, "Success.")
 
-            if (Object.keys(user_data._responses).length >  0) {
-                user_data = user_data.next()._settledValue;
-                formatted_response = formatResponse(
-                        [user_data], 
-                        true, 
-                        "Success."
-                    );
-            } else {
-                throw new NotFoundException(username, "User doesn't exist.")
-            }
         } catch (error) {
-            formatted_response = formatResponse(
-                [error],
-                false,
-                error.status
-            )
+            formatted_response = formatResponse
+                ([error], false, error.status)
         }
     
         this
         .loggerService
-        .insertLogs(formatLogs(
-                "editUser", param, formatted_response
-            )
+        .insertLogs(formatLogs
+            ("editUser", param, formatted_response)
         );
 
         return formatted_response;
     }
 
-    //http://localhost:3000/api/users/update/kmarcus20
+    // http://localhost:3000/api/users/update?id=123abc
     @UseGuards(AuthTokenGuard)
     @RoleGuard(Role.Admin)
-    @Put("update/:username")
-    async updateUser(@Req() request: Request,
-        @Body() user: User,
-        @Param() param): Promise<IResponseFormat> {
+    @Put("update")
+    async updateUser(@Body() user: UserDTO,
+        @Query() query): Promise<IResponseFormat> {
 
             let formatted_response: IResponseFormat;
-            user.updated_date = setDateTime();
+            let default_user: UserDTO = user;
 
             try {
-                let user_data = await 
+                // check if id exists
+                let response= await 
                     this
                     .userService
-                    .getUserByUsername(param.username)
+                    .getUserById(query.id)
+
+                if (!response)
+                    throw new NotFoundException
+                        (`ID: [${query.id}] doesn't exist.`)
+               
+                // update updated_date
+                default_user.updated_date = setDateTime();
                 
-                if (user_data._responses.length < 1)
-                    throw new NotFoundException(
-                        param.username, 
-                        "User doesn't exist."
-                    )
-                
-                user_data = user_data.next()._settledValue;
-                let response = await 
-                    this
+                formatted_response = await this
                     .userService
-                    .updateUser(user,user_data.id);
-                
-                formatted_response = formatResponse(
-                    [user], true, "Update Successful."
-                )
+                    .updateUser(user,response.id)
+                        .then( result => {
+                            return formatResponse
+                                (
+                                    result.changes[0].new_val, 
+                                    true, 
+                                    "Success."
+                                )
+                        })
             } catch (error) {
-                formatted_response = formatResponse(
-                    [error],
-                    false,
-                    error.status
-                )
+                formatted_response = formatResponse
+                    ([error], false, error.status)
             }
 
             this
             .loggerService
-            .insertLogs(formatLogs(
-                    "updateUser",user, formatted_response
-                )
+            .insertLogs(formatLogs
+                ("updateUser", user, formatted_response)
             )
 
             return formatted_response;
@@ -209,43 +248,39 @@ export class UserController {
     @RoleGuard(Role.Admin)
     @Delete("delete")
     async deleteUser(@Query() query): Promise<IResponseFormat> {
+
         let formatted_response: IResponseFormat;
-        const id_to_delete = query.id;
         
         try {
-            let user = await 
-                this
+            // check if user exists
+            let user = await this
                 .userService
-                .getUserById(id_to_delete)
+                .getUserById(query.id)
             
             if (!user)
-                throw new 
-                    BadRequestException
-                    ( `ID: ${id_to_delete} doesn't exist`)
+                throw new NotFoundException
+                    ( `ID [${query.id}] doesn't exist`)
             
-            let response = await 
-                this
+            formatted_response = await this
                 .userService
-                .deleteUser(id_to_delete)
-
-            formatted_response = formatResponse(
-                [response],
-                true,
-                "Successfully deleted user."
-            )
+                .deleteUser(query.id)
+                    .then(result => {
+                        return formatResponse
+                        (
+                            result,
+                            true,
+                            "Successfully deleted user."
+                        )
+                    })
         } catch (error) {
-            formatted_response = formatResponse(
-                [error],
-                false,
-                error.status
-            )
+            formatted_response = formatResponse
+                ([error], false, error.status)
         }
 
         this
         .loggerService
-        .insertLogs(formatLogs(
-                "deleteUser", query, formatted_response
-            )
+        .insertLogs(formatLogs
+            ("deleteUser", query, formatted_response)
         )
 
         return formatted_response;

@@ -1,7 +1,6 @@
 import { Logger, Module } from '@nestjs/common';
 import { RethinkModule } from 'rethinkdb/rethink.module';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { UserModule } from './users/user.module';
 import { UserRoleModule } from './user_roles/user_role.module';
 import { ConfigModule } from "@nestjs/config"
@@ -26,13 +25,13 @@ import { JwtModule } from '@nestjs/jwt';
     }),
   ],
   controllers: [AppController],
-  providers: [AppService,
+  providers: [
     {
       provide: APP_FILTER,
       useClass: HttpExceptionFilter
     },
     LoggerService,
   ],
-  exports:[AppService]
+  exports:[]
 })
 export class AppModule {}

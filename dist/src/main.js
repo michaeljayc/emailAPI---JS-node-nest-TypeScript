@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const common_1 = require("@nestjs/common");
 const core_1 = require("@nestjs/core");
 const cookieParser = require("cookie-parser");
 const app_module_1 = require("./app.module");
@@ -11,8 +12,9 @@ async function bootstrap() {
     const { httpAdapter } = app.get(core_1.HttpAdapterHost);
     app.setGlobalPrefix("api");
     app.use(cookieParser());
-    app.useGlobalInterceptors(new logging_interceptor_1.LoggingInterceptor);
-    app.useGlobalFilters(new http_exception_filter_1.HttpExceptionFilter);
+    app.useGlobalInterceptors(new logging_interceptor_1.LoggingInterceptor());
+    app.useGlobalFilters(new http_exception_filter_1.HttpExceptionFilter());
+    app.useGlobalPipes(new common_1.ValidationPipe);
     app.enableCors({
         credentials: true,
         origin: '*',

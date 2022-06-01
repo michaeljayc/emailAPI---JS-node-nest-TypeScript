@@ -1,7 +1,7 @@
 import { IResponseFormat } from "./common.interface";
 import { TLogs } from "./common.types";
 
-const DATE = new Date;
+const DATE = new Date();
 
 export const setDateTime = () => 
     DATE.toLocaleDateString()+' - '+DATE.toLocaleTimeString();
@@ -14,15 +14,15 @@ export const formatResponse = (data?: any,
         let truncated_data = data ?? [];
 
         if (!truncated_data) {
-            truncated_data.forEach( value => {
+            truncated_data.map( value => {
                 return value
             })
         }
 
         return {
             count: truncated_data.length ?? 1,
-            success: (isSuccessful) ? isSuccessful : false,
-            message: (status) ? status : "Failed",
+            success: isSuccessful ?? false,
+            message: status ?? "Failed",
             datas: truncated_data
         }
 }
@@ -40,7 +40,3 @@ export const formatLogs = (
         },
         response: response
 })
-
-export const hidePasswordProperty = (user_data: any) => {
-    console.log(user_data)
-}
