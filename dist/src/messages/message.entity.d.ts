@@ -1,5 +1,5 @@
 export declare class Message {
-    uuid: string;
+    id: string;
     message_origin_id: string;
     sender: {
         email: string;
@@ -14,7 +14,7 @@ export declare class Message {
     status: number;
     created_date: string;
     updated_date: string;
-    constructor(uuid: string, message_origin_id: string, sender: {
+    constructor(id: string, message_origin_id: string, sender: {
         email: string;
         menu: number;
     }, recipient: {

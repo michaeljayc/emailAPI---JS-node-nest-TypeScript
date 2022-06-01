@@ -14,23 +14,18 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SearchService = void 0;
 const common_1 = require("@nestjs/common");
-const rethink = require("rethinkdb");
+const r = require("rethinkdb");
 const DB = "emailAPI";
 let SearchService = class SearchService {
     constructor(connection) {
         this.connection = connection;
     }
-    async search(keyword, reference, table) {
+    async search(keyword, reference) {
         keyword = keyword.toLocaleLowerCase();
-        return rethink
+        return await r
             .db(DB)
-            .table(table)
-            .filter(function (item) {
-            return item("recipient").eq(reference)
-                .and(item("subject").match(keyword)
-                .or(item("sender").match(keyword)
-                .or(item("message").match(keyword))));
-        })
+            .table("messages")
+            .filter(r.row('recipient')('email').eq(reference).or(r.row('sender')('email').eq(reference)).and(r.row('subject').match(keyword).or(r.row('message').match(keyword))))
             .run(this.connection);
     }
 };

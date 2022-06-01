@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, ForbiddenException, forwardRef, Inject, Injectable } from "@nestjs/common";
+import { CanActivate, ExecutionContext, ForbiddenException, forwardRef, HttpException, Inject, Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Observable } from "rxjs";
 import { formatResponse } from "src/common/common.functions";
@@ -14,19 +14,10 @@ export class AuthTokenGuard implements CanActivate {
     async canActivate(context: ExecutionContext): Promise<boolean>  {
         try {
             const req_data = context.getArgs()[1]
-            const hasCookie = await this.authTokenService.getContextData(req_data.req.cookies.jwt);
-            const cookie = await this.jwtService.verifyAsync(req_data.req.cookies.jwt)
-            // if (cookie.username === req_data.req.params.username) {
-            //     return hasCookie
-            // } else {
-            //     console.log("error")
-            // }
-            return hasCookie;
+            return await this.authTokenService.getContextData(req_data.req.cookies.jwt);
         } catch (error) {
-            console.log(formatResponse
-                (error, false, error.status));
-                
-            return false;
+            console.log(formatResponse(null,false, error))
+            throw new HttpException(error, error.statusCode)
         }
     }
 

@@ -22,13 +22,11 @@ let AuthTokenGuard = class AuthTokenGuard {
     async canActivate(context) {
         try {
             const req_data = context.getArgs()[1];
-            const hasCookie = await this.authTokenService.getContextData(req_data.req.cookies.jwt);
-            const cookie = await this.jwtService.verifyAsync(req_data.req.cookies.jwt);
-            return hasCookie;
+            return await this.authTokenService.getContextData(req_data.req.cookies.jwt);
         }
         catch (error) {
-            console.log((0, common_functions_1.formatResponse)(error, false, error.status));
-            return false;
+            console.log((0, common_functions_1.formatResponse)(null, false, error));
+            throw new common_1.HttpException(error, error.statusCode);
         }
     }
 };

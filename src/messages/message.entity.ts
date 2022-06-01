@@ -2,7 +2,7 @@ import { STATE } from "./message.common";
 
 export class Message {
 
-    uuid: string;
+    id: string;
     message_origin_id: string;
     sender: {
         email: string,
@@ -18,7 +18,7 @@ export class Message {
     created_date: string;
     updated_date: string;
 
-    constructor(uuid: string,
+    constructor(id: string,
         message_origin_id: string,
         sender: {
             email: string,

@@ -13,7 +13,7 @@ async function bootstrap() {
   app.use(cookieParser());
   app.useGlobalInterceptors(new LoggingInterceptor())
   app.useGlobalFilters(new HttpExceptionFilter())
-  app.useGlobalPipes(new ValidationPipe())
+  app.useGlobalPipes(new ValidationPipe)
   
  // === For access ===
   app.enableCors({

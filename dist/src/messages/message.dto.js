@@ -13,22 +13,24 @@ exports.NewMessageDTO = exports.EmailReference = void 0;
 const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 const common_functions_1 = require("../common/common.functions");
+const message_common_1 = require("./message.common");
 class EmailReference {
 }
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsEmail)(),
     __metadata("design:type", String)
 ], EmailReference.prototype, "email", void 0);
 __decorate([
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsIn)(Object.values(message_common_1.MENU)),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], EmailReference.prototype, "menu", void 0);
 exports.EmailReference = EmailReference;
 class NewMessageDTO {
     constructor() {
-        this.uuid;
+        this.id;
         this.message_origin_id = "";
         this.subject;
         this.message;
@@ -48,6 +50,7 @@ __decorate([
     __metadata("design:type", EmailReference)
 ], NewMessageDTO.prototype, "sender", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsDefined)(),
     (0, class_validator_1.IsNotEmptyObject)(),
     (0, class_validator_1.IsObject)(),
@@ -59,7 +62,7 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], NewMessageDTO.prototype, "uuid", void 0);
+], NewMessageDTO.prototype, "id", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
@@ -75,7 +78,7 @@ __decorate([
     __metadata("design:type", String)
 ], NewMessageDTO.prototype, "message", void 0);
 __decorate([
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], NewMessageDTO.prototype, "status", void 0);

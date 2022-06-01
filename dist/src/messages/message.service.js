@@ -31,6 +31,7 @@ let MessageService = class MessageService {
             .run(this.connection);
     }
     async getMessages(data) {
+        console.log(data);
         return rethink
             .db(DB)
             .table(TABLE)
@@ -38,38 +39,37 @@ let MessageService = class MessageService {
             .orderBy('updated_date')
             .run(this.connection);
     }
-    async getMessageDetails(message_id) {
+    async getMessageDetails(message_id, filtered) {
         return rethink
             .db(DB)
             .table(TABLE)
-            .get(message_id)
+            .filter(filtered)
             .run(this.connection);
     }
     async sendMessage(message) {
         return rethink
             .db(DB)
             .table(TABLE)
-            .insert(message)
+            .insert(message, { returnChanges: true })
             .run(this.connection);
     }
     async updateReadUnread(message_id) {
-        await rethink
+        return await rethink
             .db(DB)
             .table(TABLE)
             .get(message_id)
             .update({
             "status": message_common_1.STATE.read,
             "updated_date": (0, common_functions_1.setDateTime)()
-        })
+        }, { returnChanges: "always" })
             .run(this.connection);
-        return await this.getMessageDetails(message_id);
     }
     async updateMessage(id, message) {
         return rethink
             .db(DB)
             .table(TABLE)
             .get(id)
-            .update(message)
+            .update(message, { returnChanges: "always" })
             .run(this.connection);
     }
     async deleteMessage(message_id) {
@@ -77,9 +77,8 @@ let MessageService = class MessageService {
             .db(DB)
             .table(TABLE)
             .get(message_id)
-            .delete()
+            .delete({ returnChanges: "always" })
             .run(this.connection);
-        return this.getMessageById(message_id);
     }
 };
 MessageService = __decorate([

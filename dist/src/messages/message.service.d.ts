@@ -5,7 +5,7 @@ export declare class MessageService {
     constructor(connection: any);
     getMessageById(id: string): Promise<Message>;
     getMessages(data: any): Promise<rethink.WriteResult>;
-    getMessageDetails(message_id: string): Promise<any>;
+    getMessageDetails(message_id: string, filtered?: any): Promise<rethink.WriteResult>;
     sendMessage(message: Message): Promise<rethink.WriteResult>;
     updateReadUnread(message_id: string): Promise<any>;
     updateMessage(id: string, message?: Message): Promise<rethink.WriteResult>;

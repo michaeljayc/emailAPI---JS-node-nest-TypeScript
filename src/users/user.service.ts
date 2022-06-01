@@ -3,8 +3,9 @@ import { User } from "./user.entity";
 import * as rethink from "rethinkdb";
 import { PaginationService } from "src/common/pagination/pagination.service";
 
+require('dotenv').config()
+const {DB} = process.env;
 const TABLE = "users";
-const DB = "emailAPI";
 
 @Injectable()
 export class UserService {
@@ -19,7 +20,10 @@ export class UserService {
         return rethink
             .db(DB)
             .table(TABLE)
-            .insert(user)
+            .insert(
+                user,
+                {returnChanges: "always"}
+            )
             .run(this.connection)
     }
 
@@ -31,11 +35,11 @@ export class UserService {
             .run(this.connection)
     }
 
-    async getUserById(uuid: string): Promise<User> {
+    async getUserById(id: string): Promise<User> {
         return rethink
             .db(DB)
             .table(TABLE)
-            .get(uuid)
+            .get(id)
             .run(this.connection)
     }
 
@@ -51,14 +55,15 @@ export class UserService {
 
     async updateUser(user: User, user_id:string)
         : Promise<rethink.WriteResult> {
-            await rethink
+            return rethink
                 .db(DB)
                 .table(TABLE)
                 .get(user_id)
-                .update(user)
+                .update(
+                    user,
+                    {returnChanges: "always"}
+                )
                 .run(this.connection)
-            
-            return await this.getUserById(user_id);
     }
 
     async deleteUser(id: string): Promise<rethink.WriteResult> {
@@ -66,7 +71,7 @@ export class UserService {
             .db(DB)
             .table(TABLE)
             .get(id)
-            .delete()
+            .delete({returnChanges: "always"})
             .run(this.connection)
     }
 

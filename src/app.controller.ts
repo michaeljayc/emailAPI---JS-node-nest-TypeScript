@@ -134,17 +134,11 @@ export class AppController {
             let formatted_response: IResponseFormat;
             try {
                 response.clearCookie("jwt");
-                formatted_response = formatResponse(
-                    [],
-                    true,
-                    "Logout successful."
-                );
+                formatted_response = formatResponse
+                    ([], true, "Logout successful.");
             } catch (error) {
-                formatted_response = formatResponse(
-                    [error],
-                    false,
-                    "Failed."
-                );
+                formatted_response = formatResponse
+                    ([error], false, "Failed.");
             }
 
             return formatted_response;

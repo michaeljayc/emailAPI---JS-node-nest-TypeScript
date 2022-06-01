@@ -1,22 +1,23 @@
-import { Optional } from "@nestjs/common";
 import { Type } from "class-transformer";
-import { IsDefined, IsNotEmpty, IsNotEmptyObject, IsNumber, IsObject, IsOptional, IsString, Validate, validate, ValidateNested, ValidationTypes } from "class-validator";
+import { IsDefined, IsEmail, IsIn, IsNotEmpty, IsNotEmptyObject, IsNumber, IsObject, IsOptional, IsString, Validate, validate, ValidateNested, ValidationTypes } from "class-validator";
 import { setDateTime } from "src/common/common.functions";
+import { MENU, STATE } from "./message.common";
 
 export class EmailReference {
 
     @IsNotEmpty()
-    @IsString()
-    email: String;
+    @IsEmail()
+    public email: string;
 
-    @IsNotEmpty()
-    @IsString()
-    menu: Number;
+    @IsIn(Object.values(MENU))
+    @IsOptional()
+    @IsNumber()
+    public menu: number;
 }
 export class NewMessageDTO {
 
     constructor() {
-        this.uuid;
+        this.id;
         this.message_origin_id = "";
         this.subject;
         this.message;
@@ -32,39 +33,41 @@ export class NewMessageDTO {
     @IsObject()
     @ValidateNested()
     @Type(()=> EmailReference)
-    sender: EmailReference;
+    public sender: EmailReference;
 
+    @IsOptional()
     @IsDefined()
     @IsNotEmptyObject()
     @IsObject()
     @ValidateNested()
     @Type(()=> EmailReference)
-    recipient: EmailReference;
+    public recipient: EmailReference;
     
     @IsOptional()
     @IsString()
-    uuid: string;
+    public id: string;
 
     @IsOptional()
     @IsString()
-    message_origin_id: string;
+    public message_origin_id: string;
 
     @IsNotEmpty()
     @IsString()
-    subject: string;
+    public subject: string;
 
     @IsString()
-    message: string;
+    public message: string;
 
-    @IsNotEmpty()
+    @IsOptional()
+    //@IsIn(Object.values(STATE))
     @IsNumber()
-    status: number;
+    public status: number;
 
     @IsOptional()
     @IsString()
-    created_date: string;
+    public created_date: string;
 
     @IsOptional()
     @IsString()
-    updated_date: string;
+    public updated_date: string;
 }

@@ -1,5 +1,6 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsEmail, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 import { setDateTime } from "src/common/common.functions";
+import { USER_ROLES } from "./user.common";
 
 export class UserLoginDTO {
 
@@ -28,7 +29,7 @@ export class UserDTO {
         this.updated_date = setDateTime();
     }
 
-    //@IsOptional()
+    @IsOptional()
     @IsString()
     id: string
     
@@ -52,12 +53,13 @@ export class UserDTO {
     @IsNotEmpty()
     birthdate: string
 
+    @IsIn(USER_ROLES)
     @IsNumber()
     @IsNotEmpty()
     role_type_id: number
 
 
-    @IsString()
+    @IsEmail()
     @IsNotEmpty()
     email: string
 

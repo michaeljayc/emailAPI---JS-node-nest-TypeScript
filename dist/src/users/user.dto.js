@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserDTO = exports.UserLoginDTO = void 0;
 const class_validator_1 = require("class-validator");
 const common_functions_1 = require("../common/common.functions");
+const user_common_1 = require("./user.common");
 class UserLoginDTO {
 }
 __decorate([
@@ -41,6 +42,7 @@ class UserDTO {
     }
 }
 __decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UserDTO.prototype, "id", void 0);
@@ -70,12 +72,13 @@ __decorate([
     __metadata("design:type", String)
 ], UserDTO.prototype, "birthdate", void 0);
 __decorate([
+    (0, class_validator_1.IsIn)(user_common_1.USER_ROLES),
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", Number)
 ], UserDTO.prototype, "role_type_id", void 0);
 __decorate([
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsEmail)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], UserDTO.prototype, "email", void 0);

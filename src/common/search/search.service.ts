@@ -1,33 +1,29 @@
 import { Injectable, Inject} from "@nestjs/common";
-import * as rethink from "rethinkdb";
+import * as r from "rethinkdb";
 
 const DB = "emailAPI";
 
 @Injectable()
 export class SearchService {
 
-    private connection: rethink.Connection;
+    private connection: r.Connection;
 
     constructor(@Inject("RethinkProvider") connection,) {
         this.connection = connection;
     }
 
-    async search(keyword:string, reference: string,
-        table: string)
-        : Promise<rethink.WriteResult> {
+    async search(keyword:string, reference: string)
+        : Promise<r.WriteResult> {
 
             keyword = keyword.toLocaleLowerCase();
-            return rethink  
+            return await r
                 .db(DB)
-                .table(table)
+                .table("messages")
                 .filter(
-                    function(item) {
-                        return item("recipient").eq(reference)
-                            .and(item("subject").match(keyword)
-                                .or(item("sender").match(keyword)
-                                .or(item("message").match(keyword)))
-                            )
-                    }
+                  r.row('recipient')('email').eq(reference).or
+                  (r.row('sender')('email').eq(reference)).and
+                    (r.row('subject').match(keyword).or
+                    (r.row('message').match(keyword)))
                 )
                 .run(this.connection)
     }

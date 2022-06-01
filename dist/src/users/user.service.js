@@ -15,8 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserService = void 0;
 const common_1 = require("@nestjs/common");
 const rethink = require("rethinkdb");
+require('dotenv').config();
+const { DB } = process.env;
 const TABLE = "users";
-const DB = "emailAPI";
 let UserService = class UserService {
     constructor(connection) {
         this.connection = connection;
@@ -25,7 +26,7 @@ let UserService = class UserService {
         return rethink
             .db(DB)
             .table(TABLE)
-            .insert(user)
+            .insert(user, { returnChanges: "always" })
             .run(this.connection);
     }
     async getAllUsers() {
@@ -35,11 +36,11 @@ let UserService = class UserService {
             .orderBy('updated_date')
             .run(this.connection);
     }
-    async getUserById(uuid) {
+    async getUserById(id) {
         return rethink
             .db(DB)
             .table(TABLE)
-            .get(uuid)
+            .get(id)
             .run(this.connection);
     }
     async getUserByEmail(email) {
@@ -52,20 +53,19 @@ let UserService = class UserService {
             .run(this.connection);
     }
     async updateUser(user, user_id) {
-        await rethink
+        return rethink
             .db(DB)
             .table(TABLE)
             .get(user_id)
-            .update(user)
+            .update(user, { returnChanges: "always" })
             .run(this.connection);
-        return await this.getUserById(user_id);
     }
     async deleteUser(id) {
         return rethink
             .db(DB)
             .table(TABLE)
             .get(id)
-            .delete()
+            .delete({ returnChanges: "always" })
             .run(this.connection);
     }
 };

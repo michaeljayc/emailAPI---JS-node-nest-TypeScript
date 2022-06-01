@@ -1,4 +1,5 @@
-export const menu= ["inbox","sent","draft","starred","important"];
+export const MENU_ARRAY= ["inbox","sent","draft","starred","important"];
+export const STATUS_ARRAY = ["important","starred", "read", "draft", "deleted"];
 
 export const MENU =  {
     "inbox": 1,
@@ -16,9 +17,12 @@ export const STATE = {
     "deleted": 5 
 }
 
-export const isValidMenuTables = (chosen_menu: string): boolean => menu.includes(chosen_menu)
+export const isValidMenuTables = (chosen_menu: string): boolean => MENU_ARRAY.includes(chosen_menu)
 
 export const isValidMenu = (menu: string) => {
     const menu_keys = Object.keys(MENU);
     return menu_keys.includes(menu);
 }
+
+export const isValidStatus = (status: string)
+    : boolean => STATUS_ARRAY.includes(status)

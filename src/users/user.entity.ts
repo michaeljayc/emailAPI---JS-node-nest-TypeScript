@@ -1,6 +1,6 @@
 export class User {
 
-    uuid: string;
+    id: string;
     first_name: string;
     last_name: string;
     birthdate: string;
@@ -13,7 +13,7 @@ export class User {
     role_type_id: number ;
 
     constructor(
-        uuid: string,
+        id: string,
         first_name: string,
         last_name: string,
         birthdate: string,
