@@ -1,27 +1,25 @@
 import { Inject, Injectable } from "@nestjs/common";
-import * as rethink from "rethinkdb";
+import * as rethink from "rethinkdbdash";
 import { setDateTime } from "src/common/common.functions";
+import { DatabaseService } from "src/database/database.service";
 import { STATE } from "./message.common";
 import Message from "./message.entity";
 import { TFilteredQuery } from "./message.interface";
 
+const {HOST='localhost', PORT="28015"} = process.env
 const DB = "emailAPI";
 const TABLE = "messages";
 @Injectable()
 export class MessageService {
-
-    private connection: rethink.Connection;
-
-    constructor(@Inject("RethinkProvider") connection,) {
-        this.connection = connection;
-    }
+    private rethink: rethink.Connection;
+    constructor(private databaseService: DatabaseService) {}
 
     async getMessageById(id: string): Promise<Message> {
-        return rethink
+        return this.rethink
             .db(DB)
             .table(TABLE)
             .get(id)
-            .run(this.connection)
+            
     }
 
     async getMessages(data: TFilteredQuery): Promise<rethink.WriteResult> {
@@ -30,7 +28,7 @@ export class MessageService {
             .table(TABLE)
             .filter(data)
             .orderBy('updated_date')
-            .run(this.connection)
+            
     }
 
     async getMessageDetails(filtered: TFilteredQuery)
@@ -39,7 +37,7 @@ export class MessageService {
                 .db(DB)
                 .table(TABLE)
                 .filter(filtered)
-                .run(this.connection)
+                
     }
 
     async sendMessage(message: Message)
@@ -51,7 +49,7 @@ export class MessageService {
                     message,
                     {returnChanges: true}
                 )
-                .run(this.connection)
+                
     }
 
     async updateReadUnread(message_id: string)
@@ -67,7 +65,7 @@ export class MessageService {
                     }, 
                     {returnChanges: "always"}
                 )
-                .run(this.connection)
+                
     }
 
     async updateMessage(id:string,
@@ -81,7 +79,7 @@ export class MessageService {
                     message,
                     {returnChanges: "always"}
                 )
-                .run(this.connection)
+                
     }
 
     async deleteMessage(message_id: string)
@@ -91,7 +89,23 @@ export class MessageService {
                 .table(TABLE)
                 .get(message_id)
                 .delete({returnChanges: "always"})
-                .run(this.connection)
+                
+    }
+
+    async checkMessageInMenu(query: any)
+        : Promise<rethink.WriteResult> {
+            
+            return rethink
+                .db(DB)
+                .table(TABLE)
+                .filter(
+                    rethink.row('id').eq(query.id).and
+                        (rethink.row('recipient')('email').eq(query.reference).and
+                        (rethink.row('recipient')('menu').eq(query.menu)).or
+                            (rethink.row('sender')('email').eq(query.reference).and
+                            (rethink.row('sender')('menu').eq(query.menu))))
+                )
+                
     }
 }
 

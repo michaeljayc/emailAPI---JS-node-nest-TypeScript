@@ -16,7 +16,7 @@ exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const user_service_1 = require("../users/user.service");
 const bcrypt = require('bcrypt');
-const rethink = require("rethinkdb");
+const rethink = require("rethinkdbdash");
 const TABLE = "users";
 const DB = "emailAPI";
 let AuthService = class AuthService {
@@ -28,8 +28,7 @@ let AuthService = class AuthService {
         return rethink
             .db(DB)
             .table(TABLE)
-            .insert(user)
-            .run(this.connection);
+            .insert(user);
     }
     async login(login_email) {
         return rethink
@@ -37,8 +36,7 @@ let AuthService = class AuthService {
             .table(TABLE)
             .filter({
             email: login_email
-        })
-            .run(this.connection);
+        });
     }
     async ecnryptPassword(password) {
         const salt = await bcrypt.genSalt();

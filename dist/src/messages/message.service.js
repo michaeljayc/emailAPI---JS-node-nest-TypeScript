@@ -14,43 +14,43 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageService = void 0;
 const common_1 = require("@nestjs/common");
-const rethink = require("rethinkdb");
+const rethink = require("rethinkdbdash");
 const common_functions_1 = require("../common/common.functions");
 const message_common_1 = require("./message.common");
+const { HOST = 'localhost', PORT = "28015" } = process.env;
 const DB = "emailAPI";
 const TABLE = "messages";
 let MessageService = class MessageService {
-    constructor(connection) {
-        this.connection = connection;
+    constructor(rethink) {
+        this.rethink = rethink({
+            host: HOST,
+            port: Number(PORT)
+        });
     }
     async getMessageById(id) {
-        return rethink
+        return this.rethink
             .db(DB)
             .table(TABLE)
-            .get(id)
-            .run(this.connection);
+            .get(id);
     }
     async getMessages(data) {
         return rethink
             .db(DB)
             .table(TABLE)
             .filter(data)
-            .orderBy('updated_date')
-            .run(this.connection);
+            .orderBy('updated_date');
     }
     async getMessageDetails(filtered) {
         return rethink
             .db(DB)
             .table(TABLE)
-            .filter(filtered)
-            .run(this.connection);
+            .filter(filtered);
     }
     async sendMessage(message) {
         return rethink
             .db(DB)
             .table(TABLE)
-            .insert(message, { returnChanges: true })
-            .run(this.connection);
+            .insert(message, { returnChanges: true });
     }
     async updateReadUnread(message_id) {
         return await rethink
@@ -60,24 +60,27 @@ let MessageService = class MessageService {
             .update({
             "status": message_common_1.STATE.read,
             "updated_date": (0, common_functions_1.setDateTime)()
-        }, { returnChanges: "always" })
-            .run(this.connection);
+        }, { returnChanges: "always" });
     }
     async updateMessage(id, message) {
         return rethink
             .db(DB)
             .table(TABLE)
             .get(id)
-            .update(message, { returnChanges: "always" })
-            .run(this.connection);
+            .update(message, { returnChanges: "always" });
     }
     async deleteMessage(message_id) {
         await rethink
             .db(DB)
             .table(TABLE)
             .get(message_id)
-            .delete({ returnChanges: "always" })
-            .run(this.connection);
+            .delete({ returnChanges: "always" });
+    }
+    async checkMessageInMenu(query) {
+        return rethink
+            .db(DB)
+            .table(TABLE)
+            .filter(rethink.row('id').eq(query.id).and(rethink.row('recipient')('email').eq(query.reference).and(rethink.row('recipient')('menu').eq(query.menu)).or(rethink.row('sender')('email').eq(query.reference).and(rethink.row('sender')('menu').eq(query.menu)))));
     }
 };
 MessageService = __decorate([

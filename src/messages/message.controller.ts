@@ -503,35 +503,58 @@ export class MessageController {
 
     // http://localhost:3000/api/messages/inbox?id=123abc&status=starred
     @UseGuards(AuthTokenGuard)
-    @Put("inbox")
-    async updateMessageStatus(@Query() query)
+    @Put(":menu")
+    async updateMessageStatus(@Query() query,
+        @Param() param, 
+        @Req() request: Request)
         : Promise<IResponseFormat | any> {
 
+            let to_query: any;
             let formatted_response: IResponseFormat;
             let default_message: NewMessageDTO;
 
             try {
+                const menu = param.menu;
                 const {id, status} = query;
+                // get cookie
+                const cookie = await this.jwtService
+                    .verifyAsync(request.cookies["jwt"])
+
+                to_query = {
+                    id,
+                    reference: cookie.email,
+                    menu: MENU[menu]
+                }
+
                 let response = await this
                     .messageService
-                    .getMessageById(id)
+                    .checkMessageInMenu(to_query);
 
+                // check if message exists in specified menu
+                if (response._responses.length === 0)
+                    throw new NotFoundException
+                        (`Cannot find message with ID [${id}] in [${menu}]`)
+
+                const message_data = response.next()._settledValue;
+                
                 // check if id or status is valid
-                if (!response || !isValidStatus(status))
+                if (!isValidStatus(status))
                     throw new NotFoundException
                         (`ID [${id}] or Status [${status}] is invalid.`)
                 
-                default_message = response;
+                default_message = message_data;
                 default_message = {
                     ...default_message,
                     recipient: {
                         ...default_message.recipient,
                         menu : status === "starred" ? 
-                            MENU.starred : 
-                            MENU.important
+                        MENU.starred : 
+                        MENU.important
                     },
                     updated_date: setDateTime()
                 }
+                console.log("🚀 ~ file: message.controller.ts ~ line 547 ~ MessageController ~ default_message", default_message)
+                
                
                 // update message status
                 formatted_response = await this

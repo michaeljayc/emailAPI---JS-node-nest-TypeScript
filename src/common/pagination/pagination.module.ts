@@ -1,12 +1,11 @@
 import { Module } from "@nestjs/common";
-import RethinkProvider from "rethinkdb/database.provider";
-import { RethinkModule } from "rethinkdb/rethink.module";
+import { DatabaseModule } from "src/database/database.module";
 import { PaginationService } from "./pagination.service";
 
 @Module({
-    imports:[RethinkModule],
+    imports:[DatabaseModule],
     controllers: [],
-    providers: [PaginationService, RethinkProvider],
+    providers: [PaginationService],
     exports: [PaginationService]
 })
 

@@ -14,19 +14,18 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LoggerService = void 0;
 const common_1 = require("@nestjs/common");
-const rethink = require("rethinkdb");
 const DB = "emailAPI";
 const TABLE = "logs";
+const database_provider_1 = require("../../rethinkdb/database.provider");
 let LoggerService = class LoggerService {
     constructor(connection) {
-        this.connection = connection;
+        this.connection = database_provider_1.RethinkProvider.useFactory();
     }
     async insertLogs(log) {
-        return await rethink
+        return await this.connection
             .db(DB)
             .table(TABLE)
-            .insert(log)
-            .run(this.connection);
+            .insert(log);
     }
 };
 LoggerService = __decorate([

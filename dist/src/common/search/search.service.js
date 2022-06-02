@@ -14,7 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SearchService = void 0;
 const common_1 = require("@nestjs/common");
-const r = require("rethinkdb");
+const r = require("rethinkdbdash");
 const DB = "emailAPI";
 let SearchService = class SearchService {
     constructor(connection) {

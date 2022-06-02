@@ -1,6 +1,6 @@
 import { Injectable, Inject } from "@nestjs/common";
 import { UserRole } from "src/user_roles/user_role.entity";
-import * as rethink from "rethinkdb";
+import * as rethink from "rethinkdbdash";
 
 const TABLE = "user_role";
 const DB = "emailAPI";

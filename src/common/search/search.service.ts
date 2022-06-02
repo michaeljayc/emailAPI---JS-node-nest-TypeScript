@@ -1,5 +1,5 @@
 import { Injectable, Inject} from "@nestjs/common";
-import * as r from "rethinkdb";
+import * as r from "rethinkdbdash";
 
 const DB = "emailAPI";
 

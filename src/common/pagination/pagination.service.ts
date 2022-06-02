@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import * as rethink from "rethinkdb";
+import * as rethink from "rethinkdbdash";
 
 @Injectable()
 export class PaginationService {

@@ -12,7 +12,7 @@ import { formatLogs, formatResponse } from './common/common.functions';
 import { IResponseFormat } from './common/common.interface';
 import LoggerService from './services/logger.service';
 import User from './users/user.entity';
-import { Response } from "express";
+import { Response, Request } from "express";
 import { UserLoginDTO, UserDTO } from './users/user.dto';
 
 @Controller()
@@ -22,6 +22,9 @@ export class AppController {
     private loggerService: LoggerService,
     private jwtService: JwtService){}
 
+    onModuleInit() {
+        
+    }
 
     @Post("register")
     async registerUser(@Body() user: User)
@@ -68,7 +71,7 @@ export class AppController {
     }
 
     @Post("login")
-    async loginUser(
+    async loginUser(@Req() request: Request,
       @Body() credentials: UserLoginDTO,
       @Res({passthrough: true}) response: Response)
       : Promise<IResponseFormat | any> {
@@ -79,6 +82,9 @@ export class AppController {
             ("Input email and password", response.statusMessage);
 
         try {
+            if (request.cookies["jwt"])
+                return formatResponse(null, true, 'You are currently logged in.' );
+                
             let user_data: any;
             let response_data: any = await 
                 this
@@ -128,14 +134,21 @@ export class AppController {
     }
 
     @Post("logout")
-    async logoutUser(@Res({passthrough: true}) response: Response)
+    async logoutUser(@Req() request: Request,
+        @Res({passthrough: true}) response: Response)
         : Promise<IResponseFormat> {
 
             let formatted_response: IResponseFormat;
+
             try {
-                response.clearCookie("jwt");
-                formatted_response = formatResponse
-                    ([], true, "Logout successful.");
+                if (!request.cookies["jwt"])
+                    formatted_response = formatResponse
+                        (null, false, "You are currently logged out.")
+                else {
+                    response.clearCookie("jwt");
+                    formatted_response = formatResponse
+                        ([], true, "Logout successful.");
+                }
             } catch (error) {
                 formatted_response = formatResponse
                     ([error], false, "Failed.");

@@ -1,5 +1,4 @@
-import { Logger, Module } from '@nestjs/common';
-import { RethinkModule } from 'rethinkdb/rethink.module';
+import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { UserModule } from './users/user.module';
 import { UserRoleModule } from './user_roles/user_role.module';
@@ -14,7 +13,6 @@ import { JwtModule } from '@nestjs/jwt';
 @Module({
   imports: [
     ConfigModule.forRoot({isGlobal: true}),
-    RethinkModule, 
     UserRoleModule, 
     UserModule,
     AuthModule,

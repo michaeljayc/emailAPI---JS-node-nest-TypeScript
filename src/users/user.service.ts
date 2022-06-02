@@ -1,6 +1,6 @@
 import { Injectable, Inject, forwardRef } from "@nestjs/common";
 import { User } from "./user.entity";
-import * as rethink from "rethinkdb";
+import * as rethink from "rethinkdbdash";
 import { PaginationService } from "src/common/pagination/pagination.service";
 
 require('dotenv').config()

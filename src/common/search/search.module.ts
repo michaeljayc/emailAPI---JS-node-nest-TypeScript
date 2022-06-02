@@ -1,12 +1,11 @@
 import { Module } from "@nestjs/common";
-import RethinkProvider from "rethinkdb/database.provider";
-import { RethinkModule } from "rethinkdb/rethink.module";
+import { DatabaseModule } from "src/database/database.module";
 import { SearchService } from "./search.service";
 
 @Module({
-    imports: [RethinkModule],
+    imports: [DatabaseModule],
     controllers: [],
-    providers: [SearchService, RethinkProvider],
+    providers: [SearchService],
     exports: [SearchService]
 })
 

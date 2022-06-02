@@ -1,6 +1,6 @@
 import User from "src/users/user.entity";
 import { UserService } from "src/users/user.service";
-import * as rethink from "rethinkdb";
+import * as rethink from "rethinkdbdash";
 export declare class AuthService {
     private userService;
     private connection;

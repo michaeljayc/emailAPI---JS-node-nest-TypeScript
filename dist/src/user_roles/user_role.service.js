@@ -14,7 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserRoleService = void 0;
 const common_1 = require("@nestjs/common");
-const rethink = require("rethinkdb");
+const rethink = require("rethinkdbdash");
 const TABLE = "user_role";
 const DB = "emailAPI";
 let UserRoleService = class UserRoleService {

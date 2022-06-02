@@ -1,5 +1,5 @@
 import { User } from "./user.entity";
-import * as rethink from "rethinkdb";
+import * as rethink from "rethinkdbdash";
 export declare class UserService {
     private connection;
     constructor(connection: any);

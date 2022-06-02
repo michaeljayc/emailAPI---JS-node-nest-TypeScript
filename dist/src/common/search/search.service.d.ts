@@ -1,4 +1,4 @@
-import * as r from "rethinkdb";
+import * as r from "rethinkdbdash";
 export declare class SearchService {
     private connection;
     constructor(connection: any);
