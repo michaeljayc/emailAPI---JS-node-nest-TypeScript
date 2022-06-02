@@ -6,7 +6,7 @@ export declare class AuthService {
     constructor(databaseService: DatabaseService);
     register(user: User): Promise<rethink.WriteResult>;
     login(login_email: string): Promise<User>;
-    ecnryptPassword(password: string): Promise<string>;
+    ecnryptPassword(password: any): Promise<string>;
     comparePassword(newPassword: string, passwordHash: string): Promise<any>;
 }
 export default AuthService;

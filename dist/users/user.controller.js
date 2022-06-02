@@ -39,12 +39,7 @@ let UserController = class UserController {
         try {
             response = await this
                 .userService
-                .getAllUsers()
-                .then(result => {
-                return this
-                    .paginationService
-                    .pagination(result, page_number);
-            });
+                .getAllUsers();
             formatted_response = (0, common_functions_1.formatResponse)(response.total_results > 1 ? response : [response], true, "Success");
         }
         catch (error) {

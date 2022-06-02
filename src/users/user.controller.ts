@@ -58,11 +58,12 @@ export class UserController {
                 response = await this
                     .userService
                     .getAllUsers()
-                        .then(result => {
-                            return this
-                                .paginationService
-                                .pagination(result,page_number)
-                        })
+                        // .then(result => {
+                            
+                        //     return this
+                        //         .paginationService
+                        //         .pagination(result,page_number)
+                        // })
                 
                 formatted_response = formatResponse
                 (   

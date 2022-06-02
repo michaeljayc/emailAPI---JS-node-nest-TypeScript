@@ -8,29 +8,19 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LoggerService = void 0;
 const common_1 = require("@nestjs/common");
 const DB = "emailAPI";
 const TABLE = "logs";
 let LoggerService = class LoggerService {
-    constructor(connection) {
-        this.connection = RethinkProvider.useFactory();
-    }
+    constructor() { }
     async insertLogs(log) {
-        return await this.connection
-            .db(DB)
-            .table(TABLE)
-            .insert(log);
     }
 };
 LoggerService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, common_1.Inject)("RethinkProvider")),
-    __metadata("design:paramtypes", [Object])
+    __metadata("design:paramtypes", [])
 ], LoggerService);
 exports.LoggerService = LoggerService;
 exports.default = LoggerService;

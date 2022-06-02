@@ -1,15 +1,14 @@
 import { Module } from "@nestjs/common";
-import { RethinkProvider } from "rethinkdb/database.provider";
-import { RethinkModule } from "rethinkdb/rethink.module";
+import { DatabaseModule } from "src/database/database.module";
 import { RolesModule } from "src/guards/roles/roles.module";
 import { UserService } from "src/users/user.service";
 import { UserRoleController } from "./user_role.controller";
 import { UserRoleService } from "./user_role.service";
 
 @Module({
-    imports: [RethinkModule, RolesModule],
+    imports: [DatabaseModule, RolesModule],
     controllers: [UserRoleController],
-    providers: [UserRoleService, RethinkProvider, UserService]
+    providers: [UserRoleService, UserService]
 })
 
 export class UserRoleModule{}

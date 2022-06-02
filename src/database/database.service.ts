@@ -32,7 +32,7 @@ export class DatabaseService {
   async getByFilter(
     database: string,
     table: string,
-    params: Record<string, any>,
+    params: any,
   ) {
     return this.r.db(database).table(table).filter(params);
   }
@@ -55,9 +55,9 @@ export class DatabaseService {
 //       .insert(new_params, { returnChanges: true });
 //   }
 
-    async insertRecord(database: string, table: string, params: any) {
-        return this.r.db(database).table(table).insert(params)
-    }
+  async insertRecord(database: string, table: string, params: any) {
+      return this.r.db(database).table(table).insert(params)
+  }
 
   async deleteRecord(database: string, table: string, id: string) {
     return this.r

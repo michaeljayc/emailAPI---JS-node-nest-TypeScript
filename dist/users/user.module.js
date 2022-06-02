@@ -7,11 +7,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserModule = void 0;
-const rethink_module_1 = require("rethinkdb/rethink.module");
 const user_controller_1 = require("./user.controller");
 const user_service_1 = require("./user.service");
 const common_1 = require("@nestjs/common");
-const database_provider_1 = require("rethinkdb/database.provider");
 const user_role_module_1 = require("../user_roles/user_role.module");
 const logger_service_1 = require("../services/logger.service");
 const jwt_1 = require("@nestjs/jwt");
@@ -23,11 +21,12 @@ const passport_1 = require("@nestjs/passport");
 const auth_token_module_1 = require("../guards/auth-token/auth-token.module");
 const roles_module_1 = require("../guards/roles/roles.module");
 const pagination_module_1 = require("../common/pagination/pagination.module");
+const database_module_1 = require("../database/database.module");
 let UserModule = class UserModule {
 };
 UserModule = __decorate([
     (0, common_1.Module)({
-        imports: [rethink_module_1.RethinkModule,
+        imports: [database_module_1.DatabaseModule,
             passport_1.PassportModule,
             user_role_module_1.UserRoleModule,
             jwt_1.JwtModule.register({
@@ -39,8 +38,7 @@ UserModule = __decorate([
             roles_module_1.RolesModule,
             pagination_module_1.PaginationModule],
         controllers: [user_controller_1.UserController],
-        providers: [database_provider_1.default,
-            user_service_1.UserService,
+        providers: [user_service_1.UserService,
             logger_service_1.default,
             auth_service_1.AuthService,
             {

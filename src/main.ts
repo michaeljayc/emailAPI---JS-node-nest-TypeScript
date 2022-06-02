@@ -12,7 +12,7 @@ async function bootstrap() {
   app.setGlobalPrefix("api");
   app.use(cookieParser());
   app.useGlobalInterceptors(new LoggingInterceptor())
-  app.useGlobalFilters(new HttpExceptionFilter())
+  // app.useGlobalFilters(new HttpExceptionFilter())
   app.useGlobalPipes(new ValidationPipe)
   
  // === For access ===

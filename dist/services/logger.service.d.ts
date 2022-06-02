@@ -1,7 +1,6 @@
 import { TLogs } from "../common/common.types";
 export declare class LoggerService {
-    private connection;
-    constructor(connection: any);
-    insertLogs(log: TLogs): Promise<any>;
+    constructor();
+    insertLogs(log: TLogs): Promise<void>;
 }
 export default LoggerService;

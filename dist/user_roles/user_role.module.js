@@ -8,8 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserRoleModule = void 0;
 const common_1 = require("@nestjs/common");
-const database_provider_1 = require("rethinkdb/database.provider");
-const rethink_module_1 = require("rethinkdb/rethink.module");
+const database_module_1 = require("../database/database.module");
 const roles_module_1 = require("../guards/roles/roles.module");
 const user_service_1 = require("../users/user.service");
 const user_role_controller_1 = require("./user_role.controller");
@@ -18,9 +17,9 @@ let UserRoleModule = class UserRoleModule {
 };
 UserRoleModule = __decorate([
     (0, common_1.Module)({
-        imports: [rethink_module_1.RethinkModule, roles_module_1.RolesModule],
+        imports: [database_module_1.DatabaseModule, roles_module_1.RolesModule],
         controllers: [user_role_controller_1.UserRoleController],
-        providers: [user_role_service_1.UserRoleService, database_provider_1.RethinkProvider, user_service_1.UserService]
+        providers: [user_role_service_1.UserRoleService, user_service_1.UserService]
     })
 ], UserRoleModule);
 exports.UserRoleModule = UserRoleModule;

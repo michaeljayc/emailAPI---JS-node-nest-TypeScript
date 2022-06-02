@@ -86,24 +86,22 @@ export class AppController {
                 return formatResponse(null, true, 'You are currently logged in.' );
                 
             let user_data: any;
-            let response_data: any = await 
-                this
+            let response_data: any = await this
                 .authService
                 .login(credentials.email);
-            
+           
             // If Username doesn't match any, throw NotFoundException
-            if (Object.keys(response_data._responses).length === 0)
+            if (response_data.length === 0)
                 throw new NotFoundException
-                    ("Email doesn't exist", response.statusMessage)
-
-            user_data = response_data.next()._settledValue;
+                    (`User ${credentials.email} doesn't exist`)    
+            
+            user_data = response_data[0]
 
             // If Password doesn't match, throw NotFoundException
             if (! await this.authService.comparePassword(
                 credentials.password, user_data.password)) 
-                    throw new NotFoundException
-                        ("Incorrect password", response.statusMessage)
-
+                    throw new BadRequestException ("Incorrect password.")
+            console.log(user_data)
             // Data store in the cookie
             const jwt = await this.jwtService.signAsync(
                 {
@@ -118,9 +116,9 @@ export class AppController {
                 [user_data], true, "Login Successful."
             );
         } catch (error) {
-            formatted_response = formatResponse(
-                [error], false, "Login Failed."
-            );
+            console.log(error)
+            formatted_response = formatResponse
+                ([error], false, "Login Failed.");
         }
 
         this

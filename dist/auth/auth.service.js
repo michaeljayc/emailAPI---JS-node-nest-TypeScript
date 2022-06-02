@@ -12,7 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const bcrypt = require('bcrypt');
-const rethink = require("rethinkdbdash");
 const database_service_1 = require("../database/database.service");
 const TABLE = "users";
 const DB = "emailAPI";
@@ -24,12 +23,7 @@ let AuthService = class AuthService {
         return this.databaseService.insertRecord(DB, TABLE, user);
     }
     async login(login_email) {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .filter({
-            email: login_email
-        });
+        return this.databaseService.getByFilter(DB, TABLE, { email: login_email });
     }
     async ecnryptPassword(password) {
         const salt = await bcrypt.genSalt();

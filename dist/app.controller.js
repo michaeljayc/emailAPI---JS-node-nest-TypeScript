@@ -63,11 +63,12 @@ let AppController = class AppController {
             let response_data = await this
                 .authService
                 .login(credentials.email);
-            if (Object.keys(response_data._responses).length === 0)
-                throw new common_1.NotFoundException("Email doesn't exist", response.statusMessage);
-            user_data = response_data.next()._settledValue;
+            if (response_data.length === 0)
+                throw new common_1.NotFoundException(`User ${credentials.email} doesn't exist`);
+            user_data = response_data[0];
             if (!await this.authService.comparePassword(credentials.password, user_data.password))
-                throw new common_1.NotFoundException("Incorrect password", response.statusMessage);
+                throw new common_1.BadRequestException("Incorrect password.");
+            console.log(user_data);
             const jwt = await this.jwtService.signAsync({
                 id: user_data.id,
                 username: user_data.username,
@@ -77,6 +78,7 @@ let AppController = class AppController {
             formatted_response = (0, common_functions_1.formatResponse)([user_data], true, "Login Successful.");
         }
         catch (error) {
+            console.log(error);
             formatted_response = (0, common_functions_1.formatResponse)([error], false, "Login Failed.");
         }
         this
