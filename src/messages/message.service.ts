@@ -1,10 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
 import * as rethink from "rethinkdb";
-import { filter } from "rxjs";
 import { setDateTime } from "src/common/common.functions";
-import { MENU, STATE } from "./message.common";
-import { NewMessageDTO } from "./message.dto";
+import { STATE } from "./message.common";
 import Message from "./message.entity";
+import { TFilteredQuery } from "./message.interface";
 
 const DB = "emailAPI";
 const TABLE = "messages";
@@ -25,8 +24,7 @@ export class MessageService {
             .run(this.connection)
     }
 
-    async getMessages(data: any): Promise<rethink.WriteResult> {
-        console.log(data)
+    async getMessages(data: TFilteredQuery): Promise<rethink.WriteResult> {
         return rethink
             .db(DB)
             .table(TABLE)
@@ -35,8 +33,7 @@ export class MessageService {
             .run(this.connection)
     }
 
-    async getMessageDetails(message_id: string,
-        filtered?: any)
+    async getMessageDetails(filtered: TFilteredQuery)
         : Promise<rethink.WriteResult> {
             return rethink
                 .db(DB)

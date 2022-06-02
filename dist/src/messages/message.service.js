@@ -31,7 +31,6 @@ let MessageService = class MessageService {
             .run(this.connection);
     }
     async getMessages(data) {
-        console.log(data);
         return rethink
             .db(DB)
             .table(TABLE)
@@ -39,7 +38,7 @@ let MessageService = class MessageService {
             .orderBy('updated_date')
             .run(this.connection);
     }
-    async getMessageDetails(message_id, filtered) {
+    async getMessageDetails(filtered) {
         return rethink
             .db(DB)
             .table(TABLE)

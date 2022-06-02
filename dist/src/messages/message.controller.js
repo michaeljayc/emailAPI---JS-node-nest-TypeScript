@@ -47,17 +47,16 @@ let MessageController = class MessageController {
     }
     async getMessages(request, query) {
         let filtered;
-        let response;
         let menu = query.menu ? query.menu : "inbox";
         let formatted_response;
         let page_number = (query.page !== undefined) ?
             Number(query.page) : 1;
         try {
             if ((0, message_common_1.isValidMenu)(menu)) {
-                const user_data = await this
+                const cookie = await this
                     .jwtService
                     .verifyAsync(request.cookies["jwt"]);
-                let email = user_data.email;
+                const email = cookie.email;
                 if (menu === "sent" || menu === "drafts") {
                     filtered = { "sender": { "email": email,
                             "menu": menu === "sent" ?
@@ -73,7 +72,7 @@ let MessageController = class MessageController {
                             message_common_1.MENU.starred :
                             message_common_1.MENU.important;
                 }
-                response = await this
+                let response = await this
                     .messageService
                     .getMessages(filtered)
                     .then(result => {
@@ -96,10 +95,10 @@ let MessageController = class MessageController {
     }
     async getMessageDetails(request, param) {
         let formatted_response;
+        let filtered;
         try {
             const { menu, id } = param;
             const cookie = await this.jwtService.verifyAsync(request.cookies["jwt"]);
-            let filtered;
             if (menu === "sent" || menu === "drafts")
                 filtered = { id,
                     sender: { email: cookie.email }
@@ -110,7 +109,7 @@ let MessageController = class MessageController {
                 };
             let response = await this
                 .messageService
-                .getMessageDetails(id, filtered);
+                .getMessageDetails(filtered);
             if (Object.keys(response._responses).length === 0)
                 formatted_response = (0, common_functions_1.formatResponse)(null, true, "Success.");
             else {
@@ -323,9 +322,8 @@ let MessageController = class MessageController {
                 .searchService
                 .search(query.keyword, cookie.email);
             let response_data_length = response_data._responses.length;
-            if (response_data_length > 0) {
+            if (response_data_length > 0)
                 response_data = response_data._responses[0].r;
-            }
             formatted_response = (0, common_functions_1.formatResponse)((response_data_length > 0) ? response_data : null, true, "Success");
         }
         catch (error) {

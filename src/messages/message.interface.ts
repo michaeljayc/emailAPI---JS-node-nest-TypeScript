@@ -13,3 +13,15 @@ export interface IReplyMessageFormat {
     message: string;
     message_origin_id: string;
 }
+
+export type TFilteredQuery = {
+    id?: string,
+    sender?: {
+        email?: string,
+        menu?: number
+    },
+    recipient?: {
+        email?: string,
+        menu?: number,
+    }
+}

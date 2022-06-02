@@ -32,6 +32,8 @@ import { NewMessageDTO } from "./message.dto";
 import { SearchService } from "src/common/search/search.service";
 import { PaginationService } from "src/common/pagination/pagination.service";
 import { omit } from "lodash";
+import { TFilteredQuery } from "./message.interface";
+import Message from "./message.entity";
 
 @Controller("messages")
 export class MessageController {
@@ -51,8 +53,7 @@ export class MessageController {
     async getMessages(@Req() request: Request,
         @Query() query): Promise<IResponseFormat | any> {
 
-            let filtered: any;
-            let response: any;
+            let filtered: TFilteredQuery;
             let menu = query.menu ? query.menu : "inbox";
             let formatted_response: IResponseFormat;
             let page_number = (query.page !== undefined) ? 
@@ -61,12 +62,11 @@ export class MessageController {
             try {
                 if (isValidMenu(menu)) {
                     // Get cookie data
-                    const user_data = await 
-                        this
+                    const cookie = await this
                         .jwtService
                         .verifyAsync(request.cookies["jwt"]);
                     
-                    let email: string = user_data.email;
+                    const email: string = cookie.email;
                     
                     if (menu === "sent" || menu === "drafts") {
                         filtered = {"sender": {"email": email,
@@ -84,7 +84,7 @@ export class MessageController {
                                 MENU.important;
                     }
                     // Retrieve and paginate data
-                    response = await this
+                    let response = await this
                         .messageService
                         .getMessages(filtered)
                         .then(result => {
@@ -120,6 +120,7 @@ export class MessageController {
         : Promise<IResponseFormat> {
 
             let formatted_response: IResponseFormat;
+            let filtered: TFilteredQuery;
             
             try {   
                 const {menu, id} = param;
@@ -127,7 +128,6 @@ export class MessageController {
                 const cookie = await this.jwtService.verifyAsync
                     (request.cookies["jwt"])
 
-                let filtered: any;
                 if (menu === "sent" || menu === "drafts")
                     filtered = { id,
                         sender: { email: cookie.email }
@@ -140,7 +140,7 @@ export class MessageController {
                 // Check if message id exists
                 let response = await this
                     .messageService
-                    .getMessageDetails(id,filtered)
+                    .getMessageDetails(filtered)
                 
                 if (Object.keys(response._responses).length === 0)
                     formatted_response = formatResponse
@@ -176,7 +176,7 @@ export class MessageController {
         @Body() message: NewMessageDTO)
         : Promise<IResponseFormat> {
             
-            let formatted_response: any;
+            let formatted_response: IResponseFormat;
             const newMessageDTO = new NewMessageDTO();
             let default_message = ({
                 ...newMessageDTO,
@@ -583,9 +583,8 @@ export class MessageController {
                     response_data._responses.length;
                 
             
-                if (response_data_length > 0) {
+                if (response_data_length > 0)
                     response_data = response_data._responses[0].r;
-                }
                        
                 formatted_response = formatResponse
                     (  
