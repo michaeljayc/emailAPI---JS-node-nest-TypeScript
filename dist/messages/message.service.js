@@ -12,9 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageService = void 0;
 const common_1 = require("@nestjs/common");
 const rethink = require("rethinkdbdash");
-const common_functions_1 = require("../common/common.functions");
 const database_service_1 = require("../database/database.service");
-const message_common_1 = require("./message.common");
 const { HOST = 'localhost', PORT = "28015" } = process.env;
 const DB = "emailAPI";
 const TABLE = "messages";
@@ -23,53 +21,25 @@ let MessageService = class MessageService {
         this.databaseService = databaseService;
     }
     async getMessageById(id) {
-        return this.rethink
-            .db(DB)
-            .table(TABLE)
-            .get(id);
+        return this.databaseService.getById(DB, TABLE, id);
     }
     async getMessages(data) {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .filter(data)
-            .orderBy('updated_date');
+        return this.databaseService.getByFilter(DB, TABLE, data);
     }
     async getMessageDetails(filtered) {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .filter(filtered);
+        return this.databaseService.getByFilter(DB, TABLE, filtered);
     }
     async sendMessage(message) {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .insert(message, { returnChanges: true });
+        return this.databaseService.insertRecord(DB, TABLE, message);
     }
-    async updateReadUnread(message_id) {
-        return await rethink
-            .db(DB)
-            .table(TABLE)
-            .get(message_id)
-            .update({
-            "status": message_common_1.STATE.read,
-            "updated_date": (0, common_functions_1.setDateTime)()
-        }, { returnChanges: "always" });
+    async updateReadUnread(message_id, data) {
+        return this.databaseService.updateRecord(DB, TABLE, message_id, data);
     }
     async updateMessage(id, message) {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .get(id)
-            .update(message, { returnChanges: "always" });
+        return this.databaseService.updateRecord(DB, TABLE, id, message);
     }
     async deleteMessage(message_id) {
-        await rethink
-            .db(DB)
-            .table(TABLE)
-            .get(message_id)
-            .delete({ returnChanges: "always" });
+        await this.databaseService.deleteRecord(DB, TABLE, message_id);
     }
     async checkMessageInMenu(query) {
         return rethink

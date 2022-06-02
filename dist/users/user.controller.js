@@ -39,7 +39,12 @@ let UserController = class UserController {
         try {
             response = await this
                 .userService
-                .getAllUsers();
+                .getAllUsers()
+                .then(result => {
+                return this
+                    .paginationService
+                    .pagination(result, page_number);
+            });
             formatted_response = (0, common_functions_1.formatResponse)(response.total_results > 1 ? response : [response], true, "Success");
         }
         catch (error) {
@@ -144,7 +149,7 @@ let UserController = class UserController {
                 .userService
                 .deleteUser(query.id)
                 .then(result => {
-                return (0, common_functions_1.formatResponse)(result, true, "Successfully deleted user.");
+                return (0, common_functions_1.formatResponse)(result.changes, true, "Successfully deleted user.");
             });
         }
         catch (error) {

@@ -35,14 +35,17 @@ let DatabaseService = class DatabaseService {
         return this.r.db(database).table(table);
     }
     async insertRecord(database, table, params) {
-        return this.r.db(database).table(table).insert(params);
+        return this.r.db(database).table(table).insert(params, { returnChanges: "always" });
+    }
+    async updateRecord(database, table, id, params) {
+        return this.r.db(database).table(table).get(id).update(params, { returnChanges: "always" });
     }
     async deleteRecord(database, table, id) {
         return this.r
             .db(database)
             .table(table)
             .get(id)
-            .update({ status: 'Inactive', updated_date: new Date().getTime() });
+            .delete({ returnChanges: "always" });
     }
 };
 DatabaseService = __decorate([

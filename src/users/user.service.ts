@@ -14,14 +14,7 @@ export class UserService {
     constructor(private databaseService: DatabaseService){}
 
     async createNewUser(user: User): Promise<rethink.WriteResult> {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .insert(
-                user,
-                {returnChanges: "always"}
-            )
-            .run()
+        return this.databaseService.insertRecord(DB, TABLE, user);
     }
 
     async getAllUsers(): Promise<rethink.WriteResult>{
@@ -33,35 +26,16 @@ export class UserService {
     }
 
     async getUserByEmail(email:string): Promise<any> {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .filter({
-                'email': email
-            })
-            .run()
+        return this.databaseService.getByFilter(DB, TABLE, {email: email})
     }
 
     async updateUser(user: User, user_id:string)
         : Promise<rethink.WriteResult> {
-            return rethink
-                .db(DB)
-                .table(TABLE)
-                .get(user_id)
-                .update(
-                    user,
-                    {returnChanges: "always"}
-                )
-                .run()
+            return this.databaseService.updateRecord(DB, TABLE, user_id, user);
     }
 
     async deleteUser(id: string): Promise<rethink.WriteResult> {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .get(id)
-            .delete({returnChanges: "always"})
-            .run()
+       return this.databaseService.deleteRecord(DB, TABLE, id);
     }
 
 }

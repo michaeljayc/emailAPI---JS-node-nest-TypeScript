@@ -130,32 +130,42 @@ export class MessageController {
 
                 if (menu === "sent" || menu === "drafts")
                     filtered = { id,
-                        sender: { email: cookie.email }
+                        sender: { email: cookie.email,
+                        menu: MENU[menu]
+                     }
                     }
                 else
                     filtered = { id,
-                        recipient: { email: cookie.email }
+                            recipient: { email: cookie.email,
+                            menu: MENU[menu]    
+                        }
                     }
-
+                    
                 // Check if message id exists
                 let response = await this
                     .messageService
                     .getMessageDetails(filtered)
-                
-                if (Object.keys(response._responses).length === 0)
+
+                if (!response.length)
                     formatted_response = formatResponse
-                        (null, true, "Success.");
+                        ([], true, "Success.");
                 else {
-                    response = response.next()._settledValue;
+                    let data = response[0]
+                    data = ({
+                        ...data,
+                        status: STATE.read,
+                        updated_date: setDateTime()
+                    })
                     formatted_response = await this
                         .messageService
-                        .updateReadUnread(response.id)
+                        .updateReadUnread(data.id,data)
                             .then( result => {
                                 return formatResponse
                                 (result.changes[0].new_val, true, "Success.");
                             })
                 }
             } catch (error) {
+                console.log(error)
                 formatted_response = formatResponse
                     ([error], false, error.status)
             }
@@ -189,12 +199,11 @@ export class MessageController {
                     (request.cookies["jwt"]);
 
                 // Check if recipient exist
-                let recipient_data = await 
-                    this
+                let recipient_data = await this
                     .userService
                     .getUserByEmail(message.recipient.email);
                 
-                if (Object.keys(recipient_data._responses).length < 1)
+                if (!recipient_data[0])
                     throw new NotFoundException
                         (`${message.recipient.email}`, "Recipient doesn't exist")   
                 
@@ -210,7 +219,7 @@ export class MessageController {
                         menu: MENU.inbox
                     }
                 })
-        
+                
                 // insert to messages
                 formatted_response = await this
                 .messageService
@@ -220,6 +229,7 @@ export class MessageController {
                             result.changes[0].new_val, true, "Message Sent"
                     )});
             } catch (error) {
+                console.log(error)
                 formatted_response = formatResponse
                     ([error], false, error.status)
             }
@@ -296,14 +306,14 @@ export class MessageController {
                 const response = await this
                     .messageService
                     .getMessageById(id)
-                
+              
                 if (!response)
                     throw new NotFoundException
                         (`Message with ID ${id} doesn't exist`);
 
                 // update update_date
                 default_message.updated_date = setDateTime();
-               
+
                 formatted_response = await this
                     .messageService
                     .updateMessage(id,default_message)
@@ -346,7 +356,7 @@ export class MessageController {
                 const response = await this
                     .messageService
                     .getMessageById(id)
-                
+                    console.log(response)
                 if (!response)
                     throw new NotFoundException
                         (`Message with ID: ${id} doesn't exist`)
@@ -407,12 +417,18 @@ export class MessageController {
                     throw new NotFoundException
                         (`Message with ID ${query.id} doesn't exist.`)
 
+                // check if message exists in menu
+                const response = await this.messageService.getMessageDetails({
+                    id: query.id,
+                    
+                })     
+
                 formatted_response = await this
                     .messageService
                     .deleteMessage(query.id)
                         .then(result => {
                             return formatResponse
-                                ({query}, true, "Message Deleted")
+                                (result.changes, true, "Message Deleted")
                         });
             } catch (error) {
                 formatted_response = formatResponse

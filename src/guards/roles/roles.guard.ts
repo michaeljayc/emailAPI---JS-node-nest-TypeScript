@@ -25,7 +25,7 @@ export class RolesGuard implements CanActivate {
             context.getClass(),
           ]
         );
-      
+
         if (!requiredRole) {
           return true;
         }
@@ -33,7 +33,7 @@ export class RolesGuard implements CanActivate {
         const context_data = context.switchToHttp().getRequest();
         const data = await this.jwtService.verifyAsync(context_data.cookies.jwt)
         const user = await this.rolesService.getUserDataContext(data)
-
+        
         if (requiredRole !== user.role_type_id)
           throw new UnauthorizedException()
         else 

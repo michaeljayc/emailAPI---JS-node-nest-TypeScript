@@ -7,5 +7,6 @@ export declare class DatabaseService {
     getByFilter(database: string, table: string, params: any): Promise<any>;
     list(database: string, table: string): Promise<any>;
     insertRecord(database: string, table: string, params: any): Promise<any>;
+    updateRecord(database: string, table: string, id: string, params: any): Promise<any>;
     deleteRecord(database: string, table: string, id: string): Promise<any>;
 }

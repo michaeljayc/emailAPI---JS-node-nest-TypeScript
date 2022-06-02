@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isValidStatus = exports.isValidMenu = exports.isValidMenuTables = exports.STATE = exports.MENU = exports.STATUS_ARRAY = exports.MENU_ARRAY = void 0;
-exports.MENU_ARRAY = ["inbox", "sent", "draft", "starred", "important"];
+exports.MENU_ARRAY = ["inbox", "sent", "drafts", "starred", "important"];
 exports.STATUS_ARRAY = ["important", "starred", "read", "draft", "deleted"];
 exports.MENU = {
     "inbox": 1,

@@ -11,22 +11,24 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RolesService = void 0;
 const common_1 = require("@nestjs/common");
-const user_service_1 = require("../../users/user.service");
+const database_service_1 = require("../../database/database.service");
+require('dotenv').config();
+const { DB } = process.env;
+const TABLE = "users";
 let RolesService = class RolesService {
-    constructor(userService) {
-        this.userService = userService;
+    constructor(databaseService) {
+        this.databaseService = databaseService;
     }
     async getUserDataContext(data) {
         let user = await this
-            .userService
-            .getUserByEmail(data.email);
-        if (Object.keys(user._responses).length !== 0)
-            return user.next()._settledValue;
+            .databaseService.getByFilter(DB, TABLE, { email: data.email });
+        if (user.length !== 0)
+            return user[0];
     }
 };
 RolesService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [user_service_1.UserService])
+    __metadata("design:paramtypes", [database_service_1.DatabaseService])
 ], RolesService);
 exports.RolesService = RolesService;
 //# sourceMappingURL=roles.services.js.map

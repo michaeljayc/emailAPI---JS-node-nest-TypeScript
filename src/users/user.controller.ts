@@ -1,5 +1,4 @@
 import { 
-    BadRequestException,
     Body,
     Controller, 
     Delete, 
@@ -15,7 +14,6 @@ import {
 } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { LoggerService } from "src/services/logger.service";
-import { User } from "./user.entity";
 import { IResponseFormat } from "src/common/common.interface";
 import { 
     formatResponse, 
@@ -58,12 +56,12 @@ export class UserController {
                 response = await this
                     .userService
                     .getAllUsers()
-                        // .then(result => {
+                        .then(result => {
                             
-                        //     return this
-                        //         .paginationService
-                        //         .pagination(result,page_number)
-                        // })
+                            return this
+                                .paginationService
+                                .pagination(result,page_number)
+                        })
                 
                 formatted_response = formatResponse
                 (   
@@ -268,7 +266,7 @@ export class UserController {
                     .then(result => {
                         return formatResponse
                         (
-                            result,
+                            result.changes,
                             true,
                             "Successfully deleted user."
                         )

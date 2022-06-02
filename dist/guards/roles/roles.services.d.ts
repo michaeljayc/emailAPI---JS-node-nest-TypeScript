@@ -1,7 +1,7 @@
+import { DatabaseService } from "src/database/database.service";
 import User from "src/users/user.entity";
-import { UserService } from "src/users/user.service";
 export declare class RolesService {
-    private userService;
-    constructor(userService: UserService);
+    private databaseService;
+    constructor(databaseService: DatabaseService);
     getUserDataContext(data: any): Promise<User>;
 }

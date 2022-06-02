@@ -11,7 +11,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserService = void 0;
 const common_1 = require("@nestjs/common");
-const rethink = require("rethinkdbdash");
 const database_service_1 = require("../database/database.service");
 require('dotenv').config();
 const { DB } = process.env;
@@ -21,11 +20,7 @@ let UserService = class UserService {
         this.databaseService = databaseService;
     }
     async createNewUser(user) {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .insert(user, { returnChanges: "always" })
-            .run();
+        return this.databaseService.insertRecord(DB, TABLE, user);
     }
     async getAllUsers() {
         return this.databaseService.list(DB, TABLE);
@@ -34,29 +29,13 @@ let UserService = class UserService {
         return this.databaseService.getById(DB, TABLE, id);
     }
     async getUserByEmail(email) {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .filter({
-            'email': email
-        })
-            .run();
+        return this.databaseService.getByFilter(DB, TABLE, { email: email });
     }
     async updateUser(user, user_id) {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .get(user_id)
-            .update(user, { returnChanges: "always" })
-            .run();
+        return this.databaseService.updateRecord(DB, TABLE, user_id, user);
     }
     async deleteUser(id) {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .get(id)
-            .delete({ returnChanges: "always" })
-            .run();
+        return this.databaseService.deleteRecord(DB, TABLE, id);
     }
 };
 UserService = __decorate([

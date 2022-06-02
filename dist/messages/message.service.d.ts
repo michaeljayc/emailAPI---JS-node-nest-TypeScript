@@ -10,7 +10,7 @@ export declare class MessageService {
     getMessages(data: TFilteredQuery): Promise<rethink.WriteResult>;
     getMessageDetails(filtered: TFilteredQuery): Promise<rethink.WriteResult>;
     sendMessage(message: Message): Promise<rethink.WriteResult>;
-    updateReadUnread(message_id: string): Promise<any>;
+    updateReadUnread(message_id: string, data: Message): Promise<any>;
     updateMessage(id: string, message?: Message): Promise<rethink.WriteResult>;
     deleteMessage(message_id: string): Promise<rethink.WriteResult>;
     checkMessageInMenu(query: any): Promise<rethink.WriteResult>;

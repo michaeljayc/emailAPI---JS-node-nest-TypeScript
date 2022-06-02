@@ -15,80 +15,40 @@ export class MessageService {
     constructor(private databaseService: DatabaseService) {}
 
     async getMessageById(id: string): Promise<Message> {
-        return this.rethink
-            .db(DB)
-            .table(TABLE)
-            .get(id)
+        return this.databaseService.getById(DB, TABLE, id)
             
     }
 
     async getMessages(data: TFilteredQuery): Promise<rethink.WriteResult> {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .filter(data)
-            .orderBy('updated_date')
+        return this.databaseService.getByFilter(DB, TABLE, data);
             
     }
 
     async getMessageDetails(filtered: TFilteredQuery)
-        : Promise<rethink.WriteResult> {
-            return rethink
-                .db(DB)
-                .table(TABLE)
-                .filter(filtered)
-                
+    : Promise<rethink.WriteResult> {
+            return this.databaseService.getByFilter(DB, TABLE, filtered)
     }
 
     async sendMessage(message: Message)
         : Promise<rethink.WriteResult> {
-            return rethink
-                .db(DB)
-                .table(TABLE)
-                .insert(
-                    message,
-                    {returnChanges: true}
-                )
-                
+            return this.databaseService.insertRecord(DB, TABLE, message);    
     }
 
-    async updateReadUnread(message_id: string)
+    async updateReadUnread(message_id: string, data: Message)
         : Promise<any> {
-
-            return await rethink
-                .db(DB)
-                .table(TABLE)
-                .get(message_id)
-                .update({
-                    "status": STATE.read,
-                    "updated_date": setDateTime() 
-                    }, 
-                    {returnChanges: "always"}
-                )
-                
+            return this.databaseService.updateRecord(DB, TABLE, message_id, data)       
     }
 
     async updateMessage(id:string,
         message?: Message)
         : Promise<rethink.WriteResult> {
-            return rethink
-                .db(DB)
-                .table(TABLE)
-                .get(id)
-                .update(
-                    message,
-                    {returnChanges: "always"}
-                )
+            return this.databaseService.updateRecord(DB, TABLE, id, message);
                 
     }
 
     async deleteMessage(message_id: string)
         : Promise<rethink.WriteResult> {
-            await rethink
-                .db(DB)
-                .table(TABLE)
-                .get(message_id)
-                .delete({returnChanges: "always"})
+            await this.databaseService.deleteRecord(DB, TABLE, message_id);
                 
     }
 

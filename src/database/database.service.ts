@@ -56,14 +56,24 @@ export class DatabaseService {
 //   }
 
   async insertRecord(database: string, table: string, params: any) {
-      return this.r.db(database).table(table).insert(params)
+      return this.r.db(database).table(table).insert(
+          params,
+          {returnChanges: "always"}
+        )
   }
+
+  async updateRecord(database: string, table: string, id: string, params: any) {
+    return this.r.db(database).table(table).get(id).update(
+        params,
+        {returnChanges: "always"}
+      )
+}
 
   async deleteRecord(database: string, table: string, id: string) {
     return this.r
       .db(database)
       .table(table)
       .get(id)
-      .update({ status: 'Inactive', updated_date: new Date().getTime() });
+      .delete({returnChanges: "always"})
   }
 }
