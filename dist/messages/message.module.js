@@ -5,22 +5,25 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageModule = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const passport_1 = require("@nestjs/passport");
 const auth_module_1 = require("../auth/auth.module");
-const auth_service_1 = require("../auth/auth.service");
+const auth_service_1 = __importDefault(require("../auth/auth.service"));
 const constants_1 = require("../auth/constants");
 const pagination_module_1 = require("../common/pagination/pagination.module");
 const search_module_1 = require("../common/search/search.module");
 const database_module_1 = require("../database/database.module");
 const auth_token_module_1 = require("../guards/auth-token/auth-token.module");
-const logger_service_1 = require("../services/logger.service");
+const logger_service_1 = __importDefault(require("../services/logger.service"));
 const user_service_1 = require("../users/user.service");
-const message_controller_1 = require("./message.controller");
-const message_service_1 = require("./message.service");
+const message_controller_1 = __importDefault(require("./message.controller"));
+const message_service_1 = __importDefault(require("./message.service"));
 let MessageModule = class MessageModule {
 };
 MessageModule = __decorate([

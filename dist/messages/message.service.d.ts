@@ -4,7 +4,6 @@ import Message from "./message.entity";
 import { TFilteredQuery } from "./message.interface";
 export declare class MessageService {
     private databaseService;
-    private rethink;
     constructor(databaseService: DatabaseService);
     getMessageById(id: string): Promise<Message>;
     getMessages(data: TFilteredQuery): Promise<rethink.WriteResult>;

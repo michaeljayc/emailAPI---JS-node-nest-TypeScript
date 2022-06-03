@@ -284,5 +284,4 @@ export class UserController {
 
         return formatted_response;
     }
-
 }

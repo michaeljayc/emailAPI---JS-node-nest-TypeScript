@@ -11,9 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageService = void 0;
 const common_1 = require("@nestjs/common");
-const rethink = require("rethinkdbdash");
 const database_service_1 = require("../database/database.service");
-const { HOST = 'localhost', PORT = "28015" } = process.env;
 const DB = "emailAPI";
 const TABLE = "messages";
 let MessageService = class MessageService {
@@ -39,13 +37,10 @@ let MessageService = class MessageService {
         return this.databaseService.updateRecord(DB, TABLE, id, message);
     }
     async deleteMessage(message_id) {
-        await this.databaseService.deleteRecord(DB, TABLE, message_id);
+        return this.databaseService.deleteRecord(DB, TABLE, message_id);
     }
     async checkMessageInMenu(query) {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .filter(rethink.row('id').eq(query.id).and(rethink.row('recipient')('email').eq(query.reference).and(rethink.row('recipient')('menu').eq(query.menu)).or(rethink.row('sender')('email').eq(query.reference).and(rethink.row('sender')('menu').eq(query.menu)))));
+        return this.databaseService.checkMessageInMenu(DB, TABLE, query);
     }
 };
 MessageService = __decorate([

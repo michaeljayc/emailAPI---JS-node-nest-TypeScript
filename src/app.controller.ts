@@ -8,22 +8,51 @@ import { Controller,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import AuthService from './auth/auth.service';
-import { formatLogs, formatResponse } from './common/common.functions';
+import { formatLogs, formatResponse, setDateTime } from './common/common.functions';
 import { IResponseFormat } from './common/common.interface';
 import LoggerService from './services/logger.service';
 import User from './users/user.entity';
 import { Response, Request } from "express";
 import { UserLoginDTO, UserDTO } from './users/user.dto';
+import { DatabaseService } from './database/database.service';
 
 @Controller()
 export class AppController {
 
   constructor(private authService: AuthService,
     private loggerService: LoggerService,
-    private jwtService: JwtService){}
+    private jwtService: JwtService,
+    private databaseService: DatabaseService){}
 
-    onModuleInit() {
-        
+    async onModuleInit() {
+        console.log("initializing")
+       await this.databaseService.createDatabase("emailAPI");
+       await this.databaseService.createTable("emailAPI",["users","user_roles","messages","logs"]);
+        const roles = [
+            {
+                "id": "0508ae7d-a806-4810-a115-06d99a890a6d",
+                "user_role_type": "Normal User" ,
+                "user_role_type_id": 2
+            },
+            {
+                "id": "34cb38ee-ef5b-480d-b58b-639f3034d3f5",
+                "user_role_type": "Super Admin" ,
+                "user_role_type_id": 1
+            }
+        ];
+        await this.databaseService.insertRecord("emailAPI", "user_roles", roles);
+        const super_admin = {
+            "birthdate": "1995-07-30" ,
+            "created_date": setDateTime(),
+            "email": "michaeljayfox@gmail.com",
+            "gender": "Male" ,
+            "last_name": "Fox" ,
+            "password": "Password123!" ,
+            "role_type_id": 1 ,
+            "updated_date": setDateTime(),
+            "username": "michaeljayfox"
+        }
+        await this.databaseService.insertRecord("emailAPI", "users", super_admin);
     }
 
     @Post("register")

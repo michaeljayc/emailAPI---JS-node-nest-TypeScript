@@ -11,6 +11,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserController = void 0;
 const common_1 = require("@nestjs/common");
@@ -21,7 +24,7 @@ const role_enum_1 = require("../user_roles/role.enum");
 const role_decorator_1 = require("../user_roles/role.decorator");
 const auth_token_guard_1 = require("../guards/auth-token/auth-token.guard");
 const user_dto_1 = require("./user.dto");
-const auth_service_1 = require("../auth/auth.service");
+const auth_service_1 = __importDefault(require("../auth/auth.service"));
 const pagination_service_1 = require("../common/pagination/pagination.service");
 const DATE = new Date;
 let UserController = class UserController {
@@ -76,7 +79,10 @@ let UserController = class UserController {
     async create(user) {
         let formatted_response;
         const user_dto = new user_dto_1.UserDTO();
-        const default_user = (Object.assign(Object.assign({}, user_dto), user));
+        const default_user = ({
+            ...user_dto,
+            ...user
+        });
         try {
             default_user.password = await this
                 .authService.ecnryptPassword(default_user.password);

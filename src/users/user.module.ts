@@ -13,6 +13,7 @@ import { AuthTokenModule } from "src/guards/auth-token/auth-token.module";
 import { RolesModule } from "src/guards/roles/roles.module";
 import { PaginationModule } from "src/common/pagination/pagination.module";
 import { DatabaseModule } from "src/database/database.module";
+import { SearchModule } from "src/common/search/search.module";
 @Module({
     imports: [DatabaseModule,
         PassportModule, 
@@ -24,11 +25,11 @@ import { DatabaseModule } from "src/database/database.module";
         AuthModule,
         AuthTokenModule,
         RolesModule,
-        PaginationModule],
+        PaginationModule,
+        SearchModule],
     controllers: [UserController],
     providers: [UserService,
         LoggerService,
-        AuthService,
         {
             provide: APP_GUARD,
             useClass: RolesGuard

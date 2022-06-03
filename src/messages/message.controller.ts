@@ -67,26 +67,17 @@ export class MessageController {
                         .verifyAsync(request.cookies["jwt"]);
                     
                     const email: string = cookie.email;
+                    filtered = {
+
+                    }
                     
-                    if (menu === "sent" || menu === "drafts") {
-                        filtered = {"sender": {"email": email,
-                            "menu": menu === "sent" ? 
-                            MENU.sent : 
-                            MENU.drafts
-                            }
-                        }
-                    }
-                    else {
-                        filtered = {"recipient": {"email": email} }
-                        if (menu !== "inbox")
-                            filtered.recipient.menu = (menu === "starred") ?
-                                MENU.starred : 
-                                MENU.important;
-                    }
                     // Retrieve and paginate data
-                    let response = await this
+                    const response = await this
                         .messageService
-                        .getMessages(filtered)
+                        .checkMessageInMenu({
+                            reference: cookie.email,
+                            menu: MENU[menu]
+                        })
                         .then(result => {
                             return this
                             .paginationService
@@ -120,52 +111,47 @@ export class MessageController {
         : Promise<IResponseFormat> {
 
             let formatted_response: IResponseFormat;
-            let filtered: TFilteredQuery;
-            
+            let return_data: any;
             try {   
                 const {menu, id} = param;
                 // get cookie
                 const cookie = await this.jwtService.verifyAsync
                     (request.cookies["jwt"])
 
-                if (menu === "sent" || menu === "drafts")
-                    filtered = { id,
-                        sender: { email: cookie.email,
-                        menu: MENU[menu]
-                     }
-                    }
-                else
-                    filtered = { id,
-                            recipient: { email: cookie.email,
-                            menu: MENU[menu]    
-                        }
-                    }
-                    
-                // Check if message id exists
-                let response = await this
-                    .messageService
-                    .getMessageDetails(filtered)
-
+                let response:any = await this
+                        .messageService
+                        .checkMessageInMenu({
+                            id,
+                            reference: cookie.email,
+                            menu: MENU[menu]
+                        })
+                
                 if (!response.length)
-                    formatted_response = formatResponse
-                        ([], true, "Success.");
-                else {
-                    let data = response[0]
-                    data = ({
-                        ...data,
+                    throw new NotFoundException
+                        (`Message ID [${id}] doesn't exist in ${menu} menu`);
+                
+                return_data = response[0];
+                if (return_data.status === 0) {
+                    const data = ({
+                        ...response[0],
                         status: STATE.read,
                         updated_date: setDateTime()
                     })
-                    formatted_response = await this
-                        .messageService
-                        .updateReadUnread(data.id,data)
-                            .then( result => {
-                                return formatResponse
-                                (result.changes[0].new_val, true, "Success.");
-                            })
+
+                    return_data = await this
+                    .messageService
+                    .updateReadUnread(data.id,data)
+                        .then( result => {
+                            return result.changes[0].new_val
+                        })
                 }
+
+                formatted_response = formatResponse
+                    (return_data, true, "Success.");
+
+                
+                console.log(response)
             } catch (error) {
-                console.log(error)
                 formatted_response = formatResponse
                     ([error], false, error.status)
             }
@@ -397,38 +383,38 @@ export class MessageController {
             return formatted_response; 
     }
 
-    // http://localhost:3000/api/messages/menu/delete?id=9f415197-22f9-4f93-88b2-77e381ff4079
+    // http://localhost:3000/api/messages/menu/delete?id=123abc
     @UseGuards(AuthTokenGuard)
     @Delete(":menu/delete")
-    async deleteMessage(@Param() param, 
-        @Query() query)
+    async deleteMessage(@Req() request: Request, 
+        @Param() param, @Query() query)
         : Promise<IResponseFormat> {
             
             let formatted_response: IResponseFormat;
 
             try {           
-                // check if menu is valid
-                if (!MENU_ARRAY.includes(param.menu))
-                    throw new BadRequestException
-                        (`Menu ${param.menu} doesn't exist.`)
-
-                // check if id exists
-                if (!await this.messageService.getMessageById(query.id))
-                    throw new NotFoundException
-                        (`Message with ID ${query.id} doesn't exist.`)
+                //get cookie
+                const cookie = await this
+                    .jwtService
+                    .verifyAsync(request.cookies["jwt"]);
 
                 // check if message exists in menu
-                const response = await this.messageService.getMessageDetails({
-                    id: query.id,
-                    
-                })     
+                const response = await this.messageService.checkMessageInMenu({
+                        id: query.id,
+                        reference: cookie.email,
+                        menu: MENU[param.menu]
+                    })
+
+                if (!response.length)
+                    throw new NotFoundException
+                        (`Message ID [${query.id}] doesn't exist in ${param.menu} menu.`)
 
                 formatted_response = await this
                     .messageService
                     .deleteMessage(query.id)
                         .then(result => {
                             return formatResponse
-                                (result.changes, true, "Message Deleted")
+                                (result, true, "Message Deleted")
                         });
             } catch (error) {
                 formatted_response = formatResponse
@@ -446,8 +432,9 @@ export class MessageController {
 
     // http://localhost:3000/api/messages/inbox/reply?id=
     @UseGuards(AuthTokenGuard)
-    @Post("inbox/reply")
+    @Post(":menu/reply")
     async replyToMessage(@Req() request: Request,
+        @Param() param,
         @Query() query,
         @Body() message: NewMessageDTO)
         : Promise<IResponseFormat> {
@@ -466,11 +453,17 @@ export class MessageController {
                 const cookie = await this.jwtService.verifyAsync
                     (request.cookies["jwt"]);
 
-                // check if query.id is a valid id
-                if (!await this.messageService.getMessageById(query.id))
-                    throw new HttpException
-                        (`Message ID ${query.id} doesn't exist`, 404)
+                // check if message exists in menu
+                const response = await this.messageService.checkMessageInMenu({
+                    id: query.id,
+                    reference: cookie.email,
+                    menu: MENU[param.menu]
+                })
 
+                if (!response.length)
+                    throw new NotFoundException
+                        (`Message ID [${query.id}] doesn't exist in ${param.menu} menu`)
+               
                 // Set message details
                 default_message = ({
                     ...default_message,
@@ -491,10 +484,13 @@ export class MessageController {
                         menu: MENU.sent,
                     },
                     status: 0,
+                    created_date: setDateTime(),
                     updated_date: setDateTime()
-                })
-                
+                })  
+
+                // omit id from message
                 omitted_message = omit(default_message, ['id'])
+             
                 // Send message to recipient's INBOX
                 formatted_response = await this
                     .messageService
@@ -525,43 +521,39 @@ export class MessageController {
         @Req() request: Request)
         : Promise<IResponseFormat | any> {
 
-            let to_query: any;
             let formatted_response: IResponseFormat;
             let default_message: NewMessageDTO;
 
             try {
                 const menu = param.menu;
                 const {id, status} = query;
+
                 // get cookie
                 const cookie = await this.jwtService
                     .verifyAsync(request.cookies["jwt"])
 
-                to_query = {
-                    id,
-                    reference: cookie.email,
-                    menu: MENU[menu]
-                }
-
-                let response = await this
+                const response = await this
                     .messageService
-                    .checkMessageInMenu(to_query);
+                    .checkMessageInMenu({
+                        id,
+                        reference: cookie.email,
+                        menu: MENU[menu]
+                    })
 
                 // check if message exists in specified menu
-                if (response._responses.length === 0)
+                if (!response.length)
                     throw new NotFoundException
                         (`Cannot find message with ID [${id}] in [${menu}]`)
-
-                const message_data = response.next()._settledValue;
                 
-                // check if id or status is valid
+                // check if status is valid
                 if (!isValidStatus(status))
                     throw new NotFoundException
-                        (`ID [${id}] or Status [${status}] is invalid.`)
+                        (`Status [${status}] is invalid.`)
                 
-                default_message = message_data;
+                default_message = response[0];
                 default_message = {
                     ...default_message,
-                    recipient: {
+                    [menu === "inbox" ? "recipient" : "sender"]: {
                         ...default_message.recipient,
                         menu : status === "starred" ? 
                         MENU.starred : 
@@ -569,9 +561,7 @@ export class MessageController {
                     },
                     updated_date: setDateTime()
                 }
-                console.log("🚀 ~ file: message.controller.ts ~ line 547 ~ MessageController ~ default_message", default_message)
-                
-               
+
                 // update message status
                 formatted_response = await this
                     .messageService
@@ -601,11 +591,12 @@ export class MessageController {
     //http://localhost:3000/api/messages/search?keyword=abc123
     @UseGuards(AuthTokenGuard)
     @Get("search")
-    async search(@Req() request: Request,
+    async searchMessage(@Req() request: Request,
         @Query() query): Promise<IResponseFormat> {
             
             let formatted_response: IResponseFormat;
-            let response_data: any;
+            let page_number = (query.page !== undefined) ? 
+            Number(query.page) : 1;
 
             try {
                 // get cookie
@@ -613,25 +604,20 @@ export class MessageController {
                     .jwtService
                     .verifyAsync(request.cookies["jwt"]);
             
-                response_data = await 
-                    this
+                const response = await this
                     .searchService
-                    .search(query.keyword, cookie.email);
-
-                let response_data_length: number = 
-                    response_data._responses.length;
-                
-            
-                if (response_data_length > 0)
-                    response_data = response_data._responses[0].r;
+                    .search("messages", query.keyword, cookie.email)
+                    .then( result => {
+                        console.log(result)
+                        return this
+                            .paginationService
+                            .pagination(result, page_number)
+                    })
                        
                 formatted_response = formatResponse
-                    (  
-                        (response_data_length > 0) ? response_data : null, 
-                        true, 
-                        "Success"
-                    )
+                    ((response) ? response : null, true, "Success")
             } catch (error) {
+                console.log(error)
                 formatted_response = formatResponse
                     ([error], false, error.statusMessage)
             }

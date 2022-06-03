@@ -21,9 +21,9 @@ export declare class MessageController {
     saveAsDraft(message: NewMessageDTO): Promise<IResponseFormat>;
     updateDraftedMessage(message: NewMessageDTO, query: any): Promise<IResponseFormat>;
     sendDraftMessage(message: NewMessageDTO, query: any): Promise<IResponseFormat>;
-    deleteMessage(param: any, query: any): Promise<IResponseFormat>;
-    replyToMessage(request: Request, query: any, message: NewMessageDTO): Promise<IResponseFormat>;
+    deleteMessage(request: Request, param: any, query: any): Promise<IResponseFormat>;
+    replyToMessage(request: Request, param: any, query: any, message: NewMessageDTO): Promise<IResponseFormat>;
     updateMessageStatus(query: any, param: any, request: Request): Promise<IResponseFormat | any>;
-    search(request: Request, query: any): Promise<IResponseFormat>;
+    searchMessage(request: Request, query: any): Promise<IResponseFormat>;
 }
 export default MessageController;

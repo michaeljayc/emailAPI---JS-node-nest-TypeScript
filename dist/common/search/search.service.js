@@ -11,20 +11,15 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SearchService = void 0;
 const common_1 = require("@nestjs/common");
-const r = require("rethinkdbdash");
 const database_service_1 = require("../../database/database.service");
 const DB = "emailAPI";
 let SearchService = class SearchService {
     constructor(databaseService) {
         this.databaseService = databaseService;
     }
-    async search(keyword, reference) {
+    async search(table, keyword, reference) {
         keyword = keyword.toLocaleLowerCase();
-        return await r
-            .db(DB)
-            .table("messages")
-            .filter(r.row('recipient')('email').eq(reference).or(r.row('sender')('email').eq(reference)).and(r.row('subject').match(keyword).or(r.row('message').match(keyword))))
-            .run();
+        return this.databaseService.search(DB, table, keyword, reference);
     }
 };
 SearchService = __decorate([
