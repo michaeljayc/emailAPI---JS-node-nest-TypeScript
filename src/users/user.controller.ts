@@ -1,5 +1,4 @@
 import { 
-    BadRequestException,
     Body,
     Controller, 
     Delete, 
@@ -15,7 +14,6 @@ import {
 } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { LoggerService } from "src/services/logger.service";
-import { User } from "./user.entity";
 import { IResponseFormat } from "src/common/common.interface";
 import { 
     formatResponse, 
@@ -23,7 +21,7 @@ import {
     setDateTime, 
 } from "src/common/common.functions";
 import { Request } from "express";
-import { Role } from "src/user_roles/role.enum";
+import { ROLE } from "src/user_roles/role.enum";
 import { RoleGuard } from "src/user_roles/role.decorator";
 import { AuthTokenGuard } from "src/guards/auth-token/auth-token.guard";
 import { UserDTO } from "./user.dto";
@@ -41,14 +39,18 @@ export class UserController {
         private paginationService: PaginationService){}
 
     // http://localhost:3000/api/users
-    @RoleGuard(Role.Admin)
+    @RoleGuard(ROLE.Admin)
     @UseGuards(AuthTokenGuard)
     @Get("")
     async getAllUsers(@Req() request: Request,
         @Query() query)
         : Promise<IResponseFormat> {
 
-            let formatted_response: IResponseFormat;        
+            let formatted_response: IResponseFormat = {
+                success: false,
+                message: "",
+                count: 0
+            }        
             let response: any;
             let page_number = (query.page !== undefined) ? 
                 Number(query.page) : 1;
@@ -59,6 +61,7 @@ export class UserController {
                     .userService
                     .getAllUsers()
                         .then(result => {
+                            
                             return this
                                 .paginationService
                                 .pagination(result,page_number)
@@ -122,11 +125,15 @@ export class UserController {
 
     // http://localhost:3000/api/users/create
     @UseGuards(AuthTokenGuard)
-    @RoleGuard(Role.Admin)
+    @RoleGuard(ROLE.Admin)
     @Post("create")
     async create(@Body() user: UserDTO): Promise<IResponseFormat> {
 
-        let formatted_response: IResponseFormat;
+        let formatted_response: IResponseFormat = {
+            success: false,
+            message: "",
+            count: 0
+        }
         const user_dto = new UserDTO();
         const default_user = ({
             ...user_dto,
@@ -146,7 +153,7 @@ export class UserController {
                             "User creation successful."
                         )
                 })
-        } catch (error) {
+        } catch (error: any) {
             formatted_response = formatResponse
                     ([error],false, "Failed")
             throw new HttpException(error, error.HttpCode)
@@ -161,7 +168,7 @@ export class UserController {
 
     // http://localhost:3000/api/users/edit/id
     @UseGuards(AuthTokenGuard)
-    @RoleGuard(Role.Admin)
+    @RoleGuard(ROLE.Admin)
     @Get("edit/:id")
     async editUser(@Param() param): Promise<IResponseFormat> {
         
@@ -180,7 +187,7 @@ export class UserController {
             formatted_response = formatResponse
                 ([response_data], true, "Success.")
 
-        } catch (error) {
+        } catch (error: any) {
             formatted_response = formatResponse
                 ([error], false, error.status)
         }
@@ -196,7 +203,7 @@ export class UserController {
 
     // http://localhost:3000/api/users/update?id=123abc
     @UseGuards(AuthTokenGuard)
-    @RoleGuard(Role.Admin)
+    @RoleGuard(ROLE.Admin)
     @Put("update")
     async updateUser(@Body() user: UserDTO,
         @Query() query): Promise<IResponseFormat> {
@@ -229,7 +236,7 @@ export class UserController {
                                     "Success."
                                 )
                         })
-            } catch (error) {
+            } catch (error: any) {
                 formatted_response = formatResponse
                     ([error], false, error.status)
             }
@@ -245,7 +252,7 @@ export class UserController {
 
     // http://localhost:3000/api/users/delete?id=123abc
     @UseGuards(AuthTokenGuard)
-    @RoleGuard(Role.Admin)
+    @RoleGuard(ROLE.Admin)
     @Delete("delete")
     async deleteUser(@Query() query): Promise<IResponseFormat> {
 
@@ -267,12 +274,12 @@ export class UserController {
                     .then(result => {
                         return formatResponse
                         (
-                            result,
+                            result.changes,
                             true,
                             "Successfully deleted user."
                         )
                     })
-        } catch (error) {
+        } catch (error: any) {
             formatted_response = formatResponse
                 ([error], false, error.status)
         }
@@ -285,5 +292,4 @@ export class UserController {
 
         return formatted_response;
     }
-
 }

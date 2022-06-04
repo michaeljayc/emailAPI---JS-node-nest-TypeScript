@@ -2,21 +2,21 @@ import { STATE } from "./message.common";
 
 export class Message {
 
-    id: string;
-    message_origin_id: string;
-    sender: {
-        email: string,
-        menu: number
+    id!: string;
+    message_origin_id!: string;
+    sender!: {
+        email: string;
+        menu: number;
     };
-    recipient: {
-        email: string,
-        menu: number
+    recipient!: {
+        email: string;
+        menu: number;
     };
-    subject: string;
-    message: string;
-    status: number;
-    created_date: string;
-    updated_date: string;
+    subject!: string;
+    message!: string;
+    status!: number;
+    created_date!: string;
+    updated_date!: string;
 
     constructor(id: string,
         message_origin_id: string,

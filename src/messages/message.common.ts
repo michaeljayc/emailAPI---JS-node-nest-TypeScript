@@ -1,4 +1,4 @@
-export const MENU_ARRAY= ["inbox","sent","draft","starred","important"];
+export const MENU_ARRAY= ["inbox","sent","drafts","starred","important"];
 export const STATUS_ARRAY = ["important","starred", "read", "draft", "deleted"];
 
 export const MENU =  {

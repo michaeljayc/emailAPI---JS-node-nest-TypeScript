@@ -1,13 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
-import * as rethink from "rethinkdb";
 
 @Injectable()
 export class PaginationService {
 
-    private connection: rethink.Connection;
-    constructor(@Inject("RethinkProvider") connection){
-        this.connection = connection;
-    }
+    constructor(){}
 
     async pagination(data: any, page: number) {
         const per_page = 5;

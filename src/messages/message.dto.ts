@@ -1,18 +1,18 @@
 import { Type } from "class-transformer";
 import { IsDefined, IsEmail, IsIn, IsNotEmpty, IsNotEmptyObject, IsNumber, IsObject, IsOptional, IsString, Validate, validate, ValidateNested, ValidationTypes } from "class-validator";
 import { setDateTime } from "src/common/common.functions";
-import { MENU, STATE } from "./message.common";
+import { MENU } from "./message.common";
 
 export class EmailReference {
 
     @IsNotEmpty()
     @IsEmail()
-    public email: string;
+    public email!: string;
 
     @IsIn(Object.values(MENU))
     @IsOptional()
     @IsNumber()
-    public menu: number;
+    public menu!: number;
 }
 export class NewMessageDTO {
 
@@ -32,20 +32,20 @@ export class NewMessageDTO {
     @IsNotEmptyObject()
     @IsObject()
     @ValidateNested()
-    @Type(()=> EmailReference)
-    public sender: EmailReference;
+    @Type(() => EmailReference)
+    public sender!: EmailReference;
 
     @IsOptional()
     @IsDefined()
     @IsNotEmptyObject()
     @IsObject()
     @ValidateNested()
-    @Type(()=> EmailReference)
-    public recipient: EmailReference;
+    @Type(() => EmailReference)
+    public recipient!: EmailReference;
     
     @IsOptional()
     @IsString()
-    public id: string;
+    public id!: string;
 
     @IsOptional()
     @IsString()
@@ -53,13 +53,12 @@ export class NewMessageDTO {
 
     @IsNotEmpty()
     @IsString()
-    public subject: string;
+    public subject!: string;
 
     @IsString()
-    public message: string;
+    public message!: string;
 
     @IsOptional()
-    //@IsIn(Object.values(STATE))
     @IsNumber()
     public status: number;
 

@@ -1,5 +1,4 @@
-import { Logger, Module } from '@nestjs/common';
-import { RethinkModule } from 'rethinkdb/rethink.module';
+import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { UserModule } from './users/user.module';
 import { UserRoleModule } from './user_roles/user_role.module';
@@ -10,11 +9,12 @@ import { APP_FILTER } from '@nestjs/core';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
 import LoggerService from './services/logger.service';
 import { JwtModule } from '@nestjs/jwt';
+import { DatabaseModule } from './database/database.module';
 
 @Module({
   imports: [
+    DatabaseModule,
     ConfigModule.forRoot({isGlobal: true}),
-    RethinkModule, 
     UserRoleModule, 
     UserModule,
     AuthModule,

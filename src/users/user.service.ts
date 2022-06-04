@@ -1,78 +1,42 @@
 import { Injectable, Inject, forwardRef } from "@nestjs/common";
 import { User } from "./user.entity";
-import * as rethink from "rethinkdb";
+import * as rethink from "rethinkdbdash";
 import { PaginationService } from "src/common/pagination/pagination.service";
+import { DatabaseService } from "src/database/database.service";
 
 require('dotenv').config()
-const {DB} = process.env;
+//const {DB} = process.env;
+const DB = "emailAPI"
 const TABLE = "users";
 
 @Injectable()
 export class UserService {
-    
-    private connection: rethink.Connection;
 
-    constructor(@Inject("RethinkProvider") connection){
-        this.connection = connection;
-    }
+    constructor(private databaseService: DatabaseService){}
 
     async createNewUser(user: User): Promise<rethink.WriteResult> {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .insert(
-                user,
-                {returnChanges: "always"}
-            )
-            .run(this.connection)
+        return this.databaseService.insertRecord(DB, TABLE, user);
     }
 
-    async getAllUsers(): Promise<User>{
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .orderBy('updated_date')
-            .run(this.connection)
+    async getAllUsers(): Promise<rethink.WriteResult>{
+        return this.databaseService.list(DB, TABLE);
     }
 
     async getUserById(id: string): Promise<User> {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .get(id)
-            .run(this.connection)
+        return this.databaseService.getById(DB, TABLE, id);
     }
 
     async getUserByEmail(email:string): Promise<any> {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .filter({
-                'email': email
-            })
-            .run(this.connection)
+        return this.databaseService.getByFilter(DB, TABLE, {email: email})
     }
 
     async updateUser(user: User, user_id:string)
         : Promise<rethink.WriteResult> {
-            return rethink
-                .db(DB)
-                .table(TABLE)
-                .get(user_id)
-                .update(
-                    user,
-                    {returnChanges: "always"}
-                )
-                .run(this.connection)
+            return this.databaseService.updateRecord(DB, TABLE, user_id, user);
     }
 
     async deleteUser(id: string): Promise<rethink.WriteResult> {
-        return rethink
-            .db(DB)
-            .table(TABLE)
-            .get(id)
-            .delete({returnChanges: "always"})
-            .run(this.connection)
+       return this.databaseService.deleteRecord(DB, TABLE, id);
     }
 
 }

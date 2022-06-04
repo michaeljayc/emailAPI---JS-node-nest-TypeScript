@@ -1,1 +1,0 @@
-{"version":3,"file":"rethink.module.js","sourceRoot":"","sources":["../../rethinkdb/rethink.module.ts"],"names":[],"mappings":";;;;;;;;;AAAA,2CAAwC;AACxC,2DAAsD;AAStD,IAAa,aAAa,GAA1B,MAAa,aAAa;CAAG,CAAA;AAAhB,aAAa;IAPzB,IAAA,eAAM,EAAC;QACJ,OAAO,EAAE,EAAE;QACX,WAAW,EAAE,EAAE;QACf,SAAS,EAAE,CAAC,mCAAe,CAAC;QAC5B,OAAO,EAAE,CAAC,mCAAe,CAAC;KAC7B,CAAC;GAEW,aAAa,CAAG;AAAhB,sCAAa"}

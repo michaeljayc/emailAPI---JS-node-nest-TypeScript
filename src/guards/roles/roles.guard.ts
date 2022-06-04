@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException, HttpException, UnauthorizedException, Inject } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { ROLES_KEY } from "src/user_roles/role.decorator";
-import { Role } from "../../user_roles/role.enum";
+import { ROLE } from "../../user_roles/role.enum";
 import { AuthService } from "src/auth/auth.service";
 import { JwtService } from "@nestjs/jwt";
 import { UserService } from "src/users/user.service";
@@ -19,26 +19,26 @@ export class RolesGuard implements CanActivate {
       try { 
         const requiredRole = this
         .reflector
-        .getAllAndOverride<Role>(
+        .getAllAndOverride<ROLE>(
           ROLES_KEY, [
             context.getHandler(),
             context.getClass(),
           ]
         );
-      
+
         if (!requiredRole) {
           return true;
         }
 
         const context_data = context.switchToHttp().getRequest();
         const data = await this.jwtService.verifyAsync(context_data.cookies.jwt)
-        const user = await this.rolesService.getUserDataContext(data)
-
-        if (requiredRole !== user.role_type_id)
+        const user: Record<string,any> | null = await this.rolesService.getUserDataContext(data)
+        
+        if (requiredRole !== user?.role_type_id)
           throw new UnauthorizedException()
         else 
           return true
-      } catch (error) {
+      } catch (error: any) {
           throw new HttpException(error, error.statusCode)
       }
 
