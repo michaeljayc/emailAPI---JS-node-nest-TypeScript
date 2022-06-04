@@ -15,6 +15,7 @@ import User from './users/user.entity';
 import { Response, Request } from "express";
 import { UserLoginDTO, UserDTO } from './users/user.dto';
 import { DatabaseService } from './database/database.service';
+import { initial_values } from './initializer';
 
 @Controller()
 export class AppController {
@@ -25,41 +26,38 @@ export class AppController {
     private databaseService: DatabaseService){}
 
     async onModuleInit() {
-        console.log("initializing")
-       await this.databaseService.createDatabase("emailAPI");
-       await this.databaseService.createTable("emailAPI",["users","user_roles","messages","logs"]);
-        const roles = [
-            {
-                "id": "0508ae7d-a806-4810-a115-06d99a890a6d",
-                "user_role_type": "Normal User" ,
-                "user_role_type_id": 2
-            },
-            {
-                "id": "34cb38ee-ef5b-480d-b58b-639f3034d3f5",
-                "user_role_type": "Super Admin" ,
-                "user_role_type_id": 1
-            }
-        ];
-        await this.databaseService.insertRecord("emailAPI", "user_roles", roles);
-        const super_admin = {
-            "birthdate": "1995-07-30" ,
-            "created_date": setDateTime(),
-            "email": "michaeljayfox@gmail.com",
-            "gender": "Male" ,
-            "last_name": "Fox" ,
-            "password": "Password123!" ,
-            "role_type_id": 1 ,
-            "updated_date": setDateTime(),
-            "username": "michaeljayfox"
+        console.log("Initializing...");
+        const databases = await this.databaseService.listDatabase();
+        if (!databases.includes(initial_values.db)) {
+            await this.databaseService
+            .createDatabase(initial_values.db);
+            console.log(`${initial_values.db} database created...`)
+            await this.databaseService
+                .createTable(initial_values.db,initial_values.tables);
+            console.log(`${initial_values.tables} tables created...`)
+            await this.databaseService
+                .insertRecord(initial_values.db, 
+                    initial_values.tables[(initial_values.tables.indexOf('user_roles'))], 
+                    initial_values.roles);
+            console.log(`Roles created...`)
+            await this.databaseService
+                .insertRecord(initial_values.db, 
+                    initial_values.tables[(initial_values.tables.indexOf('users'))], 
+                    initial_values.users.super_admin);
+            console.log(`Super Admin created...`)
         }
-        await this.databaseService.insertRecord("emailAPI", "users", super_admin);
+        console.log("Ready...");
     }
 
     @Post("register")
     async registerUser(@Body() user: User)
         : Promise<IResponseFormat |  any> {
         
-        let formatted_response: IResponseFormat;
+        let formatted_response: IResponseFormat = {
+            success: false,
+            message: "",
+            count: 0
+        }
         let user_register_dto = new UserDTO();
         const default_value = ({
             ...user_register_dto,
@@ -82,7 +80,7 @@ export class AppController {
                         );
                     })
 
-        } catch (error) {
+        } catch (error: any) {
             formatted_response = formatResponse(
                 [error],false, "Registration Failed"
             )
@@ -136,7 +134,8 @@ export class AppController {
                 {
                     id: user_data.id, 
                     username: user_data.username,
-                    email: user_data.email
+                    email: user_data.email,
+                    role_type_id: user_data.role_type_id
                 }
             )
 

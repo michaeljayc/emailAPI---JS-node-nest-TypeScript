@@ -89,7 +89,7 @@ export class MessageController {
                 } else
                     throw new BadRequestException
                         (`Invalid Menu '${menu}'`)
-            } catch (error) {
+            } catch (error: any) {
                 formatted_response = formatResponse
                     ([error], false, error.status)
             }
@@ -151,7 +151,7 @@ export class MessageController {
 
                 
                 console.log(response)
-            } catch (error) {
+            } catch (error: any) {
                 formatted_response = formatResponse
                     ([error], false, error.status)
             }
@@ -214,8 +214,7 @@ export class MessageController {
                         return formatResponse(
                             result.changes[0].new_val, true, "Message Sent"
                     )});
-            } catch (error) {
-                console.log(error)
+            } catch (error: any) {
                 formatted_response = formatResponse
                     ([error], false, error.status)
             }
@@ -262,7 +261,7 @@ export class MessageController {
                     true,
                     "Saved as draft."
                 )
-            } catch (error) {
+            } catch (error: any) {
                 formatted_response = formatResponse
                     ([error], false, error.status)
             }
@@ -307,7 +306,7 @@ export class MessageController {
                             return formatResponse
                                 (result.changes, true, "Message updated.")
                         })
-            } catch (error) {
+            } catch (error: any) {
                 formatted_response = formatResponse
                     ([error], false, error.statusMessage)
             }
@@ -369,7 +368,7 @@ export class MessageController {
                             return formatResponse
                                 (result.changes[0].new_val, true, "Message Sent.")
                         })
-            } catch (error) {
+            } catch (error: any) {
                 formatted_response = formatResponse
                     ([error], false, error.statusMessage)
             }
@@ -416,7 +415,7 @@ export class MessageController {
                             return formatResponse
                                 (result, true, "Message Deleted")
                         });
-            } catch (error) {
+            } catch (error: any) {
                 formatted_response = formatResponse
                     ([error], false, error.status);
             }
@@ -439,7 +438,7 @@ export class MessageController {
         @Body() message: NewMessageDTO)
         : Promise<IResponseFormat> {
 
-            let omitted_message: NewMessageDTO;
+            let omitted_message: NewMessageDTO = new NewMessageDTO();
             let formatted_response: IResponseFormat;
             const newMessageDTO = new NewMessageDTO();
             let default_message = omit(message, ['id'])
@@ -499,7 +498,7 @@ export class MessageController {
                         return formatResponse
                             (omitted_message, true, "Reply sent.")
                     })
-            } catch (error) {
+            } catch (error: any) {
                 formatted_response = formatResponse
                     ([error], false, error.status);
             }
@@ -574,7 +573,7 @@ export class MessageController {
                                     `Message set to ${status}`
                                 )
                         })
-            } catch (error) {
+            } catch (error: any) {
                 formatted_response = formatResponse
                     ([error], false, error.status)
             }
@@ -587,49 +586,6 @@ export class MessageController {
 
             return formatted_response
     }
-
-    //http://localhost:3000/api/messages/search?keyword=abc123
-    @UseGuards(AuthTokenGuard)
-    @Get("search")
-    async searchMessage(@Req() request: Request,
-        @Query() query): Promise<IResponseFormat> {
-            
-            let formatted_response: IResponseFormat;
-            let page_number = (query.page !== undefined) ? 
-            Number(query.page) : 1;
-
-            try {
-                // get cookie
-                const cookie = await this
-                    .jwtService
-                    .verifyAsync(request.cookies["jwt"]);
-            
-                const response = await this
-                    .searchService
-                    .search("messages", query.keyword, cookie.email)
-                    .then( result => {
-                        console.log(result)
-                        return this
-                            .paginationService
-                            .pagination(result, page_number)
-                    })
-                       
-                formatted_response = formatResponse
-                    ((response) ? response : null, true, "Success")
-            } catch (error) {
-                console.log(error)
-                formatted_response = formatResponse
-                    ([error], false, error.statusMessage)
-            }
-
-            this
-            .loggerService
-            .insertLogs(formatLogs
-                ("search", query, formatted_response)
-            )
-            
-            return formatted_response;
-    } 
 }
 
 export default MessageController;

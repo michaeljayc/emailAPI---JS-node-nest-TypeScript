@@ -6,11 +6,11 @@ export class UserLoginDTO {
 
     @IsString()
     @IsNotEmpty()
-    email: string
+    email!: string;
 
     @IsString()
     @IsNotEmpty()
-    password: string
+    password!: string;
 }
 
 export class UserDTO {
@@ -31,41 +31,41 @@ export class UserDTO {
 
     @IsOptional()
     @IsString()
-    id: string
+    id!: string;
     
     @IsString()
     @IsNotEmpty()
-    username: string
+    username!: string;
 
     @IsString()
     @IsNotEmpty()
-    first_name: string
+    first_name!: string;
 
     @IsString()
     @IsNotEmpty()
-    last_name: string
+    last_name!: string;
 
     @IsString()
     @IsNotEmpty()
-    gender: string
+    gender!: string;
 
     @IsString()
     @IsNotEmpty()
-    birthdate: string
+    birthdate!: string;
 
     @IsIn(USER_ROLES)
     @IsNumber()
     @IsNotEmpty()
-    role_type_id: number
+    role_type_id!: number;
 
 
     @IsEmail()
     @IsNotEmpty()
-    email: string
+    email!: string;
 
     @IsString()
     @IsNotEmpty()
-    password: string
+    password!: string;
 
     @IsString()
     @IsOptional()

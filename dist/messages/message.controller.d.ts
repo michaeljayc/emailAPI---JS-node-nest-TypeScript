@@ -24,6 +24,5 @@ export declare class MessageController {
     deleteMessage(request: Request, param: any, query: any): Promise<IResponseFormat>;
     replyToMessage(request: Request, param: any, query: any, message: NewMessageDTO): Promise<IResponseFormat>;
     updateMessageStatus(query: any, param: any, request: Request): Promise<IResponseFormat | any>;
-    searchMessage(request: Request, query: any): Promise<IResponseFormat>;
 }
 export default MessageController;

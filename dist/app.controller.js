@@ -24,6 +24,7 @@ const logger_service_1 = __importDefault(require("./services/logger.service"));
 const user_entity_1 = __importDefault(require("./users/user.entity"));
 const user_dto_1 = require("./users/user.dto");
 const database_service_1 = require("./database/database.service");
+const initializer_1 = require("./initializer");
 let AppController = class AppController {
     constructor(authService, loggerService, jwtService, databaseService) {
         this.authService = authService;
@@ -32,37 +33,30 @@ let AppController = class AppController {
         this.databaseService = databaseService;
     }
     async onModuleInit() {
-        console.log("initializing");
-        await this.databaseService.createDatabase("emailAPI");
-        await this.databaseService.createTable("emailAPI", ["users", "user_roles", "messages", "logs"]);
-        const roles = [
-            {
-                "id": "0508ae7d-a806-4810-a115-06d99a890a6d",
-                "user_role_type": "Normal User",
-                "user_role_type_id": 2
-            },
-            {
-                "id": "34cb38ee-ef5b-480d-b58b-639f3034d3f5",
-                "user_role_type": "Super Admin",
-                "user_role_type_id": 1
-            }
-        ];
-        await this.databaseService.insertRecord("emailAPI", "user_roles", roles);
-        const super_admin = {
-            "birthdate": "1995-07-30",
-            "created_date": (0, common_functions_1.setDateTime)(),
-            "email": "michaeljayfox@gmail.com",
-            "gender": "Male",
-            "last_name": "Fox",
-            "password": "Password123!",
-            "role_type_id": 1,
-            "updated_date": (0, common_functions_1.setDateTime)(),
-            "username": "michaeljayfox"
-        };
-        await this.databaseService.insertRecord("emailAPI", "users", super_admin);
+        console.log("Initializing...");
+        const databases = await this.databaseService.listDatabase();
+        if (!databases.includes(initializer_1.initial_values.db)) {
+            await this.databaseService
+                .createDatabase(initializer_1.initial_values.db);
+            console.log(`${initializer_1.initial_values.db} database created...`);
+            await this.databaseService
+                .createTable(initializer_1.initial_values.db, initializer_1.initial_values.tables);
+            console.log(`${initializer_1.initial_values.tables} tables created...`);
+            await this.databaseService
+                .insertRecord(initializer_1.initial_values.db, initializer_1.initial_values.tables[(initializer_1.initial_values.tables.indexOf('user_roles'))], initializer_1.initial_values.roles);
+            console.log(`Roles created...`);
+            await this.databaseService
+                .insertRecord(initializer_1.initial_values.db, initializer_1.initial_values.tables[(initializer_1.initial_values.tables.indexOf('users'))], initializer_1.initial_values.users.super_admin);
+            console.log(`Super Admin created...`);
+        }
+        console.log("Ready...");
     }
     async registerUser(user) {
-        let formatted_response;
+        let formatted_response = {
+            success: false,
+            message: "",
+            count: 0
+        };
         let user_register_dto = new user_dto_1.UserDTO();
         const default_value = ({
             ...user_register_dto,
@@ -108,7 +102,8 @@ let AppController = class AppController {
             const jwt = await this.jwtService.signAsync({
                 id: user_data.id,
                 username: user_data.username,
-                email: user_data.email
+                email: user_data.email,
+                role_type_id: user_data.role_type_id
             });
             response.cookie("jwt", jwt, { httpOnly: true });
             formatted_response = (0, common_functions_1.formatResponse)([user_data], true, "Login Successful.");

@@ -24,6 +24,7 @@ let RolesService = class RolesService {
             .databaseService.getByFilter(DB, TABLE, { email: data.email });
         if (user.length !== 0)
             return user[0];
+        return null;
     }
 };
 RolesService = __decorate([

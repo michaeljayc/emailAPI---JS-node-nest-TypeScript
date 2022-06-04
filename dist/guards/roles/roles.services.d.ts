@@ -3,5 +3,5 @@ import User from "src/users/user.entity";
 export declare class RolesService {
     private databaseService;
     constructor(databaseService: DatabaseService);
-    getUserDataContext(data: any): Promise<User>;
+    getUserDataContext(data: any): Promise<User | null>;
 }

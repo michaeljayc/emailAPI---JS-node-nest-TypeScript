@@ -1,14 +1,10 @@
 import { Injectable, Logger } from "@nestjs/common";
-import * as rethink from "rethinkdbdash";
+import rethink from "rethinkdbdash";
 import bluebird from "bluebird"
 const logger = new Logger('DB:SERVICE:RETHINK');
 require('dotenv').config();
 
-const {
-  // database = 'nest_test',
-  HOST = 'localhost',
-  PORT = '28015',
-} = process.env;
+const {HOST,PORT} = process.env;
 
 @Injectable()
 export class DatabaseService {
@@ -23,6 +19,9 @@ export class DatabaseService {
 
   async createDatabase(database: string) {
     try {
+      const dbLists = await this.listDatabase();
+      if (dbLists.includes("emailAPI"))
+        return; 
       return this.r.dbCreate(database)
     } catch (error) {
       logger.log(error);
@@ -30,16 +29,17 @@ export class DatabaseService {
     }
   }
 
+  async listDatabase() {
+    return this.r.dbList();
+  }
+
   async createTable(database: string, tables: string[]) {
-    console.log("🚀 ~ file: database.service.ts ~ line 33 ~ DatabaseService ~ createTable ~ tables", tables)
     try {
-      if (tables.length)
-        return await tables.forEach( async(table) => {
+        return await bluebird.each( tables, async(table) => {
           await this.r.db(database).tableCreate(table)
         })
-      
     } catch (error) {
-      logger.log(error)
+      return logger.log(error)
     }
   }
 
@@ -56,10 +56,14 @@ export class DatabaseService {
   }
 
   async insertRecord(database: string, table: string, params: any) {
-      return this.r.db(database).table(table).insert(
-          params,
-          {returnChanges: "always"}
-        )
+    try {
+      return await this.r.db(database).table(table).insert(
+        params,
+        {returnChanges: "always"}
+      )
+    } catch (error) {
+      return logger.warn(error)
+    }
   }
 
   async updateRecord(database: string, table: string, id: string, params: any) {

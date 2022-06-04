@@ -1,16 +1,16 @@
 export class User {
 
-    id: string;
-    first_name: string;
-    last_name: string;
-    birthdate: string;
-    gender: string;
-    username: string;
-    email: string;
+    id!: string;
+    first_name!: string;
+    last_name!: string;
+    birthdate!: string;
+    gender!: string;
+    username!: string;
+    email!: string;
     password?: string;
-    created_date: string;
-    updated_date: string;
-    role_type_id: number ;
+    created_date!: string;
+    updated_date!: string;
+    role_type_id!: number;
 
     constructor(
         id: string,

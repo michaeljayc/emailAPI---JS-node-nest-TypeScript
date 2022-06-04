@@ -19,7 +19,6 @@ exports.SearchController = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const auth_token_guard_1 = require("../../guards/auth-token/auth-token.guard");
-const role_decorator_1 = require("../../user_roles/role.decorator");
 const role_enum_1 = require("../../user_roles/role.enum");
 const search_service_1 = require("./search.service");
 const pagination_service_1 = require("../pagination/pagination.service");
@@ -33,8 +32,7 @@ let SearchController = class SearchController {
         this.loggerService = loggerService;
     }
     async search(request, query) {
-        var _a;
-        const keyword = (_a = query.keyword) !== null && _a !== void 0 ? _a : "";
+        const { table = "messages", keyword = "" } = query;
         let formatted_response;
         let page_number = (query.page !== undefined) ?
             Number(query.page) : 1;
@@ -42,9 +40,11 @@ let SearchController = class SearchController {
             const cookie = await this
                 .jwtService
                 .verifyAsync(request.cookies["jwt"]);
+            if (cookie.role_type_id === role_enum_1.ROLE.User && table === "users")
+                throw new common_1.ForbiddenException;
             const response = await this
                 .searchService
-                .search("users", query.keyword, cookie.email)
+                .search(table, keyword, cookie.email)
                 .then(result => {
                 console.log(result);
                 return this
@@ -60,12 +60,10 @@ let SearchController = class SearchController {
             .loggerService
             .insertLogs((0, common_functions_1.formatLogs)("search", query, formatted_response));
         return formatted_response;
-        return;
     }
 };
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
-    (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
     (0, common_1.Get)(""),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Query)()),

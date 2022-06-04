@@ -1,8 +1,7 @@
-import { Controller, Get, Query, Req, UseGuards } from "@nestjs/common";
+import { Controller, ForbiddenException, Get, Query, Req, UseGuards } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { AuthTokenGuard } from "src/guards/auth-token/auth-token.guard";
-import { RoleGuard } from "src/user_roles/role.decorator";
-import { Role } from "src/user_roles/role.enum";
+import { ROLE } from "src/user_roles/role.enum";
 import { IResponseFormat } from "../common.interface";
 import { Request } from "express"
 import { SearchService } from "./search.service";
@@ -20,13 +19,11 @@ export class SearchController {
 
      // http://localhost:3000/api/search?table=users&keyword=123abc
      @UseGuards(AuthTokenGuard)
-     @RoleGuard(Role.Admin)
      @Get("")
      async search(@Req() request: Request,
         @Query() query): Promise<IResponseFormat> {
 
-            const keyword = query.keyword ?? "";
-
+            const {table="messages" , keyword=""} = query;
             let formatted_response: IResponseFormat;
             let page_number = (query.page !== undefined) ? 
             Number(query.page) : 1;
@@ -36,10 +33,14 @@ export class SearchController {
                 const cookie = await this
                     .jwtService
                     .verifyAsync(request.cookies["jwt"]);
+
+                // normal users can only search for table messages    
+                if (cookie.role_type_id === ROLE.User && table === "users")
+                   throw new ForbiddenException
             
                 const response = await this
                     .searchService
-                    .search("users", query.keyword, cookie.email)
+                    .search(table, keyword, cookie.email)
                     .then( result => {
                         console.log(result)
                         return this
@@ -49,7 +50,7 @@ export class SearchController {
                     
                 formatted_response = formatResponse
                     ((response) ? response : null, true, "Success")
-            } catch (error) {
+            } catch (error: any) {
                 formatted_response = formatResponse
                     ([error], false, error.statusMessage)
             }
@@ -61,7 +62,6 @@ export class SearchController {
             )
             
             return formatted_response;
-            return
      }
 }
 

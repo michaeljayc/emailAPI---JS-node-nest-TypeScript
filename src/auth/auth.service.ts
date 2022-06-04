@@ -4,6 +4,7 @@ import { UserService } from "src/users/user.service";
 const bcrypt = require('bcrypt');
 import * as rethink from "rethinkdbdash";
 import { DatabaseService } from "src/database/database.service";
+import { createDecipheriv } from "crypto";
 
 const TABLE = "users";
 const DB: string = "emailAPI";

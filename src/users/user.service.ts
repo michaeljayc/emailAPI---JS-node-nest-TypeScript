@@ -5,7 +5,8 @@ import { PaginationService } from "src/common/pagination/pagination.service";
 import { DatabaseService } from "src/database/database.service";
 
 require('dotenv').config()
-const {DB} = process.env;
+//const {DB} = process.env;
+const DB = "emailAPI"
 const TABLE = "users";
 
 @Injectable()

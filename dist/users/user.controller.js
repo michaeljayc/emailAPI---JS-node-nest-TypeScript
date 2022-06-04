@@ -35,7 +35,11 @@ let UserController = class UserController {
         this.paginationService = paginationService;
     }
     async getAllUsers(request, query) {
-        let formatted_response;
+        let formatted_response = {
+            success: false,
+            message: "",
+            count: 0
+        };
         let response;
         let page_number = (query.page !== undefined) ?
             Number(query.page) : 1;
@@ -77,7 +81,11 @@ let UserController = class UserController {
         return formatted_response;
     }
     async create(user) {
-        let formatted_response;
+        let formatted_response = {
+            success: false,
+            message: "",
+            count: 0
+        };
         const user_dto = new user_dto_1.UserDTO();
         const default_user = ({
             ...user_dto,
@@ -168,7 +176,7 @@ let UserController = class UserController {
     }
 };
 __decorate([
-    (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
+    (0, role_decorator_1.RoleGuard)(role_enum_1.ROLE.Admin),
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
     (0, common_1.Get)(""),
     __param(0, (0, common_1.Req)()),
@@ -188,7 +196,7 @@ __decorate([
 ], UserController.prototype, "getUserDetails", null);
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
-    (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
+    (0, role_decorator_1.RoleGuard)(role_enum_1.ROLE.Admin),
     (0, common_1.Post)("create"),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -197,7 +205,7 @@ __decorate([
 ], UserController.prototype, "create", null);
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
-    (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
+    (0, role_decorator_1.RoleGuard)(role_enum_1.ROLE.Admin),
     (0, common_1.Get)("edit/:id"),
     __param(0, (0, common_1.Param)()),
     __metadata("design:type", Function),
@@ -206,7 +214,7 @@ __decorate([
 ], UserController.prototype, "editUser", null);
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
-    (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
+    (0, role_decorator_1.RoleGuard)(role_enum_1.ROLE.Admin),
     (0, common_1.Put)("update"),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Query)()),
@@ -216,7 +224,7 @@ __decorate([
 ], UserController.prototype, "updateUser", null);
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
-    (0, role_decorator_1.RoleGuard)(role_enum_1.Role.Admin),
+    (0, role_decorator_1.RoleGuard)(role_enum_1.ROLE.Admin),
     (0, common_1.Delete)("delete"),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),

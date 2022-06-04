@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Role = void 0;
-var Role;
-(function (Role) {
-    Role[Role["Admin"] = 1] = "Admin";
-    Role[Role["User"] = 2] = "User";
-})(Role = exports.Role || (exports.Role = {}));
+exports.ROLE = void 0;
+var ROLE;
+(function (ROLE) {
+    ROLE[ROLE["Admin"] = 1] = "Admin";
+    ROLE[ROLE["User"] = 2] = "User";
+})(ROLE = exports.ROLE || (exports.ROLE = {}));
 //# sourceMappingURL=role.enum.js.map

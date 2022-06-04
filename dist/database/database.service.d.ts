@@ -1,9 +1,10 @@
-import * as rethink from "rethinkdbdash";
+import rethink from "rethinkdbdash";
 export declare class DatabaseService {
     r: rethink.Client;
     constructor();
     createDatabase(database: string): Promise<any>;
-    createTable(database: string, tables: string[]): Promise<void>;
+    listDatabase(): Promise<any>;
+    createTable(database: string, tables: string[]): Promise<void | string[]>;
     getById(database: string, table: string, id: string): Promise<any>;
     getByFilter(database: string, table: string, params: any): Promise<any>;
     list(database: string, table: string): Promise<any>;

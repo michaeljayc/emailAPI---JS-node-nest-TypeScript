@@ -13,7 +13,7 @@ exports.UserService = void 0;
 const common_1 = require("@nestjs/common");
 const database_service_1 = require("../database/database.service");
 require('dotenv').config();
-const { DB } = process.env;
+const DB = "emailAPI";
 const TABLE = "users";
 let UserService = class UserService {
     constructor(databaseService) {

@@ -148,7 +148,6 @@ let MessageController = class MessageController {
             });
         }
         catch (error) {
-            console.log(error);
             formatted_response = (0, common_functions_1.formatResponse)([error], false, error.status);
         }
         this
@@ -284,7 +283,7 @@ let MessageController = class MessageController {
         return formatted_response;
     }
     async replyToMessage(request, param, query, message) {
-        let omitted_message;
+        let omitted_message = new message_dto_1.NewMessageDTO();
         let formatted_response;
         const newMessageDTO = new message_dto_1.NewMessageDTO();
         let default_message = (0, lodash_1.omit)(message, ['id']);
@@ -384,34 +383,6 @@ let MessageController = class MessageController {
             .insertLogs((0, common_functions_1.formatLogs)("setMenuState", query, formatted_response));
         return formatted_response;
     }
-    async searchMessage(request, query) {
-        let formatted_response;
-        let page_number = (query.page !== undefined) ?
-            Number(query.page) : 1;
-        try {
-            const cookie = await this
-                .jwtService
-                .verifyAsync(request.cookies["jwt"]);
-            const response = await this
-                .searchService
-                .search("messages", query.keyword, cookie.email)
-                .then(result => {
-                console.log(result);
-                return this
-                    .paginationService
-                    .pagination(result, page_number);
-            });
-            formatted_response = (0, common_functions_1.formatResponse)((response) ? response : null, true, "Success");
-        }
-        catch (error) {
-            console.log(error);
-            formatted_response = (0, common_functions_1.formatResponse)([error], false, error.statusMessage);
-        }
-        this
-            .loggerService
-            .insertLogs((0, common_functions_1.formatLogs)("search", query, formatted_response));
-        return formatted_response;
-    }
 };
 __decorate([
     (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
@@ -497,15 +468,6 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object, Object]),
     __metadata("design:returntype", Promise)
 ], MessageController.prototype, "updateMessageStatus", null);
-__decorate([
-    (0, common_1.UseGuards)(auth_token_guard_1.AuthTokenGuard),
-    (0, common_1.Get)("search"),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Query)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
-    __metadata("design:returntype", Promise)
-], MessageController.prototype, "searchMessage", null);
 MessageController = __decorate([
     (0, common_1.Controller)("messages"),
     __metadata("design:paramtypes", [message_service_1.default,

@@ -35,7 +35,7 @@ let RolesGuard = class RolesGuard {
             const context_data = context.switchToHttp().getRequest();
             const data = await this.jwtService.verifyAsync(context_data.cookies.jwt);
             const user = await this.rolesService.getUserDataContext(data);
-            if (requiredRole !== user.role_type_id)
+            if (requiredRole !== (user === null || user === void 0 ? void 0 : user.role_type_id))
                 throw new common_1.UnauthorizedException();
             else
                 return true;

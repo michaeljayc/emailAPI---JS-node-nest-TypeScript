@@ -15,7 +15,7 @@ export class AuthTokenGuard implements CanActivate {
         try {
             const req_data = context.getArgs()[1]
             return await this.authTokenService.getContextData(req_data.req.cookies.jwt);
-        } catch (error) {
+        } catch (error: any) {
             console.log(formatResponse(null,false, error))
             throw new HttpException(error, error.statusCode)
         }

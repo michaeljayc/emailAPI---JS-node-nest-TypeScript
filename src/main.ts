@@ -1,6 +1,6 @@
 import { NestApplicationOptions, ValidationPipe } from '@nestjs/common';
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
